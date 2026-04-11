@@ -128,8 +128,22 @@ class TaigaClient {
 
 		if (!response.ok) {
 			const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-			const message = error.detail || error._error_message || JSON.stringify(error) || `HTTP ${response.status}`;
-			throw new Error(message);
+			let message: string;
+			if (error.detail) {
+				message = error.detail;
+			} else if (error._error_message) {
+				message = error._error_message;
+			} else if (error.error) {
+				message = error.error;
+			} else {
+				// Format field-level validation errors (e.g. {"description": ["This field is required."]})
+				const fieldErrors = Object.entries(error)
+					.filter(([, v]) => Array.isArray(v))
+					.map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+					.join('; ');
+				message = fieldErrors || JSON.stringify(error) || `HTTP ${response.status}`;
+			}
+			throw new Error(`[${response.status}] ${message}`);
 		}
 
 		if (response.status === 204) {

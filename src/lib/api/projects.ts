@@ -27,7 +27,7 @@ export async function getProjectBySlug(slug: string): Promise<Project> {
 export async function createProject(data: CreateProjectData): Promise<Project> {
 	return api.post<Project>('/projects', {
 		name: data.name,
-		description: data.description || '',
+		description: data.description || data.name,
 		creation_template: data.creation_template || 2, // Default to Kanban
 		is_private: data.is_private ?? false
 	});
