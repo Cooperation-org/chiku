@@ -35,7 +35,7 @@
 			<h1 class="text-2xl font-semibold text-zinc-100">
 				Taiga<span class="text-lt-cyan">LT</span>
 			</h1>
-			<p class="text-zinc-500 mt-1">Sign in to your account</p>
+<p class="text-lt-cyan mt-1">Welcome Aya! Ready to build?</p>
 		</div>
 
 		<!-- Login Form -->
