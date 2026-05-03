@@ -40,6 +40,7 @@ export interface UserStoryStatus {
 	is_closed: boolean;
 	order: number;
 	project: number;
+	version: number;
 }
 
 export interface TaskStatus {
@@ -177,3 +178,19 @@ export interface AuthResponse {
 	auth_token: string;
 	refresh: string;
 }
+
+export interface Membership {
+	id: number;
+	user: number;
+	project: number;
+	role: number;
+	role_name: string;
+	full_name: string;
+	email: string;
+	color: string;
+	photo: string | null;
+	is_admin: boolean;
+	is_active: boolean;
+	is_owner: boolean;
+}
+
