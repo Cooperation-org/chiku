@@ -49,7 +49,8 @@ export async function removeMembership(membershipId: number): Promise<void> {
 }
 
 export async function createInvitation(projectId: number, username: string, roleId: number): Promise<Membership> {
-	return api.post<Membership>('/invitations', {
+	// Taiga's /invitations endpoint only supports GET (by token); use /memberships for adding by username
+	return api.post<Membership>('/memberships', {
 		project: projectId,
 		username,
 		role: roleId
