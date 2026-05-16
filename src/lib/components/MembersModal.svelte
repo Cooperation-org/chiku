@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { getProjectMemberships, getProjectRoles, getAllUsers, addMembership, removeMembership, createInvitation, updateMembershipRole } from '$lib/api/memberships';
 	import type { Membership, Role } from '$lib/api/memberships';
+	import { getRoleDefaultsConfig } from '$lib/config/roleDefaults';
 
 	export let projectId: number;
 	export let projectName: string = '';
@@ -56,12 +57,23 @@
 				getProjectMemberships(projectId),
 				getProjectRoles(projectId)
 			]);
+			const config = getRoleDefaultsConfig();
 			roles = roles.sort((a, b) => a.order - b.order);
 			if (roles.length > 0 && !selectedRole) {
-				selectedRole = roles[0].id;
+				selectedRole = roles.find(r =>
+					config.preferredRoleNames.length === 0 ||
+					config.preferredRoleNames.some(preferred =>
+						r.name.toLowerCase() === preferred.toLowerCase()
+					)
+				)?.id ?? roles[0].id;
 			}
 			if (roles.length > 0 && !inviteRole) {
-				inviteRole = roles[0].id;
+				inviteRole = roles.find(r =>
+					config.preferredRoleNames.length === 0 ||
+					config.preferredRoleNames.some(preferred =>
+						r.name.toLowerCase() === preferred.toLowerCase()
+					)
+				)?.id ?? roles[0].id;
 			}
 		} catch (err) {
 			error = (err as Error).message;
@@ -139,7 +151,15 @@
 
 	function startEditRole(membership: Membership) {
 		editingRoleFor = membership.id;
-		newRoleFor = roles.find(r => r.name === membership.role_name)?.id ?? roles[0]?.id ?? null;
+		const config = getRoleDefaultsConfig();
+		newRoleFor = roles.find(r =>
+			r.name.toLowerCase() === membership.role_name.toLowerCase()
+		)?.id ?? roles.find(r =>
+			config.preferredRoleNames.length > 0 &&
+			config.preferredRoleNames.some(preferred =>
+				r.name.toLowerCase() === preferred.toLowerCase()
+			)
+		)?.id ?? roles[0]?.id ?? null;
 	}
 
 	async function saveRoleChange(membership: Membership) {
