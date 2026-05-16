@@ -47,3 +47,16 @@ export async function addMembership(projectId: number, username: string, roleId:
 export async function removeMembership(membershipId: number): Promise<void> {
 	return api.delete(`/memberships/${membershipId}`);
 }
+
+export async function createInvitation(projectId: number, username: string, roleId: number): Promise<Membership> {
+	// Taiga's /invitations endpoint only supports GET (by token); use /memberships for adding by username
+	return api.post<Membership>('/memberships', {
+		project: projectId,
+		username,
+		role: roleId
+	});
+}
+
+export async function updateMembershipRole(membershipId: number, roleId: number, version: number): Promise<Membership> {
+	return api.patch<Membership>(`/memberships/${membershipId}`, { role: roleId, version });
+}
