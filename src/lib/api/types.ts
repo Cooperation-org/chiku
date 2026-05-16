@@ -136,6 +136,7 @@ export interface Epic {
 export interface Task {
 	id: number;
 	ref: number;
+	version: number;
 	subject: string;
 	description: string;
 	status: number;

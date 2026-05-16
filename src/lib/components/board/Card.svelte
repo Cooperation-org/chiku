@@ -71,8 +71,9 @@
 			<!-- Task count badge -->
 			{#if taskCount > 0}
 				<span class="text-xs text-zinc-500 flex items-center gap-1">
-					<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+					<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<rect x="3" y="3" width="18" height="18" rx="2"/>
+						<path d="M9 12l2 2 4-4"/>
 					</svg>
 					{taskCount}
 				</span>

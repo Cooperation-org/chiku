@@ -167,10 +167,8 @@
 	}
 
 	async function handleToggleTask(task: Task) {
-		const newStatus = task.status_extra_info.is_closed ? 1 : 2; // Simple toggle - in production you'd want to get actual closed status
-
 		try {
-			const updated = await updateTask(task.id, { is_closed: !task.status_extra_info.is_closed });
+			const updated = await updateTask(task.id, { is_closed: !task.status_extra_info.is_closed, version: task.version });
 			tasks = tasks.map(t => t.id === task.id ? updated : t);
 		} catch (err) {
 			console.error('Failed to update task:', err);
