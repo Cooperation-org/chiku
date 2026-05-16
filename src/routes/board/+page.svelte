@@ -9,11 +9,13 @@
 	import { currentProject } from '$lib/stores/project';
 	import { getUserStories, getUserStoryStatuses, getUserStory } from '$lib/api/userstories';
 	import { getProjectMemberships } from '$lib/api/memberships';
-	import type { UserStory, UserStoryStatus, User, Membership } from '$lib/api/types';
+	import { getTasks } from '$lib/api/tasks';
+	import type { UserStory, UserStoryStatus, User, Membership, Task } from '$lib/api/types';
 
 	let statuses: UserStoryStatus[] = [];
 	let stories: UserStory[] = [];
 	let projectMembers: User[] = [];
+	let taskCounts: Record<number, number> = {}; // storyId -> task count
 	let isLoading = true;
 	let error = '';
 
@@ -42,10 +44,11 @@
 		isLoading = true;
 		error = '';
 		try {
-			const [statusesData, storiesData, membershipsData] = await Promise.all([
+			const [statusesData, storiesData, membershipsData, tasksData] = await Promise.all([
 				getUserStoryStatuses(projectId),
 				getUserStories(projectId),
-				getProjectMemberships(projectId)
+				getProjectMemberships(projectId),
+				getTasks(projectId)
 			]);
 			statuses = statusesData.sort((a, b) => a.order - b.order);
 			stories = storiesData;
@@ -60,6 +63,13 @@
 				color: m.color,
 				big_photo: null
 			}));
+			// Count tasks per story
+			taskCounts = {};
+			for (const task of tasksData) {
+				if (task.user_story) {
+					taskCounts[task.user_story] = (taskCounts[task.user_story] || 0) + 1;
+				}
+			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load board';
 			console.error('Failed to load board:', err);
@@ -146,7 +156,7 @@
 				<div class="text-red-400">{error}</div>
 			</div>
 		{:else}
-			<Board {statuses} {stories} projectId={$currentProject.id} on:select={handleStorySelect} on:addToColumn={handleAddToColumn} />
+			<Board {statuses} {stories} {taskCounts} projectId={$currentProject.id} on:select={handleStorySelect} on:addToColumn={handleAddToColumn} />
 		{/if}
 	</div>
 </div>

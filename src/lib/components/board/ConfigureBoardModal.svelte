@@ -16,6 +16,7 @@
 	let deleting = new Set<number>();
 	let showDeleteConfirm: number | null = null;
 	let error = '';
+	let moving = new Set<number>();
 
 	function startEdit(status: UserStoryStatus) {
 		editing[status.id] = { name: status.name, color: status.color };
@@ -82,6 +83,35 @@
 			dispatch('update', statuses);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to create column';
+		}
+	}
+
+	async function moveColumn(status: UserStoryStatus, direction: 'up' | 'down') {
+		const sorted = [...statuses].sort((a, b) => a.order - b.order);
+		const idx = sorted.findIndex(s => s.id === status.id);
+		if (idx === -1) return;
+
+		const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+		if (targetIdx < 0 || targetIdx >= sorted.length) return;
+
+		moving.add(status.id);
+		moving = moving;
+
+		try {
+			const other = sorted[targetIdx];
+			const myOrder = status.order;
+			const otherOrder = other.order;
+
+			await updateUserStoryStatus(status.id, { order: otherOrder }, status.version);
+			await updateUserStoryStatus(other.id, { order: myOrder }, other.version);
+
+			statuses = [...statuses].sort((a, b) => a.order - b.order);
+			dispatch('update', statuses);
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to reorder';
+		} finally {
+			moving.delete(status.id);
+			moving = moving;
 		}
 	}
 
@@ -158,6 +188,30 @@
 					{:else}
 						<!-- View mode -->
 						<span class="flex-1 text-sm font-medium text-zinc-200 truncate">{status.name}</span>
+
+						<!-- Move buttons -->
+						<div class="flex items-center gap-0.5">
+							<button
+								class="p-1 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700 rounded transition-colors disabled:opacity-30"
+								on:click={() => moveColumn(status, 'up')}
+								disabled={moving.has(status.id)}
+								title="Move up"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+								</svg>
+							</button>
+							<button
+								class="p-1 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700 rounded transition-colors disabled:opacity-30"
+								on:click={() => moveColumn(status, 'down')}
+								disabled={moving.has(status.id)}
+								title="Move down"
+							>
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+								</svg>
+							</button>
+						</div>
 
 						{#if showDeleteConfirm === status.id}
 							<span class="text-xs text-zinc-400 mr-1">delete?</span>

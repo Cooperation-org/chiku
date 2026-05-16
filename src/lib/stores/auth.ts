@@ -62,10 +62,12 @@ function createAuthStore() {
 			update(s => ({ ...s, isLoading: true }));
 			try {
 				const response = await api.post<AuthResponse>('/auth/register', {
+					type: 'public',
+					accepted_terms: true,
 					username: data.username,
 					password: data.password,
 					full_name: data.full_name,
-					email: data.email || `${data.username}@localhost`
+					email: data.email || `${data.username}@voluntask.local`
 				});
 
 				api.setToken(response.auth_token);

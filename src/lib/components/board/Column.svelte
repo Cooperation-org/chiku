@@ -7,6 +7,7 @@
 
 	export let status: UserStoryStatus;
 	export let stories: UserStory[];
+	export let taskCounts: Record<number, number> = {};
 
 	const dispatch = createEventDispatcher<{
 		drop: { storyId: number; newStatusId: number };
@@ -69,7 +70,7 @@
 	>
 		{#each stories as story (story.id)}
 			<div animate:flip={{ duration: flipDurationMs }} on:click={() => handleCardClick(story)}>
-				<Card {story} />
+				<Card {story} taskCount={taskCounts[story.id] || 0} />
 			</div>
 		{/each}
 	</div>

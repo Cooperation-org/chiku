@@ -6,6 +6,8 @@
 	let password = '';
 	let fullName = '';
 	let email = '';
+	let acceptedTerms = false;
+	let acceptedPrivacy = false;
 	let error = '';
 	let isLoading = false;
 
@@ -20,6 +22,11 @@
 		if (activeTab === 'login') {
 			result = await auth.login(username, password);
 		} else {
+			if (activeTab === 'register' && (!acceptedTerms || !acceptedPrivacy)) {
+				error = 'You must accept our terms of service and privacy policy';
+				isLoading = false;
+				return;
+			}
 			result = await auth.register({ username, password, full_name: fullName, email: email || undefined });
 		}
 
@@ -118,6 +125,31 @@
 							class="w-full px-3 py-2 bg-surface-3 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-lt-cyan focus:ring-1 focus:ring-lt-cyan"
 							placeholder="you@example.com"
 						/>
+					</div>
+				{/if}
+
+				{#if activeTab === 'register'}
+					<div class="border-t border-border pt-4 mt-4">
+						<label class="flex items-start gap-2 cursor-pointer">
+							<input
+								type="checkbox"
+								bind:checked={acceptedTerms}
+								class="mt-1 accent-lt-cyan"
+							/>
+							<span class="text-sm text-zinc-400">
+								I accept the <a href="/terms" class="text-lt-cyan hover:underline">terms of service</a>
+							</span>
+						</label>
+						<label class="flex items-start gap-2 cursor-pointer mt-2">
+							<input
+								type="checkbox"
+								bind:checked={acceptedPrivacy}
+								class="mt-1 accent-lt-cyan"
+							/>
+							<span class="text-sm text-zinc-400">
+								I accept the <a href="/privacy" class="text-lt-cyan hover:underline">privacy policy</a>
+							</span>
+						</label>
 					</div>
 				{/if}
 
