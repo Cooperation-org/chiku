@@ -6,6 +6,7 @@
 
 	export let statuses: UserStoryStatus[] = [];
 	export let stories: UserStory[] = [];
+	export let taskCounts: Record<number, number> = {};
 	export let projectId: number;
 
 	let errorMessage = '';
@@ -82,6 +83,7 @@
 		<Column
 			{status}
 			stories={storiesByStatus[status.id] || []}
+			{taskCounts}
 			on:drop={handleDrop}
 			on:select={handleSelect}
 			on:add={handleAddToColumn}

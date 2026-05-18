@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import type { UserStory, UserStoryStatus, User } from '$lib/api/types';
+	import type { UserStory, UserStoryStatus, User, Task } from '$lib/api/types';
 	import { updateUserStory, getUserStory } from '$lib/api/userstories';
+	import { getTasks, createTask, updateTask, deleteTask } from '$lib/api/tasks';
 	import { api } from '$lib/api';
 
 	export let story: UserStory;
@@ -28,6 +29,16 @@
 		} finally {
 			isLoadingDetail = false;
 		}
+
+		// Load tasks for this story
+		isLoadingTasks = true;
+		try {
+			tasks = await getTasks(story.project, story.id);
+		} catch (err) {
+			console.error('Failed to load tasks:', err);
+		} finally {
+			isLoadingTasks = false;
+		}
 	});
 
 	let isEditing = false;
@@ -39,6 +50,14 @@
 	let isSaving = false;
 	let isDeleting = false;
 	let showDeleteConfirm = false;
+
+	// Task state
+	let tasks: Task[] = [];
+	let isLoadingTasks = false;
+	let showAddTask = false;
+	let newTaskSubject = '';
+	let isCreatingTask = false;
+	let taskError = '';
 
 	// Update edit fields when fullStory loads
 	$: if (fullStory && !isEditing) {
@@ -121,6 +140,49 @@
 			console.error('Failed to delete story:', err);
 			alert('Failed to delete: ' + (err as Error).message);
 			// Note: story already removed from UI, would need reload to restore
+		}
+	}
+
+	async function handleCreateTask() {
+		if (!newTaskSubject.trim() || isCreatingTask) return;
+
+		isCreatingTask = true;
+		taskError = '';
+
+		try {
+			const task = await createTask({
+				project: story.project,
+				subject: newTaskSubject.trim(),
+				user_story: story.id
+			});
+			tasks = [...tasks, task];
+			newTaskSubject = '';
+			showAddTask = false;
+		} catch (err) {
+			console.error('Failed to create task:', err);
+			taskError = (err as Error).message;
+		} finally {
+			isCreatingTask = false;
+		}
+	}
+
+	async function handleToggleTask(task: Task) {
+		try {
+			const updated = await updateTask(task.id, { is_closed: !task.status_extra_info.is_closed, version: task.version });
+			tasks = tasks.map(t => t.id === task.id ? updated : t);
+		} catch (err) {
+			console.error('Failed to update task:', err);
+			alert('Failed to update task: ' + (err as Error).message);
+		}
+	}
+
+	async function handleDeleteTask(taskId: number) {
+		try {
+			await deleteTask(taskId);
+			tasks = tasks.filter(t => t.id !== taskId);
+		} catch (err) {
+			console.error('Failed to delete task:', err);
+			alert('Failed to delete task: ' + (err as Error).message);
 		}
 	}
 
@@ -335,6 +397,90 @@
 						<div class="text-zinc-300 whitespace-pre-wrap">{fullStory.description}</div>
 					{:else}
 						<p class="text-zinc-500 italic">No description</p>
+					{/if}
+				</div>
+
+				<!-- Tasks -->
+				<div class="pt-4 border-t border-border">
+					<div class="flex items-center justify-between mb-3">
+						<h3 class="text-sm font-medium text-zinc-400">
+							Tasks
+							{#if !isLoadingTasks}
+								<span class="text-zinc-600">({tasks.length})</span>
+							{/if}
+						</h3>
+					</div>
+
+					{#if showAddTask}
+						<form on:submit|preventDefault={handleCreateTask} class="mb-3 flex gap-2">
+							<input
+								type="text"
+								bind:value={newTaskSubject}
+								placeholder="Task subject..."
+								class="flex-1 px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-lt-cyan focus:ring-1 focus:ring-lt-cyan text-sm"
+								autofocus
+							/>
+							<button
+								type="submit"
+								disabled={!newTaskSubject.trim() || isCreatingTask}
+								class="px-3 py-2 bg-lt-cyan text-zinc-900 text-sm font-medium rounded-md hover:bg-lt-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								{isCreatingTask ? '...' : 'Add'}
+							</button>
+							<button
+								type="button"
+								on:click={() => { showAddTask = false; newTaskSubject = ''; }}
+								class="px-3 py-2 text-zinc-400 hover:text-zinc-200 text-sm transition-colors"
+							>
+								Cancel
+							</button>
+						</form>
+						{#if taskError}
+							<p class="text-red-400 text-sm mb-2">{taskError}</p>
+						{/if}
+					{/if}
+
+					{#if isLoadingTasks}
+						<p class="text-zinc-500 text-sm">Loading tasks...</p>
+					{:else if tasks.length === 0 && !showAddTask}
+						<p class="text-zinc-500 text-sm">No tasks yet. Click "Add task" to create one.</p>
+					{:else}
+						<div class="space-y-2">
+							{#each tasks as task (task.id)}
+								<div class="flex items-center gap-3 p-2 bg-surface-2 rounded-md group hover:bg-surface-3 transition-colors">
+									<button
+										on:click={() => handleToggleTask(task)}
+										class="w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors {task.status_extra_info.is_closed ? 'bg-lt-cyan border-lt-cyan' : 'border-zinc-500 hover:border-lt-cyan'}"
+									>
+										{#if task.status_extra_info.is_closed}
+											<svg class="w-3 h-3 text-zinc-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+											</svg>
+										{/if}
+									</button>
+									<span class="flex-1 text-sm {task.status_extra_info.is_closed ? 'text-zinc-500 line-through' : 'text-zinc-300'}">
+										{task.subject}
+									</span>
+									<button
+										on:click={() => handleDeleteTask(task.id)}
+										class="opacity-0 group-hover:opacity-100 p-1 text-zinc-500 hover:text-red-400 transition-all"
+									>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+										</svg>
+									</button>
+								</div>
+							{/each}
+						</div>
+						<button
+							on:click={() => { showAddTask = !showAddTask; newTaskSubject = ''; taskError = ''; }}
+							class="mt-3 text-sm text-lt-cyan hover:text-lt-cyan/80 flex items-center gap-1"
+						>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+							</svg>
+							Add task
+						</button>
 					{/if}
 				</div>
 

@@ -2,6 +2,7 @@
 	import type { UserStory } from '$lib/api/types';
 
 	export let story: UserStory;
+	export let taskCount: number = 0;
 
 	function getInitials(name: string): string {
 		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -66,6 +67,16 @@
 			<!-- Points -->
 			{#if story.total_points !== null}
 				<span class="text-xs font-medium text-lt-cyan">{story.total_points} pts</span>
+			{/if}
+			<!-- Task count badge -->
+			{#if taskCount > 0}
+				<span class="text-xs text-zinc-500 flex items-center gap-1">
+					<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<rect x="3" y="3" width="18" height="18" rx="2"/>
+						<path d="M9 12l2 2 4-4"/>
+					</svg>
+					{taskCount}
+				</span>
 			{/if}
 			<!-- Last updated -->
 			<span class="text-[10px] text-zinc-500">{formatRelativeDate(story.modified_date)}</span>
