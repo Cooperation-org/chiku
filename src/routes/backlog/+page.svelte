@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { currentProject } from '$lib/stores/project';
 	import { getUserStories, getUserStoryStatuses } from '$lib/api/userstories';
@@ -17,6 +18,33 @@
 	// Modal state
 	let showCreateModal = false;
 	let selectedStory: UserStory | null = null;
+
+	// Theme state
+	let isDark = true;
+
+	onMount(() => {
+		const savedTheme = localStorage.getItem('theme');
+		if (savedTheme) {
+			isDark = savedTheme === 'dark';
+		} else {
+			isDark = true;
+		}
+		applyTheme();
+	});
+
+	function applyTheme() {
+		if (isDark) {
+			document.documentElement.classList.add('dark');
+		} else {
+			document.documentElement.classList.remove('dark');
+		}
+	}
+
+	function toggleTheme() {
+		isDark = !isDark;
+		localStorage.setItem('theme', isDark ? 'dark' : 'light');
+		applyTheme();
+	}
 
 	// Handle URL story param
 	$: storyParam = $page.url.searchParams.get('story');
@@ -106,12 +134,23 @@
 
 <div class="h-full flex flex-col">
 	<!-- Header -->
-	<header class="flex items-center justify-between px-6 py-4 border-b border-border">
+	<header class="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-border">
 		<div>
-			<h1 class="text-lg font-semibold text-zinc-100">{$currentProject?.name || 'Select a project'}</h1>
-			<p class="text-sm text-zinc-500">Backlog · {openStories.length} stories · {openPoints} points</p>
+			<h1 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{$currentProject?.name || 'Select a project'}</h1>
+			<p class="text-sm text-zinc-500 dark:text-zinc-500">Backlog · {openStories.length} stories · {openPoints} points</p>
 		</div>
 		<div class="flex items-center gap-2">
+			<button class="p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-surface-3 rounded-md transition-colors" title="Toggle theme" on:click={toggleTheme}>
+				{#if isDark}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+					</svg>
+				{:else}
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+					</svg>
+				{/if}
+			</button>
 			<button class="btn btn-primary" on:click={() => showCreateModal = true}>
 				<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
