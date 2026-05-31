@@ -42,7 +42,7 @@
 
 	async function handleGoogleLogin() {
 		if (!googleClientId) {
-			error = 'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID.';
+			error = 'Google OAuth is not configured. Set PUBLIC_GOOGLE_CLIENT_ID in your .env file.';
 			isLoadingGoogle = false;
 			return;
 		}
