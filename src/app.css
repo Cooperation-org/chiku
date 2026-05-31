@@ -8,45 +8,97 @@
 	--color-lt-coral: #ff6872;
 	--color-lt-green: #8dc63f;
 	--color-lt-gold: #ffca4d;
-
-	/* Dark mode surface colors */
-	--color-surface-0: #0a0a0b;
-	--color-surface-1: #111113;
-	--color-surface-2: #1a1a1d;
-	--color-surface-3: #232326;
-
-	--color-border: #2a2a2e;
-	--color-border-hover: #3a3a3e;
-
-	/* Fonts */
-	--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--font-mono: 'JetBrains Mono', Menlo, Monaco, monospace;
-
-	/* Animations */
-	--animate-fade-in: fadeIn 150ms ease-out;
-	--animate-slide-up: slideUp 150ms ease-out;
 }
 
-@keyframes fadeIn {
-	0% { opacity: 0; }
-	100% { opacity: 1; }
+/* ============================================
+   THEME SYSTEM - CSS Custom Properties
+   Light mode (default): white/gray palette
+   Dark mode: AMOLED deep black palette
+   ============================================ */
+
+/* Light mode - applied by default */
+:root {
+	/* Backgrounds */
+	--bg-app: #ffffff;
+	--bg-sidebar: #f8fafc;
+	--bg-card: #ffffff;
+	--bg-elevated: #ffffff;
+	--bg-hover: #f4f4f5;
+	--bg-active: #e4e4e7;
+
+	/* Borders */
+	--border-default: #e4e4e7;
+	--border-hover: #d4d4d8;
+	--border-strong: #a1a1aa;
+
+	/* Text */
+	--text-primary: #18181b;
+	--text-secondary: #52525b;
+	--text-muted: #a1a1aa;
+	--text-inverse: #ffffff;
+
+	/* Brand colors */
+	--accent: #2563eb;
+	--accent-hover: #1d4ed8;
+
+	/* Scrollbar */
+	--scrollbar: #d4d4d8;
+	--scrollbar-hover: #a1a1aa;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+	--shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
-@keyframes slideUp {
-	0% { opacity: 0; transform: translateY(4px); }
-	100% { opacity: 1; transform: translateY(0); }
+/* Dark mode - AMOLED deep black */
+html.dark {
+	/* Backgrounds */
+	--bg-app: #0a0a0b;
+	--bg-sidebar: #0f0f10;
+	--bg-card: #111113;
+	--bg-elevated: #18181b;
+	--bg-hover: #1c1c1f;
+	--bg-active: #27272a;
+
+	/* Borders */
+	--border-default: #27272a;
+	--border-hover: #3f3f46;
+	--border-strong: #52525b;
+
+	/* Text */
+	--text-primary: #fafafa;
+	--text-secondary: #a1a1aa;
+	--text-muted: #71717a;
+	--text-inverse: #0a0a0b;
+
+	/* Brand colors - cyan in dark mode */
+	--accent: #00b2e5;
+	--accent-hover: #00a3cc;
+
+	/* Scrollbar */
+	--scrollbar: #3f3f46;
+	--scrollbar-hover: #52525b;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+	--shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
 }
 
 @layer base {
+	* {
+		border-color: var(--border-default);
+	}
+
 	html {
-		@apply bg-surface-0 text-zinc-100 antialiased;
+		background-color: var(--bg-app);
+		color: var(--text-primary);
 	}
 
 	body {
 		@apply font-sans;
 	}
 
-	/* Scrollbar styling for dark mode */
+	/* Scrollbar styling */
 	::-webkit-scrollbar {
 		@apply w-2 h-2;
 	}
@@ -56,40 +108,52 @@
 	}
 
 	::-webkit-scrollbar-thumb {
-		@apply bg-zinc-700 rounded-full;
+		background-color: var(--scrollbar);
+		border-radius: 9999px;
 	}
 
 	::-webkit-scrollbar-thumb:hover {
-		@apply bg-zinc-600;
+		background-color: var(--scrollbar-hover);
 	}
 }
 
 @layer components {
-	.card {
-		@apply bg-surface-1 border border-border rounded-lg p-3
-			   hover:border-border-hover transition-colors duration-150;
-	}
-
-	.btn {
-		@apply px-3 py-1.5 rounded-md text-sm font-medium
-			   transition-all duration-150 cursor-pointer;
-	}
-
+	/* Button primary */
 	.btn-primary {
-		@apply bg-lt-cyan text-white hover:bg-lt-cyan/90;
+		background-color: var(--accent);
+		color: var(--text-inverse);
+	}
+	.btn-primary:hover {
+		background-color: var(--accent-hover);
 	}
 
-	.btn-ghost {
-		@apply text-zinc-400 hover:text-zinc-100 hover:bg-surface-3;
+	/* Card component */
+	.card {
+		background-color: var(--bg-card);
+		border: 1px solid var(--border-default);
+		box-shadow: var(--shadow-sm);
+	}
+	.card:hover {
+		border-color: var(--border-hover);
 	}
 
+	/* Column component */
 	.column {
-		@apply bg-surface-1/50 rounded-lg p-2 min-w-[280px] max-w-[320px];
+		background-color: var(--bg-elevated);
+		border: 1px solid var(--border-default);
 	}
 
-	.kbd {
-		@apply inline-flex items-center justify-center px-1.5 py-0.5
-			   text-xs font-mono bg-surface-3 border border-border
-			   rounded text-zinc-400;
+	/* Modal backdrop */
+	.modal-backdrop {
+		background-color: rgb(0 0 0 / 0.5);
+	}
+	html.dark .modal-backdrop {
+		background-color: rgb(0 0 0 / 0.7);
+	}
+
+	/* Modal content */
+	.modal-content {
+		background-color: var(--bg-card);
+		border: 1px solid var(--border-default);
 	}
 }

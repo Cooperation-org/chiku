@@ -77,7 +77,7 @@
 	}
 </script>
 
-<div class="flex gap-4 p-4 overflow-x-auto">
+<div class="flex gap-4 p-4 overflow-x-auto" style="background-color: var(--bg-app);">
 	{#each statuses.sort((a, b) => a.order - b.order) as status (status.id)}
 		<Column
 			{status}
@@ -90,7 +90,8 @@
 </div>
 
 {#if errorMessage}
-	<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-red-500/15 border border-red-500/30 rounded-lg text-red-400 text-sm shadow-lg backdrop-blur-sm">
+	<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg text-sm shadow-lg backdrop-blur-sm"
+		style="background-color: rgb(239 68 68 / 0.15); border: 1px solid rgb(239 68 68 / 0.3); color: #ef4444;">
 		{errorMessage}
 	</div>
 {/if}

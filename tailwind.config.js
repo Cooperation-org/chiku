@@ -14,16 +14,25 @@ export default {
 					green: '#8dc63f',     // lime green
 					gold: '#ffca4d',      // gold/yellow
 				},
-				// UI colors for dark mode Linear-like aesthetic
-				surface: {
+				// Light mode surface colors
+				'surface-light': {
+					0: '#fafafa',         // page background
+					1: '#ffffff',         // card/sidebar background
+					2: '#f4f4f5',         // elevated elements
+					3: '#e4e4e7',         // hover states
+				},
+				// Dark mode surface colors
+				'surface-dark': {
 					0: '#0a0a0b',         // darkest background
 					1: '#111113',         // card background
 					2: '#1a1a1d',         // elevated surface
 					3: '#232326',         // hover states
 				},
 				border: {
-					DEFAULT: '#2a2a2e',
-					hover: '#3a3a3e',
+					DEFAULT: '#e4e4e7',
+					dark: '#2a2a2e',
+					hover: '#d4d4d8',
+					'dark-hover': '#3a3a3e',
 				}
 			},
 			fontFamily: {

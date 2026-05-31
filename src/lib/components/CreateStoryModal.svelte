@@ -48,35 +48,34 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
-<div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" on:click={() => dispatch('close')}>
-	<div
-		class="bg-surface-1 border border-border rounded-lg shadow-2xl w-full max-w-lg"
-		on:click|stopPropagation
-	>
-		<div class="p-4 border-b border-border">
-			<h2 class="text-lg font-semibold text-zinc-100">New Story</h2>
+<div class="fixed inset-0 flex items-center justify-center z-50 p-4 modal-backdrop" on:click={() => dispatch('close')}>
+	<div class="rounded-lg shadow-2xl w-full max-w-lg modal-content" on:click|stopPropagation>
+		<div class="p-4 border-b" style="border-color: var(--border-default);">
+			<h2 class="text-lg font-semibold" style="color: var(--text-primary);">New Story</h2>
 		</div>
 
 		<div class="p-4 space-y-4">
 			<div>
-				<label for="story-subject" class="block text-sm font-medium text-zinc-400 mb-1">Title</label>
+				<label for="story-subject" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">Title</label>
 				<input
 					id="story-subject"
 					type="text"
 					bind:value={subject}
 					placeholder="What needs to be done?"
-					class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent"
+					class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					style="background-color: var(--bg-elevated); border: 1px solid var(--border-default); color: var(--text-primary);"
 					autofocus
 				/>
 			</div>
 
 			{#if statuses.length > 0}
 				<div>
-					<label for="story-status" class="block text-sm font-medium text-zinc-400 mb-1">Status</label>
+					<label for="story-status" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">Status</label>
 					<select
 						id="story-status"
 						bind:value={status}
-						class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent"
+						class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+						style="background-color: var(--bg-elevated); border: 1px solid var(--border-default); color: var(--text-primary);"
 					>
 						{#each statuses.sort((a, b) => a.order - b.order) as s}
 							<option value={s.id}>{s.name}</option>
@@ -86,30 +85,32 @@
 			{/if}
 
 			<div>
-				<label for="story-desc" class="block text-sm font-medium text-zinc-400 mb-1">Description</label>
+				<label for="story-desc" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">Description</label>
 				<textarea
 					id="story-desc"
 					bind:value={description}
 					placeholder="Add details (optional)"
 					rows="3"
-					class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent resize-none"
+					class="w-full px-3 py-2 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					style="background-color: var(--bg-elevated); border: 1px solid var(--border-default); color: var(--text-primary);"
 				></textarea>
 			</div>
 		</div>
 
-		<div class="p-4 border-t border-border flex justify-between items-center">
-			<p class="text-xs text-zinc-600">Press <kbd class="px-1 py-0.5 bg-surface-2 rounded text-zinc-500">Cmd+Enter</kbd> to create</p>
+		<div class="p-4 border-t flex justify-between items-center" style="border-color: var(--border-default);">
+			<p class="text-xs" style="color: var(--text-muted);">Press <kbd class="px-1 py-0.5 rounded" style="background-color: var(--bg-hover); color: var(--text-muted);">Cmd+Enter</kbd> to create</p>
 			<div class="flex gap-2">
 				<button
 					on:click={() => dispatch('close')}
-					class="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+					class="px-4 py-2 text-sm transition-colors"
+					style="color: var(--text-secondary);"
 				>
 					Cancel
 				</button>
 				<button
 					on:click={handleCreate}
 					disabled={!subject.trim() || isCreating}
-					class="px-4 py-2 text-sm bg-lt-cyan text-zinc-900 font-medium rounded-md hover:bg-lt-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed btn-primary"
 				>
 					{isCreating ? 'Creating...' : 'Create Story'}
 				</button>
