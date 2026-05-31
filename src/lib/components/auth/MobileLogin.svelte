@@ -5,6 +5,7 @@
 
 	export let isDarkMode: boolean = true;
 	export let onToggleTheme: () => void = () => {};
+	export let googleClientId: string = '';
 
 	let username = '';
 	let password = '';
@@ -40,12 +41,16 @@
 	}
 
 	async function handleGoogleLogin() {
+		if (!googleClientId) {
+			error = 'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID.';
+			isLoadingGoogle = false;
+			return;
+		}
 		error = '';
 		isLoadingGoogle = true;
-		const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 		const callbackUrl = encodeURIComponent(`${window.location.origin}/auth/google/callback`);
 		const scope = encodeURIComponent('openid email profile');
-		window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=code&scope=${scope}&access_type=online`;
+		window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${callbackUrl}&response_type=code&scope=${scope}&access_type=online`;
 	}
 
 	async function handleBlueskyLogin() {

@@ -4,6 +4,8 @@
 	import DesktopLogin from '$lib/components/auth/DesktopLogin.svelte';
 	import MobileLogin from '$lib/components/auth/MobileLogin.svelte';
 
+	export let data: { googleClientId: string };
+
 	let isMobile = false;
 	let isDarkMode = true;
 	let mediaQuery: MediaQueryList;
@@ -48,7 +50,7 @@
 </svelte:head>
 
 {#if isMobile}
-	<MobileLogin {isDarkMode} onToggleTheme={toggleTheme} />
+	<MobileLogin {isDarkMode} onToggleTheme={toggleTheme} googleClientId={data.googleClientId} />
 {:else}
-	<DesktopLogin {isDarkMode} onToggleTheme={toggleTheme} />
+	<DesktopLogin {isDarkMode} onToggleTheme={toggleTheme} googleClientId={data.googleClientId} />
 {/if}
