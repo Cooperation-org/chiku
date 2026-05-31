@@ -4,7 +4,8 @@
 	import DesktopLogin from '$lib/components/auth/DesktopLogin.svelte';
 	import MobileLogin from '$lib/components/auth/MobileLogin.svelte';
 
-	export let data: { googleClientId: string };
+	// Load Google client ID from Vite env (project uses import.meta.env.VITE_* pattern)
+	const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 	let isMobile = false;
 	let isDarkMode = true;
@@ -50,7 +51,7 @@
 </svelte:head>
 
 {#if isMobile}
-	<MobileLogin {isDarkMode} onToggleTheme={toggleTheme} googleClientId={data.googleClientId} />
+	<MobileLogin {isDarkMode} onToggleTheme={toggleTheme} {googleClientId} />
 {:else}
-	<DesktopLogin {isDarkMode} onToggleTheme={toggleTheme} googleClientId={data.googleClientId} />
+	<DesktopLogin {isDarkMode} onToggleTheme={toggleTheme} {googleClientId} />
 {/if}
