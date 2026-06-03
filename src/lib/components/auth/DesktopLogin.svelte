@@ -30,6 +30,7 @@
 	let hasMetaMask = false;
 
 	onMount(() => {
+		console.log("CLIENT ID IS:", import.meta.env.PUBLIC_GOOGLE_CLIENT_ID);
 		const savedTheme = localStorage.getItem('theme');
 		if (savedTheme) {
 			isDarkMode = savedTheme === 'dark';
