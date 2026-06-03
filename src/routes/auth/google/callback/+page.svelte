@@ -6,8 +6,21 @@
 	onMount(async () => {
 		const params = new URLSearchParams(window.location.search);
 		const code = params.get('code');
+		const errorParam = params.get('error');
+
+		if (errorParam) {
+			// User cancelled or OAuth error - redirect with error message
+			if (typeof window !== 'undefined') {
+				sessionStorage.setItem('oauth_error', `Google sign-in was cancelled or denied.`);
+			}
+			goto('/login');
+			return;
+		}
 
 		if (!code) {
+			if (typeof window !== 'undefined') {
+				sessionStorage.setItem('oauth_error', 'No authorization code received from Google.');
+			}
 			goto('/login');
 			return;
 		}
@@ -17,6 +30,9 @@
 		if (result.success) {
 			goto('/');
 		} else {
+			if (typeof window !== 'undefined') {
+				sessionStorage.setItem('oauth_error', result.error || 'Google sign-in failed. Please try again.');
+			}
 			goto('/login');
 		}
 	});

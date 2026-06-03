@@ -31,6 +31,15 @@
 		if (savedTheme) {
 			isDarkMode = savedTheme === 'dark';
 		}
+
+		// Check for OAuth error messages
+		if (typeof window !== 'undefined') {
+			const oauthError = sessionStorage.getItem('oauth_error');
+			if (oauthError) {
+				error = oauthError;
+				sessionStorage.removeItem('oauth_error');
+			}
+		}
 	});
 
 	async function handleGitHubLogin() {
