@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
+	import { env } from '$env/dynamic/public';
 	import DesktopLogin from '$lib/components/auth/DesktopLogin.svelte';
 	import MobileLogin from '$lib/components/auth/MobileLogin.svelte';
 
-	// Vite exposes PUBLIC_ prefixed vars via import.meta.env for client-side use
-	const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || '';
+	// Use SvelteKit's $env/dynamic/public for browser-accessible public env vars
+	const googleClientId = env.PUBLIC_GOOGLE_CLIENT_ID || '';
 
 	let isMobile = false;
 	let isDarkMode = true;
