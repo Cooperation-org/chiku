@@ -2,6 +2,8 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import type { UserStory, UserStoryStatus, User } from '$lib/api/types';
 	import { updateUserStory, getUserStory } from '$lib/api/userstories';
+	import { getStoryComments } from '$lib/api/comments';
+	import type { HistoryEntry } from '$lib/api/types';
 	import { api } from '$lib/api';
 
 	export let story: UserStory;
@@ -17,18 +19,64 @@
 	let fullStory: UserStory = story;
 	let isLoadingDetail = true;
 
-	// Fetch full story detail (list endpoint doesn't include description)
+	// Fetch full story detail and comments
 	onMount(async () => {
 		try {
 			fullStory = await getUserStory(story.id);
-			dispatch('update', fullStory); // Update parent with full data
+			dispatch('update', fullStory);
 		} catch (err) {
 			console.error('Failed to load story detail:', err);
-			fullStory = story; // Fall back to list data
+			fullStory = story;
 		} finally {
 			isLoadingDetail = false;
 		}
+
+		try {
+			comments = await getStoryComments(story.id);
+		} catch (err) {
+			console.error('Failed to load comments:', err);
+		} finally {
+			isLoadingComments = false;
+		}
 	});
+
+	async function postComment() {
+		if (!newComment.trim() || isPostingComment) return;
+
+		isPostingComment = true;
+		try {
+			// Taiga adds comments via PATCH with a comment field
+			const updated = await updateUserStory(fullStory.id, {
+				comment: newComment.trim(),
+				version: fullStory.version
+			} as any);
+			fullStory = updated;
+			dispatch('update', updated);
+			newComment = '';
+			// Reload comments
+			comments = await getStoryComments(story.id);
+		} catch (err) {
+			console.error('Failed to post comment:', err);
+			alert('Failed to post comment: ' + (err as Error).message);
+		} finally {
+			isPostingComment = false;
+		}
+	}
+
+	function formatCommentDate(dateStr: string): string {
+		const date = new Date(dateStr);
+		const now = new Date();
+		const diffMs = now.getTime() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMs / 3600000);
+		const diffDays = Math.floor(diffMs / 86400000);
+
+		if (diffMins < 1) return 'just now';
+		if (diffMins < 60) return `${diffMins}m ago`;
+		if (diffHours < 24) return `${diffHours}h ago`;
+		if (diffDays < 7) return `${diffDays}d ago`;
+		return date.toLocaleDateString();
+	}
 
 	let isEditing = false;
 	let editSubject = '';
@@ -39,6 +87,12 @@
 	let isSaving = false;
 	let isDeleting = false;
 	let showDeleteConfirm = false;
+
+	// Comments
+	let comments: HistoryEntry[] = [];
+	let isLoadingComments = true;
+	let newComment = '';
+	let isPostingComment = false;
 
 	// Update edit fields when fullStory loads
 	$: if (fullStory && !isEditing) {
@@ -335,6 +389,53 @@
 						<div class="text-zinc-300 whitespace-pre-wrap">{fullStory.description}</div>
 					{:else}
 						<p class="text-zinc-500 italic">No description</p>
+					{/if}
+				</div>
+
+				<!-- Comments -->
+				<div class="pt-4 border-t border-border">
+					<h3 class="text-sm font-medium text-zinc-400 mb-3">Comments</h3>
+
+					<!-- Add comment -->
+					<div class="flex gap-2 mb-4">
+						<textarea
+							bind:value={newComment}
+							rows="2"
+							placeholder="Add a comment..."
+							class="flex-1 px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent resize-none text-sm"
+							on:keydown={(e) => { if (e.key === 'Enter' && e.metaKey) postComment(); }}
+						></textarea>
+						<button
+							on:click={postComment}
+							disabled={!newComment.trim() || isPostingComment}
+							class="px-3 py-2 text-sm bg-lt-cyan text-zinc-900 font-medium rounded-md hover:bg-lt-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end"
+						>
+							{isPostingComment ? '...' : 'Post'}
+						</button>
+					</div>
+
+					<!-- Comment list -->
+					{#if isLoadingComments}
+						<p class="text-zinc-500 text-sm">Loading comments...</p>
+					{:else if comments.length === 0}
+						<p class="text-zinc-500 text-sm italic">No comments yet</p>
+					{:else}
+						<div class="space-y-3">
+							{#each comments as comment}
+								<div class="flex gap-3">
+									<div class="w-7 h-7 rounded-full bg-surface-3 flex items-center justify-center text-xs font-medium text-zinc-400 shrink-0 mt-0.5">
+										{comment.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+									</div>
+									<div class="flex-1 min-w-0">
+										<div class="flex items-center gap-2 mb-0.5">
+											<span class="text-sm font-medium text-zinc-300">{comment.user.name}</span>
+											<span class="text-xs text-zinc-500">{formatCommentDate(comment.created_at)}</span>
+										</div>
+										<div class="text-sm text-zinc-300 whitespace-pre-wrap break-words">{comment.comment}</div>
+									</div>
+								</div>
+							{/each}
+						</div>
 					{/if}
 				</div>
 
