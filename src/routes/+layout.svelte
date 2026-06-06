@@ -6,8 +6,9 @@
 	import { auth } from '$lib/stores/auth';
 	import { currentProject } from '$lib/stores/project';
 	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject } from '$lib/api/projects';
+	import { getStatuses, createStatus, deleteStatus } from '$lib/api/statuses';
 	import MembersModal from '$lib/components/MembersModal.svelte';
-	import type { Project } from '$lib/api/types';
+	import type { Project, UserStoryStatus } from '$lib/api/types';
 
 	let projects: Project[] = [];
 	let showArchived = false;
@@ -19,6 +20,7 @@
 	let newProjectName = '';
 	let newProjectDesc = '';
 	let isCreating = false;
+	let sourceProjectId: number | null = null;
 
 	// Edit project modal state
 	let showEditModal = false;
@@ -138,6 +140,7 @@
 	function openCreateModal() {
 		newProjectName = '';
 		newProjectDesc = '';
+		sourceProjectId = null;
 		showCreateModal = true;
 	}
 
@@ -145,6 +148,7 @@
 		showCreateModal = false;
 		newProjectName = '';
 		newProjectDesc = '';
+		sourceProjectId = null;
 	}
 
 	async function handleCreateProject() {
@@ -184,6 +188,37 @@
 		// Create in background, update with real data
 		try {
 			const newProject = await createProject({ name, description, is_private: false });
+
+			// Clone columns from source project if selected
+			if (sourceProjectId) {
+				try {
+					const sourceStatuses = await getStatuses(sourceProjectId);
+					const defaultStatuses = await getStatuses(newProject.id);
+
+					// Create columns matching source project
+					for (const ss of sourceStatuses.sort((a, b) => a.order - b.order)) {
+						await createStatus({
+							project: newProject.id,
+							name: ss.name,
+							color: ss.color,
+							is_closed: ss.is_closed,
+							order: ss.order
+						});
+					}
+
+					// Remove default columns (move any stories to first new column)
+					const newStatuses = await getStatuses(newProject.id);
+					const firstNew = newStatuses.find(s => !defaultStatuses.some(d => d.id === s.id));
+					if (firstNew) {
+						for (const ds of defaultStatuses) {
+							await deleteStatus(ds.id, firstNew.id);
+						}
+					}
+				} catch (cloneErr) {
+					console.error('Failed to clone columns (project created with defaults):', cloneErr);
+				}
+			}
+
 			projects = projects.map(p => p.id === tempId ? newProject : p);
 			// Now safe to select and navigate
 			currentProject.set(newProject);
@@ -497,6 +532,19 @@
 								rows="3"
 								class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent resize-none"
 							></textarea>
+						</div>
+						<div>
+							<label for="source-project" class="block text-sm font-medium text-zinc-400 mb-1">Copy columns from</label>
+							<select
+								id="source-project"
+								bind:value={sourceProjectId}
+								class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent"
+							>
+								<option value={null}>Default columns</option>
+								{#each activeProjects as p}
+									<option value={p.id}>{p.name}</option>
+								{/each}
+							</select>
 						</div>
 					</div>
 					<div class="p-4 border-t border-border flex justify-end gap-2">
