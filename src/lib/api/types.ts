@@ -169,6 +169,24 @@ export interface Milestone {
 	user_stories: UserStory[];
 }
 
+export interface HistoryEntry {
+	id: string;
+	user: {
+		pk: number;
+		username: string;
+		name: string;
+		photo: string | null;
+		is_active: boolean;
+	};
+	created_at: string;
+	comment: string;
+	comment_html: string;
+	delete_comment_date: string | null;
+	delete_comment_user: object | null;
+	type: number;
+	values_diff: Record<string, unknown>;
+}
+
 export interface AuthResponse {
 	id: number;
 	username: string;

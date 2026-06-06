@@ -8,6 +8,7 @@
 	import { currentProject } from '$lib/stores/project';
 	import { getUserStories, getUserStoryStatuses, getUserStory } from '$lib/api/userstories';
 	import { getProjectMemberships } from '$lib/api/memberships';
+	import ColumnEditor from '$lib/components/ColumnEditor.svelte';
 	import type { UserStory, UserStoryStatus, User } from '$lib/api/types';
 
 	let statuses: UserStoryStatus[] = [];
@@ -20,6 +21,7 @@
 	let selectedStory: UserStory | null = null;
 	let showCreateModal = false;
 	let createDefaultStatus: number | null = null;
+	let showColumnEditor = false;
 
 	// Handle URL story param
 	$: storyParam = $page.url.searchParams.get('story');
@@ -107,6 +109,17 @@
 			<p class="text-sm text-zinc-500">Kanban Board</p>
 		</div>
 		<div class="flex items-center gap-2">
+			<button
+				on:click={() => showColumnEditor = true}
+				class="px-3 py-2 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-surface-3 rounded-md transition-colors flex items-center gap-1"
+				title="Edit columns"
+			>
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+				</svg>
+				Columns
+			</button>
 			<button class="btn btn-primary" on:click={() => openCreateModal()}>
 				<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -156,5 +169,13 @@
 		defaultStatus={createDefaultStatus}
 		on:close={() => showCreateModal = false}
 		on:created={handleStoryCreated}
+	/>
+{/if}
+
+{#if showColumnEditor && $currentProject}
+	<ColumnEditor
+		projectId={$currentProject.id}
+		on:close={() => showColumnEditor = false}
+		on:updated={() => loadData($currentProject.id)}
 	/>
 {/if}
