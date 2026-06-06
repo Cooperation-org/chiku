@@ -24,6 +24,7 @@
 				handle
 			};
 			localStorage.setItem('atproto_session', JSON.stringify(blueskySession));
+			auth.init();
 		}
 
 		goto('/');
