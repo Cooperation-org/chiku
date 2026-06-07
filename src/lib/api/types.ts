@@ -92,6 +92,8 @@ export interface UserStory {
 	sprint_order: number;
 	created_date: string;
 	modified_date: string;
+	due_date: string | null;
+	due_date_status: string | null;
 	tags: [string, string | null][];
 	epics: EpicRef[] | null;
 }

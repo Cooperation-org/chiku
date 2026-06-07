@@ -157,6 +157,7 @@
 		isCreating = true;
 		const name = newProjectName.trim();
 		const description = newProjectDesc.trim();
+		const cloneFromProjectId = sourceProjectId;
 
 		// Optimistic: create temp project and close modal immediately
 		const tempId = -Date.now();
@@ -190,9 +191,9 @@
 			const newProject = await createProject({ name, description, is_private: false });
 
 			// Clone columns from source project if selected
-			if (sourceProjectId) {
+			if (cloneFromProjectId) {
 				try {
-					const sourceStatuses = await getStatuses(sourceProjectId);
+					const sourceStatuses = await getStatuses(cloneFromProjectId);
 					const defaultStatuses = await getStatuses(newProject.id);
 
 					// Create columns matching source project

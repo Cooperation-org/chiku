@@ -84,6 +84,7 @@
 	let editStatus = story.status;
 	let editAssignee = story.assigned_to;
 	let editTagsText = '';
+	let editDueDate = '';
 	let isSaving = false;
 	let isDeleting = false;
 	let showDeleteConfirm = false;
@@ -101,6 +102,7 @@
 		editStatus = fullStory.status;
 		editAssignee = fullStory.assigned_to;
 		editTagsText = fullStory.tags?.map(t => t[0]).join(', ') || '';
+		editDueDate = fullStory.due_date || '';
 	}
 
 	function startEditing() {
@@ -109,6 +111,7 @@
 		editStatus = fullStory.status;
 		editAssignee = fullStory.assigned_to;
 		editTagsText = fullStory.tags?.map(t => t[0]).join(', ') || '';
+		editDueDate = fullStory.due_date || '';
 		isEditing = true;
 	}
 
@@ -136,6 +139,7 @@
 			description: editDescription.trim(),
 			status: editStatus,
 			assigned_to: editAssignee,
+			due_date: editDueDate || null,
 			tags: newTags
 		};
 		fullStory = optimisticStory;
@@ -150,6 +154,7 @@
 				description: editDescription.trim(),
 				status: editStatus,
 				assigned_to: editAssignee,
+				due_date: editDueDate || null,
 				tags: newTags,
 				version: fullStory.version
 			});
@@ -300,6 +305,15 @@
 				</div>
 
 				<div>
+					<label class="block text-sm font-medium text-zinc-400 mb-1">Due Date</label>
+					<input
+						type="date"
+						bind:value={editDueDate}
+						class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent"
+					/>
+				</div>
+
+				<div>
 					<label class="block text-sm font-medium text-zinc-400 mb-1">Labels</label>
 					<input
 						type="text"
@@ -355,6 +369,15 @@
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
 							</svg>
 							<span class="text-lt-cyan font-medium">{fullStory.total_points} points</span>
+						</div>
+					{/if}
+
+					{#if fullStory.due_date}
+						<div class="flex items-center gap-2" class:text-red-400={fullStory.due_date_status === 'past_due'} class:text-yellow-400={fullStory.due_date_status === 'near'} class:text-zinc-400={!fullStory.due_date_status || fullStory.due_date_status === 'set'}>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+							</svg>
+							<span class="font-medium">Due {new Date(fullStory.due_date + 'T00:00:00').toLocaleDateString()}</span>
 						</div>
 					{/if}
 
