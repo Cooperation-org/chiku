@@ -1,69 +1,73 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import Board from '$lib/components/board/Board.svelte';
 	import IssueModal from '$lib/components/IssueModal.svelte';
 	import CreateStoryModal from '$lib/components/CreateStoryModal.svelte';
 	import { currentProject } from '$lib/stores/project';
-	import { getUserStories, getUserStoryStatuses, getUserStory } from '$lib/api/userstories';
+	import { getUserStories, getUserStoryStatuses } from '$lib/api/userstories';
 	import { getProjectMemberships } from '$lib/api/memberships';
 	import ColumnEditor from '$lib/components/ColumnEditor.svelte';
 	import type { UserStory, UserStoryStatus, User } from '$lib/api/types';
 
-	let statuses: UserStoryStatus[] = [];
-	let stories: UserStory[] = [];
-	let projectMembers: User[] = [];
-	let isLoading = true;
-	let error = '';
+	const queryClient = useQueryClient();
 
 	// Modal state
-	let selectedStory: UserStory | null = null;
+	let selectedStory: UserStory | null = $state(null);
 	let showCreateModal = false;
-	let createDefaultStatus: number | null = null;
+	let createDefaultStatus: number | null = $state(null);
 	let showColumnEditor = false;
 
+	// Stories query - wrap in accessor function for Svelte 5
+	const storiesQuery = createQuery(() => ({
+		queryKey: ['userstories', $currentProject?.id],
+		queryFn: () => $currentProject ? getUserStories($currentProject.id) : [],
+		enabled: !!$currentProject
+	}));
+
+	// Statuses query
+	const statusesQuery = createQuery(() => ({
+		queryKey: ['userstory-statuses', $currentProject?.id],
+		queryFn: () => $currentProject ? getUserStoryStatuses($currentProject.id) : [],
+		enabled: !!$currentProject
+	}));
+
+	// Memberships query
+	const membershipsQuery = createQuery(() => ({
+		queryKey: ['project-memberships', $currentProject?.id],
+		queryFn: () => $currentProject ? getProjectMemberships($currentProject.id) : [],
+		enabled: !!$currentProject
+	}));
+
+	// Derived values using $derived - access properties directly (TanStack Query handles lazy evaluation internally)
+	let statuses = $derived(statusesQuery.data?.sort((a: UserStoryStatus, b: UserStoryStatus) => a.order - b.order) || []);
+	let stories = $derived(storiesQuery.data || []);
+	let projectMembers = $derived(membershipsQuery.data?.map((m: any) => ({
+		id: m.user,
+		full_name: m.full_name || '',
+		full_name_display: m.full_name || '',
+		email: '',
+		username: m.full_name || 'user',
+		photo: m.photo || null,
+		big_photo: null,
+		color: m.color || '#666'
+	})) || []);
+
+	let isLoading = $derived(storiesQuery.isLoading || statusesQuery.isLoading || membershipsQuery.isLoading);
+	let error = $derived(storiesQuery.error?.message || '');
+
 	// Handle URL story param
-	$: storyParam = $page.url.searchParams.get('story');
-	$: if (storyParam && stories.length > 0 && !selectedStory) {
-		const storyRef = parseInt(storyParam);
-		const found = stories.find(s => s.ref === storyRef);
-		if (found) {
-			selectedStory = found;
+	let storyParam = $derived($page.url.searchParams.get('story'));
+	$effect(() => {
+		if (storyParam && stories.length > 0 && !selectedStory) {
+			const storyRef = parseInt(storyParam);
+			const found = stories.find((s: UserStory) => s.ref === storyRef);
+			if (found) {
+				selectedStory = found;
+			}
 		}
-	}
-
-	// Reload when project changes
-	$: if ($currentProject) {
-		loadData($currentProject.id);
-	}
-
-	async function loadData(projectId: number) {
-		isLoading = true;
-		error = '';
-		try {
-			const [statusesData, storiesData, membershipsData] = await Promise.all([
-				getUserStoryStatuses(projectId),
-				getUserStories(projectId),
-				getProjectMemberships(projectId)
-			]);
-			statuses = statusesData.sort((a, b) => a.order - b.order);
-			stories = storiesData;
-			// Map memberships to User format for assignee dropdown
-			projectMembers = membershipsData.map(m => ({
-				id: m.user,
-				full_name: m.full_name,
-				username: m.full_name || 'user',
-				photo: m.photo,
-				color: m.color
-			}));
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to load board';
-			console.error('Failed to load board:', err);
-		} finally {
-			isLoading = false;
-		}
-	}
+	});
 
 	function handleStorySelect(e: CustomEvent<UserStory>) {
 		selectedStory = e.detail;
@@ -72,13 +76,13 @@
 
 	function handleStoryUpdate(e: CustomEvent<UserStory>) {
 		const updated = e.detail;
-		stories = stories.map(s => s.id === updated.id ? updated : s);
+		stories = stories.map((s: UserStory) => s.id === updated.id ? updated : s);
 		selectedStory = updated;
 	}
 
 	function handleStoryDelete(e: CustomEvent<number>) {
 		const deletedId = e.detail;
-		stories = stories.filter(s => s.id !== deletedId);
+		stories = stories.filter((s: UserStory) => s.id !== deletedId);
 		selectedStory = null;
 	}
 
@@ -94,6 +98,10 @@
 
 	function handleAddToColumn(e: CustomEvent<number>) {
 		openCreateModal(e.detail);
+	}
+
+	function handleColumnEditorUpdated() {
+		queryClient.invalidateQueries({ queryKey: ['userstory-statuses'] });
 	}
 </script>
 
@@ -176,6 +184,6 @@
 	<ColumnEditor
 		projectId={$currentProject.id}
 		on:close={() => showColumnEditor = false}
-		on:updated={() => loadData($currentProject.id)}
+		on:updated={handleColumnEditorUpdated}
 	/>
 {/if}

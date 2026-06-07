@@ -67,6 +67,31 @@ function createAuthStore() {
 			set({ user: null, isAuthenticated: false, isLoading: false });
 		},
 
+		async register({ username, password, full_name, email }: { username: string; password: string; full_name: string; email?: string }): Promise<{ success: boolean; error?: string }> {
+			update(s => ({ ...s, isLoading: true }));
+			try {
+				const response = await api.post<AuthResponse>('/auth/register', {
+					username,
+					password,
+					full_name,
+					email: email || undefined,
+					type: 'normal'
+				});
+
+				api.setToken(response.auth_token);
+				api.setRefreshToken(response.refresh);
+				if (typeof window !== 'undefined') {
+					localStorage.setItem('taiga_user', JSON.stringify(response));
+				}
+
+				set({ user: response, isAuthenticated: true, isLoading: false });
+				return { success: true };
+			} catch (err) {
+				update(s => ({ ...s, isLoading: false }));
+				return { success: false, error: err instanceof Error ? err.message : 'Registration failed' };
+			}
+		},
+
 		async loginWithGoogle(googleAuthCode: string): Promise<{ success: boolean; error?: string }> {
 			update(s => ({ ...s, isLoading: true }));
 			try {

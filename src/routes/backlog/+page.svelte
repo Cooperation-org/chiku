@@ -48,11 +48,14 @@
 			// Map memberships to User format for assignee dropdown
 			projectMembers = membershipsData.map(m => ({
 				id: m.user,
-				full_name: m.full_name,
+				full_name: m.full_name || '',
+				full_name_display: m.full_name || '',
+				email: '',
 				username: m.full_name || 'user',
-				photo: m.photo,
-				color: m.color
-			}));
+				photo: m.photo || null,
+				big_photo: null,
+				color: m.color || '#666'
+			})) as User[];
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load backlog';
 			console.error('Failed to load backlog:', err);

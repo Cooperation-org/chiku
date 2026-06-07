@@ -3,12 +3,24 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { QueryClient } from '@tanstack/svelte-query';
+	import { QueryClientProvider } from '@tanstack/svelte-query';
 	import { auth } from '$lib/stores/auth';
 	import { currentProject } from '$lib/stores/project';
 	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject } from '$lib/api/projects';
 	import { getStatuses, createStatus, deleteStatus } from '$lib/api/statuses';
 	import MembersModal from '$lib/components/MembersModal.svelte';
 	import type { Project, UserStoryStatus } from '$lib/api/types';
+
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				staleTime: 1000 * 60 * 2,
+				retry: 1,
+				refetchOnWindowFocus: false
+			}
+		}
+	});
 
 	let projects: Project[] = [];
 	let showArchived = false;
@@ -346,6 +358,7 @@
 		<div class="text-zinc-500">Loading...</div>
 	</div>
 {:else if $auth.isAuthenticated}
+	<QueryClientProvider client={queryClient}>
 	<div class="min-h-screen bg-surface-0 flex">
 		<!-- Sidebar -->
 		<aside class="w-56 bg-surface-1 border-r border-border flex flex-col">
@@ -668,4 +681,5 @@
 			/>
 		{/if}
 	</div>
+	</QueryClientProvider>
 {/if}
