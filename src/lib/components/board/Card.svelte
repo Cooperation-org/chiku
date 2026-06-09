@@ -7,19 +7,22 @@
 		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 	}
 
-	function formatRelativeDate(dateStr: string): string {
-		const date = new Date(dateStr);
+	function formatDueDate(dateStr: string | null): { text: string; color: string } | null {
+		if (!dateStr) return null;
+		const due = new Date(dateStr + 'T00:00:00');
 		const now = new Date();
-		const diffMs = now.getTime() - date.getTime();
-		const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+		now.setHours(0, 0, 0, 0);
+		const diffDays = Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-		if (diffDays === 0) return 'today';
-		if (diffDays === 1) return '1d';
-		if (diffDays < 7) return `${diffDays}d`;
-		if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`;
-		if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo`;
-		return `${Math.floor(diffDays / 365)}y`;
+		const month = due.toLocaleString('en', { month: 'short' });
+		const text = `${month} ${due.getDate()}`;
+
+		if (diffDays < 0) return { text, color: 'text-red-400' };
+		if (diffDays <= 3) return { text, color: 'text-amber-400' };
+		return { text, color: 'text-zinc-500' };
 	}
+
+	$: dueInfo = formatDueDate(story.due_date);
 </script>
 
 <div class="card group cursor-pointer animate-fade-in">
@@ -67,8 +70,10 @@
 			{#if story.total_points !== null}
 				<span class="text-xs font-medium text-lt-cyan">{story.total_points} pts</span>
 			{/if}
-			<!-- Last updated -->
-			<span class="text-[10px] text-zinc-500">{formatRelativeDate(story.modified_date)}</span>
+			<!-- Due date -->
+			{#if dueInfo}
+				<span class="text-[10px] {dueInfo.color}">{dueInfo.text}</span>
+			{/if}
 		</div>
 
 		<!-- Assignee -->

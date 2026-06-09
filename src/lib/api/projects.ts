@@ -9,7 +9,7 @@ export interface CreateProjectData {
 }
 
 export async function getProjects(): Promise<Project[]> {
-	return api.get<Project[]>('/projects');
+	return api.get<Project[]>('/projects', { page_size: 1000 });
 }
 
 export async function getProject(projectId: number): Promise<Project> {

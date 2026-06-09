@@ -4,7 +4,7 @@
 
 	// Redirect to board if project selected
 	$: if ($currentProject) {
-		goto('/board');
+		goto(`/p/${$currentProject.slug}/board`);
 	}
 </script>
 

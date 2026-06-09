@@ -56,6 +56,19 @@
 	$: archivedProjects = projects.filter(p => isArchived(p));
 	$: displayedProjects = showArchived ? archivedProjects : activeProjects;
 
+	// Extract project slug and view from URL path: /p/[slug]/board
+	$: urlMatch = $page.url.pathname.match(/^\/p\/([^/]+)(\/.*)?$/);
+	$: urlSlug = urlMatch ? urlMatch[1] : null;
+	$: urlView = urlMatch ? (urlMatch[2] || '/board') : null;
+
+	// When URL has a project slug, select that project
+	$: if (urlSlug && projects.length > 0) {
+		const match = projects.find(p => p.slug === urlSlug);
+		if (match && match.id !== $currentProject?.id) {
+			currentProject.set(match);
+		}
+	}
+
 	async function loadProjects() {
 		try {
 			const loaded = await getProjects();
@@ -63,16 +76,15 @@
 			projects = loaded.sort((a, b) =>
 				new Date(b.modified_date).getTime() - new Date(a.modified_date).getTime()
 			);
-			// Restore saved project or auto-select first active
+			// Check URL for project slug first, then localStorage, then first active
 			const active = projects.filter(p => !isArchived(p));
-			if (!$currentProject) {
-				const savedId = currentProject.getSavedId();
-				const saved = savedId ? projects.find(p => p.id === savedId) : null;
-				if (saved) {
-					currentProject.set(saved);
-				} else if (active.length > 0) {
-					currentProject.set(active[0]);
-				}
+			const slugParam = $page.url.searchParams.get('project');
+			const fromUrl = slugParam ? projects.find(p => p.slug === slugParam) : null;
+			const savedId = currentProject.getSavedId();
+			const fromSaved = savedId ? projects.find(p => p.id === savedId) : null;
+			const pick = fromUrl || fromSaved || (active.length > 0 ? active[0] : null);
+			if (pick) {
+				currentProject.set(pick);
 			}
 		} catch (err) {
 			console.error('Failed to load projects:', err);
@@ -81,6 +93,9 @@
 
 	function selectProject(project: Project) {
 		currentProject.set(project);
+		// Navigate to the project's board (or current view if already in a project route)
+		const currentView = urlMatch ? (urlMatch[2] || '/board') : '/board';
+		goto(`/p/${project.slug}${currentView}`);
 	}
 
 	function handleLogout() {
@@ -223,7 +238,7 @@
 			projects = projects.map(p => p.id === tempId ? newProject : p);
 			// Now safe to select and navigate
 			currentProject.set(newProject);
-			goto('/board');
+			goto(`/p/${newProject.slug}/board`);
 		} catch (err) {
 			console.error('Failed to create project:', err);
 			// Remove temp project on error
@@ -336,6 +351,13 @@
 
 	// Check if current route is login
 	$: isLoginPage = $page.url.pathname.startsWith('/login');
+
+	// Helper for project-scoped nav links
+	$: projectBase = $currentProject ? `/p/${$currentProject.slug}` : '';
+	$: currentView = $page.url.pathname.replace(/^\/p\/[^/]+/, '') || '/board';
+	function isView(view: string): boolean {
+		return currentView === view || currentView === view + '/';
+	}
 </script>
 
 <svelte:window on:click={closeContextMenu} on:keydown={showCreateModal ? handleCreateKeydown : showEditModal ? handleEditKeydown : undefined} />
@@ -383,14 +405,29 @@
 				</div>
 				<div class="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
 					{#each displayedProjects as project (project.id)}
-						<button
-							on:click={() => selectProject(project)}
-							on:contextmenu={(e) => handleContextMenu(e, project)}
-							class="w-full text-left px-2 py-1.5 rounded text-sm truncate transition-colors {$currentProject?.id === project.id ? 'bg-surface-3 text-zinc-100' : 'text-zinc-400 hover:text-zinc-200 hover:bg-surface-2'}"
-							title="{project.name} (right-click for options)"
-						>
-							{project.name}
-						</button>
+						<div class="group/row flex items-center rounded transition-colors {$currentProject?.id === project.id ? 'bg-surface-3' : 'hover:bg-surface-2'}">
+							<button
+								on:click={() => selectProject(project)}
+								on:contextmenu={(e) => handleContextMenu(e, project)}
+								class="flex-1 text-left px-2 py-1.5 text-sm truncate {$currentProject?.id === project.id ? 'text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'}"
+								title={project.name}
+							>
+								{project.name}
+							</button>
+							<button
+								on:click|stopPropagation={() => toggleArchive(project)}
+								class="shrink-0 p-1 mr-1 text-zinc-600 hover:text-zinc-300 opacity-0 group-hover/row:opacity-100 transition-opacity"
+								title={isArchived(project) ? 'Unarchive' : 'Archive'}
+							>
+								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									{#if isArchived(project)}
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4l3 3m0 0l3-3m-3 3V9" />
+									{:else}
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+									{/if}
+								</svg>
+							</button>
+						</div>
 					{/each}
 					{#if displayedProjects.length === 0}
 						<div class="px-2 py-4 text-sm text-zinc-600 text-center">
@@ -402,25 +439,25 @@
 
 			<!-- Navigation -->
 			<nav class="p-2 space-y-1">
-				<a href="/board" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={$page.url.pathname === '/board'} class:text-zinc-100={$page.url.pathname === '/board'}>
+				<a href="{projectBase}/board" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/board')} class:text-zinc-100={isView('/board')}>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
 					</svg>
 					Board
 				</a>
-				<a href="/backlog" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={$page.url.pathname === '/backlog'} class:text-zinc-100={$page.url.pathname === '/backlog'}>
+				<a href="{projectBase}/backlog" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/backlog')} class:text-zinc-100={isView('/backlog')}>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
 					</svg>
 					Backlog
 				</a>
-				<a href="/epics" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={$page.url.pathname === '/epics'} class:text-zinc-100={$page.url.pathname === '/epics'}>
+				<a href="{projectBase}/epics" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/epics')} class:text-zinc-100={isView('/epics')}>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
 					</svg>
 					Epics
 				</a>
-				<a href="/velocity" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={$page.url.pathname === '/velocity'} class:text-zinc-100={$page.url.pathname === '/velocity'}>
+				<a href="{projectBase}/velocity" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/velocity')} class:text-zinc-100={isView('/velocity')}>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
 					</svg>
