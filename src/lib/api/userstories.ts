@@ -21,6 +21,22 @@ export async function getUserStoryStatuses(projectId: number): Promise<UserStory
 	return api.get<UserStoryStatus[]>('/userstory-statuses', { project: projectId });
 }
 
+export async function getAllUserStories(params: Record<string, unknown> = {}): Promise<UserStory[]> {
+	return api.get<UserStory[]>('/userstories', {
+		page_size: 200,
+		order_by: '-modified_date',
+		...params
+	});
+}
+
+export async function moveUserStory(storyId: number, targetProjectId: number, targetStatus: number, version: number): Promise<UserStory> {
+	return api.patch<UserStory>(`/userstories/${storyId}`, {
+		project: targetProjectId,
+		status: targetStatus,
+		version
+	});
+}
+
 export async function createUserStory(data: {
 	project: number;
 	subject: string;

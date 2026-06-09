@@ -9,7 +9,11 @@ export interface CreateProjectData {
 }
 
 export async function getProjects(): Promise<Project[]> {
-	return api.get<Project[]>('/projects', { page_size: 1000 });
+	return api.get<Project[]>('/projects', { page_size: 1000, order_by: 'user_order' });
+}
+
+export async function reorderProjects(order: { project_id: number; order: number }[]): Promise<void> {
+	await api.post('/projects/bulk_update_order', order);
 }
 
 export async function getProject(projectId: number): Promise<Project> {

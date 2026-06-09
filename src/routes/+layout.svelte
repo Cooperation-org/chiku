@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { currentProject } from '$lib/stores/project';
-	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject } from '$lib/api/projects';
+	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject, reorderProjects } from '$lib/api/projects';
 	import { getStatuses, createStatus, deleteStatus } from '$lib/api/statuses';
 	import MembersModal from '$lib/components/MembersModal.svelte';
 	import type { Project, UserStoryStatus } from '$lib/api/types';
@@ -72,10 +72,8 @@
 	async function loadProjects() {
 		try {
 			const loaded = await getProjects();
-			// Sort by most recently modified
-			projects = loaded.sort((a, b) =>
-				new Date(b.modified_date).getTime() - new Date(a.modified_date).getTime()
-			);
+			// Server returns in user_order; preserve that
+			projects = loaded;
 			// Check URL for project slug first, then localStorage, then first active
 			const active = projects.filter(p => !isArchived(p));
 			const slugParam = $page.url.searchParams.get('project');
@@ -349,6 +347,56 @@
 		}
 	}
 
+	// Drag-to-reorder projects
+	let dragIndex: number | null = null;
+	let dragOverIndex: number | null = null;
+
+	function handleDragStart(e: DragEvent, index: number) {
+		dragIndex = index;
+		if (e.dataTransfer) {
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData('text/plain', String(index));
+		}
+	}
+
+	function handleDragOver(e: DragEvent, index: number) {
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		dragOverIndex = index;
+	}
+
+	function handleDragEnd() {
+		dragIndex = null;
+		dragOverIndex = null;
+	}
+
+	async function handleDrop(e: DragEvent, dropIndex: number) {
+		e.preventDefault();
+		if (dragIndex === null || dragIndex === dropIndex) {
+			handleDragEnd();
+			return;
+		}
+
+		// Reorder the displayed list
+		const list = [...displayedProjects];
+		const [moved] = list.splice(dragIndex, 1);
+		list.splice(dropIndex, 0, moved);
+
+		// Update full projects array to reflect new order
+		const reordered = list.map((p, i) => ({ ...p, _order: i }));
+		const otherProjects = projects.filter(p => !list.some(lp => lp.id === p.id));
+		projects = [...reordered, ...otherProjects];
+
+		handleDragEnd();
+
+		// Persist to Taiga
+		try {
+			await reorderProjects(list.map((p, i) => ({ project_id: p.id, order: i })));
+		} catch (err) {
+			console.error('Failed to save project order:', err);
+		}
+	}
+
 	// Check if current route is login
 	$: isLoginPage = $page.url.pathname.startsWith('/login');
 
@@ -404,8 +452,15 @@
 					</button>
 				</div>
 				<div class="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
-					{#each displayedProjects as project (project.id)}
-						<div class="group/row flex items-center rounded transition-colors {$currentProject?.id === project.id ? 'bg-surface-3' : 'hover:bg-surface-2'}">
+					{#each displayedProjects as project, i (project.id)}
+						<div
+							class="group/row flex items-center rounded transition-colors {$currentProject?.id === project.id ? 'bg-surface-3' : 'hover:bg-surface-2'} {dragOverIndex === i && dragIndex !== i ? 'border-t-2 border-lt-cyan' : ''}"
+							draggable="true"
+							on:dragstart={(e) => handleDragStart(e, i)}
+							on:dragover={(e) => handleDragOver(e, i)}
+							on:dragend={handleDragEnd}
+							on:drop={(e) => handleDrop(e, i)}
+						>
 							<button
 								on:click={() => selectProject(project)}
 								on:contextmenu={(e) => handleContextMenu(e, project)}
@@ -439,6 +494,13 @@
 
 			<!-- Navigation -->
 			<nav class="p-2 space-y-1">
+				<a href="/tasks" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={$page.url.pathname === '/tasks'} class:text-zinc-100={$page.url.pathname === '/tasks'}>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+					</svg>
+					My Tasks
+				</a>
+				<div class="border-t border-border my-1"></div>
 				<a href="{projectBase}/board" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/board')} class:text-zinc-100={isView('/board')}>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
