@@ -247,6 +247,7 @@
 		<CreateStoryModal
 			projectId={$currentProject.id}
 			{statuses}
+			{projectMembers}
 			defaultStatus={createDefaultStatus}
 			on:close={() => showCreateModal = false}
 			on:created={handleStoryCreated}

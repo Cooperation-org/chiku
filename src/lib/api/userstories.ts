@@ -42,6 +42,7 @@ export async function createUserStory(data: {
 	subject: string;
 	status?: number;
 	description?: string;
+	assigned_to?: number | null;
 }): Promise<UserStory> {
 	return api.post<UserStory>('/userstories', data);
 }

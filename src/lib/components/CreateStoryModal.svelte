@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { UserStory, UserStoryStatus } from '$lib/api/types';
+	import type { UserStory, UserStoryStatus, User } from '$lib/api/types';
 	import { createUserStory } from '$lib/api/userstories';
 
 	export let projectId: number;
 	export let statuses: UserStoryStatus[] = [];
 	export let defaultStatus: number | null = null;
+	export let projectMembers: User[] = [];
 
 	const dispatch = createEventDispatcher<{
 		close: void;
@@ -15,6 +16,7 @@
 	let subject = '';
 	let description = '';
 	let status = defaultStatus || (statuses.length > 0 ? statuses[0].id : null);
+	let assignedTo: number | string = '';
 	let isCreating = false;
 
 	async function handleCreate() {
@@ -26,7 +28,8 @@
 				project: projectId,
 				subject: subject.trim(),
 				description: description.trim(),
-				status: status || undefined
+				status: status || undefined,
+				assigned_to: assignedTo ? Number(assignedTo) : null
 			});
 			dispatch('created', story);
 		} catch (err) {
@@ -80,6 +83,22 @@
 					>
 						{#each statuses.sort((a, b) => a.order - b.order) as s}
 							<option value={s.id}>{s.name}</option>
+						{/each}
+					</select>
+				</div>
+			{/if}
+
+			{#if projectMembers.length > 0}
+				<div>
+					<label for="story-assignee" class="block text-sm font-medium text-zinc-400 mb-1">Assignee</label>
+					<select
+						id="story-assignee"
+						bind:value={assignedTo}
+						class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 focus:outline-none focus:ring-2 focus:ring-lt-cyan focus:border-transparent"
+					>
+						<option value="">Unassigned</option>
+						{#each projectMembers as member}
+							<option value={member.id}>{member.full_name || member.username}</option>
 						{/each}
 					</select>
 				</div>
