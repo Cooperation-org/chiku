@@ -91,9 +91,8 @@
 
 	function selectProject(project: Project) {
 		currentProject.set(project);
-		// Navigate to the project's board (or current view if already in a project route)
-		const currentView = urlMatch ? (urlMatch[2] || '/board') : '/board';
-		goto(`/p/${project.slug}${currentView}`);
+		// Always go to the board (no query params), clearing any story detail view
+		goto(`/p/${project.slug}/board`);
 	}
 
 	function handleLogout() {
@@ -216,25 +215,29 @@
 			if (cloneFromProjectId) {
 				try {
 					const sourceStatuses = await getStatuses(cloneFromProjectId);
-					const defaultStatuses = await getStatuses(newProject.id);
+					const defaultStatusIds = (await getStatuses(newProject.id)).map(s => s.id);
 
 					// Create columns matching source project
+					let firstClonedId: number | null = null;
 					for (const ss of sourceStatuses.sort((a, b) => a.order - b.order)) {
-						await createStatus({
+						const created = await createStatus({
 							project: newProject.id,
 							name: ss.name,
 							color: ss.color,
 							is_closed: ss.is_closed,
 							order: ss.order
 						});
+						if (!firstClonedId) firstClonedId = created.id;
 					}
 
-					// Remove default columns (move any stories to first new column)
-					const newStatuses = await getStatuses(newProject.id);
-					const firstNew = newStatuses.find(s => !defaultStatuses.some(d => d.id === s.id));
-					if (firstNew) {
-						for (const ds of defaultStatuses) {
-							await deleteStatus(ds.id, firstNew.id);
+					// Remove all default columns, moving any stories to first cloned column
+					if (firstClonedId) {
+						for (const defId of defaultStatusIds) {
+							try {
+								await deleteStatus(defId, firstClonedId);
+							} catch (e) {
+								console.warn('Could not remove default status', defId, e);
+							}
 						}
 					}
 				} catch (cloneErr) {

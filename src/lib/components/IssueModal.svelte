@@ -198,6 +198,10 @@
 	}
 
 	async function handleDuplicate() {
+		if (fullStory.assigned_to) {
+			alert('Only unassigned stories can be duplicated.');
+			return;
+		}
 		try {
 			const { createUserStory } = await import('$lib/api/userstories');
 			const copy = await createUserStory({
@@ -339,7 +343,7 @@
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
 				</svg>
 			</button>
-			<button on:click={handleDuplicate} class="p-2 text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 rounded transition-colors" title="Duplicate">
+			<button on:click={handleDuplicate} class="p-2 rounded transition-colors {fullStory.assigned_to ? 'text-zinc-300 cursor-not-allowed' : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100'}" title={fullStory.assigned_to ? 'Only unassigned stories can be duplicated' : 'Duplicate'}>
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
 				</svg>
