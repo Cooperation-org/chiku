@@ -81,8 +81,14 @@
 
 	function handleStoryUpdate(e: CustomEvent<UserStory>) {
 		const updated = e.detail;
-		stories = stories.map(s => s.id === updated.id ? updated : s);
-		selectedStory = updated;
+		const exists = stories.some(s => s.id === updated.id);
+		if (exists) {
+			stories = stories.map(s => s.id === updated.id ? updated : s);
+			selectedStory = updated;
+		} else {
+			// New story (e.g. from duplicate)
+			stories = [...stories, updated];
+		}
 	}
 
 	function handleStoryDelete(e: CustomEvent<number>) {

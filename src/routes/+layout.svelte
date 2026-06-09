@@ -128,12 +128,21 @@
 			p.id === project.id ? { ...p, tags: updatedTags } : p
 		);
 
-		// If we archived the current project, switch to another active one
+		// If we archived the current project, switch to another active one and navigate
 		if (!archived && $currentProject?.id === project.id) {
 			const active = projects.filter(p => !isArchived(p));
 			if (active.length > 0) {
 				currentProject.set(active[0]);
+				goto(`/p/${active[0].slug}/board`);
+			} else {
+				currentProject.set(null);
+				goto('/');
 			}
+		}
+		// If we unarchived a project, select it and navigate to it
+		if (archived) {
+			currentProject.set({ ...project, tags: updatedTags });
+			goto(`/p/${project.slug}/board`);
 		}
 
 		// Sync with server in background
