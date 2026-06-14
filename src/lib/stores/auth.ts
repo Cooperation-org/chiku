@@ -88,6 +88,29 @@ function createAuthStore() {
 			}
 		},
 
+		async loginWithLinkedTrust(code: string, redirectUri: string): Promise<{ success: boolean; error?: string }> {
+			update(s => ({ ...s, isLoading: true }));
+			try {
+				const response = await api.post<AuthResponse>('/auth', {
+					type: 'linkedtrust',
+					code,
+					redirect_uri: redirectUri
+				});
+
+				api.setToken(response.auth_token);
+				api.setRefreshToken(response.refresh);
+				if (typeof window !== 'undefined') {
+					localStorage.setItem('taiga_user', JSON.stringify(response));
+				}
+
+				set({ user: response, isAuthenticated: true, isLoading: false });
+				return { success: true };
+			} catch (err) {
+				update(s => ({ ...s, isLoading: false }));
+				return { success: false, error: err instanceof Error ? err.message : 'LinkedTrust login failed' };
+			}
+		},
+
 		async loginWithBluesky(handle: string): Promise<{ success: boolean; error?: string; redirectUrl?: string }> {
 			update(s => ({ ...s, isLoading: true }));
 			try {

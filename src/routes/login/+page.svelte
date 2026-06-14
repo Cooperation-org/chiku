@@ -7,6 +7,8 @@
 
 	// Use SvelteKit's $env/dynamic/public for browser-accessible public env vars
 	const googleClientId = env.PUBLIC_GOOGLE_CLIENT_ID || '';
+	const linkedtrustUrl = env.PUBLIC_LINKEDTRUST_URL || '';
+	const linkedtrustClientId = env.PUBLIC_LINKEDTRUST_CLIENT_ID || '';
 
 	let isMobile = false;
 	let isDarkMode = true;
@@ -52,7 +54,7 @@
 </svelte:head>
 
 {#if isMobile}
-	<MobileLogin {isDarkMode} onToggleTheme={toggleTheme} {googleClientId} />
+	<MobileLogin {isDarkMode} onToggleTheme={toggleTheme} {googleClientId} {linkedtrustUrl} {linkedtrustClientId} />
 {:else}
-	<DesktopLogin {isDarkMode} onToggleTheme={toggleTheme} {googleClientId} />
+	<DesktopLogin {isDarkMode} onToggleTheme={toggleTheme} {googleClientId} {linkedtrustUrl} {linkedtrustClientId} />
 {/if}
