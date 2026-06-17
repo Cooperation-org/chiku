@@ -145,6 +145,7 @@
 			</button>
 
 			<!-- Google OAuth -->
+		{#if googleClientId}
 			<button
 				type="button"
 				on:click={handleGoogleLogin}
@@ -160,6 +161,8 @@
 				</svg>
 				{isLoadingGoogle ? 'Redirecting...' : 'Continue with Google'}
 			</button>
+
+		{/if}
 
 			<!-- Bluesky OAuth -->
 			{#if showBlueskyInput}

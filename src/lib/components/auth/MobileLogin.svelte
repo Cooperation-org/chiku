@@ -149,6 +149,7 @@
 			</button>
 
 			<!-- Google -->
+			{#if googleClientId}
 			<button
 				type="button"
 				on:click={handleGoogleLogin}
@@ -164,6 +165,8 @@
 				</svg>
 				{isLoadingGoogle ? 'Redirecting...' : 'Continue with Google'}
 			</button>
+
+			{/if}
 
 			<!-- Bluesky -->
 			{#if showBlueskyInput}
