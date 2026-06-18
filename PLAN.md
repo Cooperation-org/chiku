@@ -8,9 +8,26 @@
 
 **Build output**: `/home/taiga/marten-build`
 
+**Required `.env`** (in `/home/ubuntu/marten/.env`). These are build-time
+`PUBLIC_*` vars baked into the bundle — **you must rebuild after changing them.**
+```
+PUBLIC_LINKEDTRUST_URL=https://live.linkedtrust.us
+# Per-host LinkedTrust OIDC client_id (public; from the IdP oidc_clients table):
+#   marten.linkedtrust.us   -> lt_4d81bf7637dc5659b9f71f8e
+#   help.raisethevoices.org -> lt_820c9c9a3c5c1db0049790f4
+PUBLIC_LINKEDTRUST_CLIENT_ID=lt_4d81bf7637dc5659b9f71f8e
+```
+> ⚠️ If `PUBLIC_LINKEDTRUST_CLIENT_ID` is empty, the "Sign in with LinkedTrust"
+> button silently no-ops (it sets "LinkedTrust login is not configured" and
+> returns without redirecting). **That is the #1 cause of "LinkedTrust login
+> does nothing."** The IdP and the taiga-back `linkedtrust` plugin are fine — it's
+> purely this missing build-time var.
+
 **Deploy commands**:
 ```bash
 cd /home/ubuntu/marten
+git pull
+# ensure .env has PUBLIC_LINKEDTRUST_CLIENT_ID set (see above), then:
 npm run build
 sudo rm -rf /home/taiga/marten-build/*
 sudo cp -r build/* /home/taiga/marten-build/
