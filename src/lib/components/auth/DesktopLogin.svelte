@@ -46,13 +46,11 @@
 	});
 
 	async function handleLinkedTrustLogin() {
-		if (!linkedtrustUrl || !linkedtrustClientId) {
-			error = 'LinkedTrust login is not configured. Set PUBLIC_LINKEDTRUST_URL and PUBLIC_LINKEDTRUST_CLIENT_ID.';
-			return;
-		}
 		error = '';
 		isLoadingLinkedTrust = true;
-		window.location.href = buildLinkedTrustAuthorizeUrl(linkedtrustUrl, linkedtrustClientId, window.location.origin);
+		// Navigate to taiga-back, which 302s to the IdP server-side (amebo pattern)
+		const apiBase = import.meta.env.VITE_API_URL || '/api/v1';
+		window.location.href = `${apiBase}/auth/linkedtrust/redirect`;
 	}
 
 	async function handleGoogleLogin() {

@@ -42,7 +42,7 @@
 	});
 
 	// Redirect to login if not authenticated
-	$: if (!$auth.isLoading && !$auth.isAuthenticated && !$page.url.pathname.startsWith('/login')) {
+	$: if (!$auth.isLoading && !$auth.isAuthenticated && !$page.url.pathname.startsWith('/login') && !$page.url.pathname.startsWith('/oauth/') && !$page.url.pathname.startsWith('/auth/')) {
 		goto('/login');
 	}
 
@@ -409,8 +409,8 @@
 		}
 	}
 
-	// Check if current route is login
-	$: isLoginPage = $page.url.pathname.startsWith('/login');
+	// Check if current route is login or auth callback
+	$: isLoginPage = $page.url.pathname.startsWith('/login') || $page.url.pathname.startsWith('/oauth/') || $page.url.pathname.startsWith('/auth/');
 
 	// Helper for project-scoped nav links
 	$: projectBase = $currentProject ? `/p/${$currentProject.slug}` : '';
