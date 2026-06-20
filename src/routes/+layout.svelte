@@ -100,7 +100,8 @@
 		goto('/login');
 	}
 
-	function getInitials(name: string): string {
+	function getInitials(name: string | undefined | null): string {
+		if (!name) return '?';
 		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 	}
 
