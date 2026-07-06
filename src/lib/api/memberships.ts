@@ -33,7 +33,11 @@ export async function getProjectRoles(projectId: number): Promise<Role[]> {
 }
 
 export async function getAllUsers(): Promise<{ id: number; username: string; full_name: string }[]> {
-	return api.get('/users', { page_size: 100 });
+	return api.get('/users', { page_size: 1000 });
+}
+
+export async function searchUsers(query: string): Promise<{ id: number; username: string; full_name: string }[]> {
+	return api.get('/users', { q: query, page_size: 10 });
 }
 
 export async function addMembership(projectId: number, username: string, roleId: number): Promise<Membership> {
