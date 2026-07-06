@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { getProjectMemberships, getProjectRoles, getAllUsers, addMembership, removeMembership } from '$lib/api/memberships';
+	import { getProjectMemberships, getProjectRoles, getAllUsers, searchUsers, addMembership, removeMembership } from '$lib/api/memberships';
 	import type { Membership, Role } from '$lib/api/memberships';
 
 	export let projectId: number;
@@ -22,7 +22,6 @@
 	let selectedRole: number | null = null;
 	let isAdding = false;
 
-	// Filter users client-side - show available (non-member) users
 	$: memberUserIds = new Set(memberships.map(m => m.user));
 	$: availableUsers = allUsers.filter(u => !memberUserIds.has(u.id));
 	$: filteredUsers = searchQuery.length >= 2
@@ -40,12 +39,10 @@
 		isLoading = true;
 		error = '';
 		try {
-			// Only load memberships and roles initially - fast
 			[memberships, roles] = await Promise.all([
 				getProjectMemberships(projectId),
 				getProjectRoles(projectId)
 			]);
-			// Sort roles by order
 			roles = roles.sort((a, b) => a.order - b.order);
 			if (roles.length > 0 && !selectedRole) {
 				selectedRole = roles[0].id;
@@ -57,7 +54,6 @@
 		}
 	}
 
-	// Load users when user starts typing
 	async function loadUsersIfNeeded() {
 		if (usersLoaded || isLoadingUsers) return;
 		isLoadingUsers = true;
@@ -71,7 +67,6 @@
 		}
 	}
 
-	// Trigger user load when search query changes
 	$: if (searchQuery.length >= 2 && !usersLoaded) {
 		loadUsersIfNeeded();
 	}
@@ -90,7 +85,20 @@
 			memberships = [...memberships, newMembership];
 			selectedUser = null;
 		} catch (err) {
-			alert('Failed to add member: ' + (err as Error).message);
+			// Taiga returns a server error when email notification fails, but the membership
+			// is still created. Reload to confirm actual state.
+			const refreshed = await getProjectMemberships(projectId).catch(() => null);
+			if (refreshed) {
+				const wasAdded = refreshed.some(m => m.user === selectedUser?.id);
+				memberships = refreshed;
+				if (wasAdded) {
+					selectedUser = null;
+				} else {
+					alert('Failed to add member: ' + (err as Error).message);
+				}
+			} else {
+				alert('Failed to add member: ' + (err as Error).message);
+			}
 		} finally {
 			isAdding = false;
 		}
@@ -224,7 +232,7 @@
 					<input
 						type="text"
 						bind:value={searchQuery}
-						placeholder="Type 2+ chars to search users..."
+						placeholder="Type 2+ chars to search by name or username..."
 						class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-lt-cyan"
 					/>
 					{#if isLoadingUsers}
