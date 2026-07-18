@@ -147,6 +147,38 @@ function createAuthStore() {
 			}
 		},
 
+		// Persist a session from SSO redirect params (e.g. Taiga auth response
+		// delivered in a URL fragment). Mirrors the token-storing path used above.
+		setSession(params: URLSearchParams): boolean {
+			const authToken = params.get('auth_token');
+			if (!authToken) {
+				return false;
+			}
+			const refresh = params.get('refresh') ?? undefined;
+
+			api.setToken(authToken);
+			if (refresh) {
+				api.setRefreshToken(refresh);
+			}
+
+			// Build a user object from the remaining fragment params.
+			const userObj: Record<string, string> = {};
+			params.forEach((value, key) => {
+				userObj[key] = value;
+			});
+
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('taiga_token', authToken);
+				if (refresh) {
+					localStorage.setItem('taiga_refresh_token', refresh);
+				}
+				localStorage.setItem('taiga_user', JSON.stringify(userObj));
+			}
+
+			set({ user: userObj as unknown as AuthResponse, isAuthenticated: true, isLoading: false });
+			return true;
+		},
+
 		handleAuthSuccess(accessToken: string, refreshToken?: string, userData?: Partial<AuthResponse>) {
 			api.setToken(accessToken);
 			if (refreshToken) {
