@@ -60,8 +60,11 @@
 			projectMembers = membershipsData.map(m => ({
 				id: m.user,
 				full_name: m.full_name,
+				full_name_display: m.full_name,
 				username: m.full_name || 'user',
+				email: m.email,
 				photo: m.photo,
+				big_photo: null,
 				color: m.color
 			}));
 			loadedProjectId = projectId;
@@ -258,7 +261,7 @@
 		<ColumnEditor
 			projectId={$currentProject.id}
 			on:close={() => showColumnEditor = false}
-			on:updated={() => loadData($currentProject.id)}
+			on:updated={() => $currentProject && loadData($currentProject.id)}
 		/>
 	{/if}
 {/if}

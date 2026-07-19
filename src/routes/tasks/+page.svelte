@@ -22,8 +22,8 @@
 	$: allUsers = (() => {
 		const map = new Map<number, { id: number; name: string }>();
 		for (const s of stories) {
-			if (s.assigned_to_extra_info) {
-				map.set(s.assigned_to, { id: s.assigned_to!, name: s.assigned_to_extra_info.full_name_display || s.assigned_to_extra_info.full_name });
+			if (s.assigned_to != null && s.assigned_to_extra_info) {
+				map.set(s.assigned_to, { id: s.assigned_to, name: s.assigned_to_extra_info.full_name_display || s.assigned_to_extra_info.full_name });
 			}
 			if (s.owner_extra_info) {
 				map.set(s.owner, { id: s.owner, name: s.owner_extra_info.full_name_display || s.owner_extra_info.full_name });

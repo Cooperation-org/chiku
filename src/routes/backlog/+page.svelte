@@ -49,8 +49,11 @@
 			projectMembers = membershipsData.map(m => ({
 				id: m.user,
 				full_name: m.full_name,
+				full_name_display: m.full_name,
 				username: m.full_name || 'user',
+				email: m.email,
 				photo: m.photo,
+				big_photo: null,
 				color: m.color
 			}));
 		} catch (err) {
