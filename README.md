@@ -1,72 +1,64 @@
-# Martin - Modern Taiga Frontend
+# Marten - Modern Taiga Frontend
 
 A fast, Linear-inspired frontend for Taiga built with SvelteKit. Drop-in replacement for the default Taiga frontend.
 
+Repo: https://github.com/Cooperation-org/marten
+
 ## Features
 
-- Kanban board with drag-and-drop
+- Kanban board with drag-and-drop (PATCHes status/order with optimistic updates)
+- Story detail view with comments, deep-linkable via `?story=<ref>`
 - Backlog list view
 - Epics with progress tracking
 - Velocity charts and sprint projections
+- My Tasks view across projects
+- Project-scoped URLs: `/p/<project-slug>/board`, `/backlog`, `/epics`, `/velocity`
+- Sign in with LinkedTrust (team OIDC provider, brokers Google + Bluesky), plus optional direct Google OAuth, Bluesky, and Taiga password login
 - Dark mode UI
 - Works with any existing Taiga backend
 
-## Deploy to Your Taiga Server
+## Authentication
 
-### Prerequisites
+The primary login is **Sign in with LinkedTrust**, run entirely server-side by
+taiga-back (no frontend OAuth config): the button sends the browser to
+`${VITE_API_URL}/auth/linkedtrust/redirect`, taiga-back 302s to the IdP
+(live.linkedtrust.us), completes the code exchange with its confidential
+client, and redirects back to `{origin}/oauth/callback` with tokens in the
+URL fragment. The SPA stores them in localStorage and returns the user to the
+page they originally requested (deep links like `/p/<slug>/board?story=<ref>`
+survive the round trip).
 
-- Node.js 18+ installed on your server
-- Existing Taiga backend running (taiga-back)
-- Nginx serving your Taiga instance
+There is no self-serve registration in the UI — accounts are provisioned via
+SSO (or by a Taiga admin for password accounts).
 
-### Step 1: Clone and Build
+## Deployment
+
+Marten builds to a fully static SPA (`@sveltejs/adapter-static` with an
+`index.html` fallback), so any static file server with SPA fallback works.
+
+### Cohort VM (martin.workers.vc)
+
+The deployment at `https://martin.workers.vc` deploys automatically: every
+push to `main` triggers `.github/workflows/deploy-to-cohort.yml`, which SSHes
+to the cohort VM and runs `/opt/earnkit/bin/update-marten` (pull, build,
+publish). No manual steps.
+
+### Any Taiga server
 
 ```bash
-# Clone the repo
-cd /opt
-git clone git@github.com:Cooperation-org/martin.git
-cd martin
-
-# Install dependencies
+git clone git@github.com:Cooperation-org/marten.git
+cd marten
 npm install
-
-# Build for production
+# Point the build at your Taiga API if it is not proxied at /api/v1:
+# echo 'VITE_API_URL=https://taiga.example.com/api/v1' > .env
 npm run build
 ```
 
-### Step 2: Configure Nginx
-
-Add this to your Taiga nginx config (usually `/etc/nginx/sites-available/taiga` or similar):
+Serve `build/` at the site root with an SPA fallback, e.g. nginx:
 
 ```nginx
-# Martin frontend (new UI)
-location /martin/ {
-    alias /opt/martin/build/;
-    try_files $uri $uri/ /martin/index.html;
-}
-```
-
-Then reload nginx:
-```bash
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-### Step 3: Access
-
-Open `https://your-taiga-server.com/martin/`
-
-Login with your existing Taiga credentials.
-
----
-
-## Alternative: Replace Default Frontend
-
-To completely replace the old frontend instead of running alongside:
-
-```nginx
-# In your nginx config, change the root location:
 location / {
-    root /opt/martin/build;
+    root /path/to/marten/build;
     try_files $uri $uri/ /index.html;
 }
 
@@ -77,7 +69,8 @@ location /api/ {
 }
 ```
 
----
+The app must be served at the origin root (routes like `/p/<slug>/board` are
+absolute); it is not designed to run under a path prefix.
 
 ## Development
 
@@ -85,8 +78,14 @@ location /api/ {
 # Install dependencies
 npm install
 
-# Run dev server (proxies API to localhost:8000)
+# Run dev server (proxies /api to localhost:8000)
 npm run dev
+
+# Type-check
+npm run check
+
+# Unit tests (vitest)
+npm test
 
 # Build for production
 npm run build
@@ -100,16 +99,14 @@ npm run preview
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `VITE_API_URL` | Taiga API URL | `/api/v1` (uses nginx proxy) |
+| `PUBLIC_GOOGLE_CLIENT_ID` | Optional: enables the direct "Continue with Google" button | unset (button hidden) |
 
-For custom API URL, create `.env` before building:
-```bash
-echo 'VITE_API_URL=https://taiga.example.com/api/v1' > .env
-npm run build
-```
+Sign in with LinkedTrust needs no frontend variables — the OIDC client
+lives in taiga-back. See `.env.example`.
 
 ## Tech Stack
 
-- SvelteKit
+- SvelteKit (static adapter, SPA)
 - Tailwind CSS
 - TypeScript
-- Vite
+- Vite + Vitest

@@ -112,20 +112,33 @@ with nothing broken on the way.
 
 ### Work items (in order)
 
-1. **Login lands teams**: a cohort member clicking through from the dash
-   must reach their board in ≤2 clicks signed in. Verify the LinkedTrust
-   login round-trips back to the **deep-linked path** (auth guard
-   currently bounces to `/login`; preserve the original URL incl.
-   `?story=` through the OIDC hop and return to it after callback).
-2. **Fix or remove the register tab** (`auth.register` missing). Cohort
-   members arrive via SSO; if register stays, wire it; if not, drop the
-   tab rather than ship a throwing button.
-3. **Delete the dead client-side OIDC helper** and its imports.
-4. **Slug routing check**: confirm `/p/<slug>/…` resolves for a project
-   the user was just added to (project list load precedes slug
-   resolution — no stale-cache trap on first visit).
-5. **Docs**: refresh NOTES.md/README.md to match reality (server-side
-   OIDC, earnkit deploy, real hostname `martin.workers.vc`).
+1. **DONE (2026-07-19)** **Login lands teams**: auth guard now saves the
+   original path incl. `?story=` (`src/lib/auth/returnTo.ts`,
+   sessionStorage, sanitized against open redirects and login loops)
+   before bouncing to `/login`; every login success path — OIDC
+   `/oauth/callback`, Google, Bluesky, password — returns to it.
+   Vitest coverage in `src/lib/auth/__tests__/returnTo.test.ts`.
+2. **DONE (2026-07-19)** Register tab removed from DesktopLogin and
+   MobileLogin (no `auth.register` anywhere, no `/register` route —
+   nothing in the repo intends registration to work; cohort members
+   arrive via SSO). Password Sign In form stays.
+3. **DONE (2026-07-19)** `src/lib/auth/linkedtrust.ts` deleted with its
+   imports, unused `linkedtrustUrl`/`linkedtrustClientId` props, and the
+   `PUBLIC_LINKEDTRUST_*` env vars (`.env.example` updated — server-side
+   flow needs no frontend config).
+4. **VERIFIED (2026-07-19)** `/p/<slug>/…` is safe on first visit: the
+   project list is fetched fresh from the API on every full page load
+   (in-memory only; nothing cached across loads except the selected
+   project *id*, which is only a fallback when the URL has no slug), and
+   slug resolution is a reactive that waits for the loaded list — so a
+   just-added project resolves on the first landing after login. No fix
+   needed.
+5. **DONE (2026-07-19)** NOTES.md/README.md rewritten: server-side OIDC
+   flow, earnkit auto-deploy via `.github/workflows/deploy-to-cohort.yml`
+   to `martin.workers.vc`, root-serving SPA nginx example replacing the
+   stale `/martin/` alias instructions, and the false "drag-drop doesn't
+   PATCH" / "create story/epic don't work" / "no story detail" claims
+   corrected (all are implemented).
 6. **Phase 2 (not now)**: a `<marten-board>` mini card via Svelte custom
    elements if we ever want live task rows rendered by marten itself on
    the dash; v1 deliberately routes that through GovKit.
