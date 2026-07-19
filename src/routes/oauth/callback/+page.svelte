@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
+	import { consumeReturnTo } from '$lib/auth/returnTo';
 
 	function fail(message: string) {
 		if (typeof window !== 'undefined') {
@@ -42,7 +43,8 @@
 				refresh: refresh || undefined
 			} as any);
 
-			goto('/');
+			// Return to the deep-linked page saved before the OIDC hop, if any
+			goto(consumeReturnTo() ?? '/', { replaceState: true });
 		} else {
 			fail('LinkedTrust sign-in failed. Please try again.');
 		}

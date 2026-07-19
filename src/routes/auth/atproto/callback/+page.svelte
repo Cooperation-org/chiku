@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
+	import { consumeReturnTo } from '$lib/auth/returnTo';
 
 	onMount(async () => {
 		const params = new URLSearchParams(window.location.search);
@@ -27,7 +28,7 @@
 			auth.init();
 		}
 
-		goto('/');
+		goto(consumeReturnTo() ?? '/', { replaceState: true });
 	});
 </script>
 

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
+	import { consumeReturnTo } from '$lib/auth/returnTo';
 
 	onMount(async () => {
 		const params = new URLSearchParams(window.location.search);
@@ -28,7 +29,7 @@
 		const result = await auth.loginWithGoogle(code);
 
 		if (result.success) {
-			goto('/');
+			goto(consumeReturnTo() ?? '/', { replaceState: true });
 		} else {
 			if (typeof window !== 'undefined') {
 				sessionStorage.setItem('oauth_error', result.error || 'Google sign-in failed. Please try again.');

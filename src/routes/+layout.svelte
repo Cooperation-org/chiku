@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
+	import { saveReturnTo } from '$lib/auth/returnTo';
 	import { currentProject } from '$lib/stores/project';
 	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject, reorderProjects } from '$lib/api/projects';
 	import { getStatuses, createStatus, deleteStatus } from '$lib/api/statuses';
@@ -41,8 +42,10 @@
 		auth.init();
 	});
 
-	// Redirect to login if not authenticated
+	// Redirect to login if not authenticated, preserving the deep-linked URL
+	// (incl. ?story=) so login round-trips back to it.
 	$: if (!$auth.isLoading && !$auth.isAuthenticated && !$page.url.pathname.startsWith('/login') && !$page.url.pathname.startsWith('/oauth/') && !$page.url.pathname.startsWith('/auth/')) {
+		saveReturnTo($page.url.pathname + $page.url.search);
 		goto('/login');
 	}
 
