@@ -2,27 +2,18 @@
 	import { onMount } from 'svelte';
 	import { auth } from '$lib/stores/auth';
 	import BlueskyLogin from '$lib/components/auth/BlueskyLogin.svelte';
-	import { buildLinkedTrustAuthorizeUrl } from '$lib/auth/linkedtrust';
+	import { consumeReturnTo } from '$lib/auth/returnTo';
 
 	export let isDarkMode: boolean = true;
 	export let onToggleTheme: () => void = () => {};
 	export let googleClientId: string = '';
-	export let linkedtrustUrl: string = '';
-	export let linkedtrustClientId: string = '';
 
 	let username = '';
 	let password = '';
-	let fullName = '';
-	let email = '';
-	let acceptedTerms = false;
-	let acceptedPrivacy = false;
 	let error = '';
 	let isLoading = false;
 	let isLoadingLinkedTrust = false;
 	let isLoadingGoogle = false;
-
-	// Tab: 'login' | 'register'
-	let activeTab: 'login' | 'register' = 'login';
 
 	// Bluesky toggle
 	let showBlueskyInput = false;
@@ -78,7 +69,7 @@
 		if (result.redirectUrl) {
 			window.location.href = result.redirectUrl;
 		} else if (result.success) {
-			window.location.href = '/';
+			window.location.href = consumeReturnTo() ?? '/';
 		} else {
 			error = result.error || 'Bluesky login failed';
 			isLoadingBluesky = false;
@@ -89,24 +80,14 @@
 		error = '';
 		isLoading = true;
 
-		let result;
-		if (activeTab === 'login') {
-			result = await auth.login(username, password);
-		} else {
-			if (activeTab === 'register' && (!acceptedTerms || !acceptedPrivacy)) {
-				error = 'You must accept our terms of service and privacy policy';
-				isLoading = false;
-				return;
-			}
-			result = await auth.register({ username, password, full_name: fullName, email: email || undefined });
-		}
+		const result = await auth.login(username, password);
 
 		isLoading = false;
 
 		if (result.success) {
-			window.location.href = '/';
+			window.location.href = consumeReturnTo() ?? '/';
 		} else {
-			error = result.error || (activeTab === 'login' ? 'Login failed' : 'Registration failed');
+			error = result.error || 'Login failed';
 		}
 	}
 </script>
@@ -199,26 +180,6 @@
 		</div>
 	</div>
 
-	<!-- Tabs -->
-	<div class="px-6 mb-4">
-		<div class="flex rounded-lg p-1" style="background-color: var(--bg-hover); border: 1px solid var(--border-default);">
-			<button
-				class="flex-1 py-2 text-sm font-medium rounded-md transition-colors"
-				style={activeTab === 'login' ? `background-color: var(--bg-active); color: var(--text-primary);` : `color: var(--text-muted);`}
-				on:click={() => { activeTab = 'login'; error = ''; }}
-			>
-				Sign In
-			</button>
-			<button
-				class="flex-1 py-2 text-sm font-medium rounded-md transition-colors"
-				style={activeTab === 'register' ? `background-color: var(--bg-active); color: var(--text-primary);` : `color: var(--text-muted);`}
-				on:click={() => { activeTab = 'register'; error = ''; }}
-			>
-				Create Account
-			</button>
-		</div>
-	</div>
-
 	<!-- Form -->
 	<form on:submit|preventDefault={handleSubmit} class="flex-1 px-6 pb-6">
 		<div class="rounded-lg p-6" style="background-color: var(--bg-elevated); border: 1px solid var(--border-default);">
@@ -238,63 +199,6 @@
 						placeholder="your-username"
 					/>
 				</div>
-
-				{#if activeTab === 'register'}
-					<div>
-						<label for="mobile-fullName" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">
-							Full Name
-						</label>
-						<input
-							id="mobile-fullName"
-							type="text"
-							bind:value={fullName}
-							required={activeTab === 'register'}
-							class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-1 text-base"
-							style="background-color: var(--bg-hover); border: 1px solid var(--border-default); color: var(--text-primary);"
-							placeholder="Your Name"
-						/>
-					</div>
-					<div>
-						<label for="mobile-email" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">
-							Email <span style="color: var(--text-muted);">(optional)</span>
-						</label>
-						<input
-							id="mobile-email"
-							type="email"
-							bind:value={email}
-							class="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-1 text-base"
-							style="background-color: var(--bg-hover); border: 1px solid var(--border-default); color: var(--text-primary);"
-							placeholder="you@example.com"
-						/>
-					</div>
-				{/if}
-
-				{#if activeTab === 'register'}
-					<div class="border-t pt-4 mt-4" style="border-color: var(--border-default);">
-						<label class="flex items-start gap-2 cursor-pointer">
-							<input
-								type="checkbox"
-								bind:checked={acceptedTerms}
-								class="mt-1"
-								style="accent-color: var(--accent); width: 18px; height: 18px;"
-							/>
-							<span class="text-sm" style="color: var(--text-secondary);">
-								I accept the <a href="/terms" style="color: var(--accent);" class="hover:underline">terms of service</a>
-							</span>
-						</label>
-						<label class="flex items-start gap-2 cursor-pointer mt-2">
-							<input
-								type="checkbox"
-								bind:checked={acceptedPrivacy}
-								class="mt-1"
-								style="accent-color: var(--accent); width: 18px; height: 18px;"
-							/>
-							<span class="text-sm" style="color: var(--text-secondary);">
-								I accept the <a href="/privacy" style="color: var(--accent);" class="hover:underline">privacy policy</a>
-							</span>
-						</label>
-					</div>
-				{/if}
 
 				<div>
 					<label for="mobile-password" class="block text-sm font-medium mb-1" style="color: var(--text-secondary);">
@@ -316,13 +220,7 @@
 					disabled={isLoading}
 					class="w-full py-3 px-4 font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed btn-primary text-base"
 				>
-					{#if isLoading}
-						{activeTab === 'login' ? 'Signing in...' : 'Creating account...'}
-					{:else if activeTab === 'login'}
-						Sign in
-					{:else}
-						Create Account
-					{/if}
+					{isLoading ? 'Signing in...' : 'Sign in'}
 				</button>
 			</div>
 
