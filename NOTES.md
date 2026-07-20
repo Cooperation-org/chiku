@@ -34,7 +34,7 @@
 - Vite dev server with API proxy to localhost:8000
 - Vitest unit tests (`npm test`), svelte-check (`npm run check`)
 - Deploy: push to `main` → `.github/workflows/deploy-to-cohort.yml` →
-  `/opt/earnkit/bin/update-marten` on the cohort VM → https://martin.workers.vc
+  `/opt/earnkit/bin/update-marten` on the cohort VM → https://marten.workers.vc
 
 ### API Integration
 - `src/lib/api/client.ts` - Fetch wrapper with auth token handling
@@ -146,7 +146,7 @@ npm run build        # Production build to build/
 npm run preview      # Preview production build
 ```
 
-Deploy to martin.workers.vc: just push to `main` (GitHub Actions runs
+Deploy to marten.workers.vc: just push to `main` (GitHub Actions runs
 `/opt/earnkit/bin/update-marten` on the cohort VM).
 
 ---

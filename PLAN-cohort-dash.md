@@ -53,7 +53,7 @@ component attribute there).
 | The pie | GovKit | `<govkit-pie>` | `dash.workers.vc/o/<org>/pie/` |
 | Earned on tasks (hours feed) | GovKit | `<govkit-feed>` | `dash.workers.vc/o/<org>/pie/` |
 | Curriculum tracker | GovKit (genesis checklist) | `<govkit-checklist>` | `dash.workers.vc/o/<org>/` |
-| Tasks to do | GovKit (tasksources → Taiga) | `<govkit-tasks>` | `martin.workers.vc/p/<org>/board` |
+| Tasks to do | GovKit (tasksources → Taiga) | `<govkit-tasks>` | `marten.workers.vc/p/<org>/board` |
 | Money | GovKit (projects app) | `<govkit-money>` | `dash.workers.vc/o/<org>/projects/` |
 | Reach out (CRM) | crm-outreach-runner (Odoo) | `<crm-reachout>` | `crm-<org>.workers.vc` Outreach Runner |
 | Ask amebo | amebo (exists) | `<amebo-ask>` | `amebo.workers.vc` |
@@ -135,7 +135,7 @@ with nothing broken on the way.
    needed.
 5. **DONE (2026-07-19)** NOTES.md/README.md rewritten: server-side OIDC
    flow, earnkit auto-deploy via `.github/workflows/deploy-to-cohort.yml`
-   to `martin.workers.vc`, root-serving SPA nginx example replacing the
+   to `marten.workers.vc`, root-serving SPA nginx example replacing the
    stale `/martin/` alias instructions, and the false "drag-drop doesn't
    PATCH" / "create story/epic don't work" / "no story detail" claims
    corrected (all are implemented).
@@ -146,6 +146,6 @@ with nothing broken on the way.
 ### Definition of done
 
 From `workers.vc/dash/<team>/`, clicking a task row opens
-`martin.workers.vc/p/<team>/board?story=<ref>`; a signed-out member goes
+`marten.workers.vc/p/<team>/board?story=<ref>`; a signed-out member goes
 through LinkedTrust and arrives at that same story; no login-page button
 throws; docs match the deployment.

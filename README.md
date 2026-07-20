@@ -36,9 +36,9 @@ SSO (or by a Taiga admin for password accounts).
 Marten builds to a fully static SPA (`@sveltejs/adapter-static` with an
 `index.html` fallback), so any static file server with SPA fallback works.
 
-### Cohort VM (martin.workers.vc)
+### Cohort VM (marten.workers.vc)
 
-The deployment at `https://martin.workers.vc` deploys automatically: every
+The deployment at `https://marten.workers.vc` deploys automatically: every
 push to `main` triggers `.github/workflows/deploy-to-cohort.yml`, which SSHes
 to the cohort VM and runs `/opt/earnkit/bin/update-marten` (pull, build,
 publish). No manual steps.
