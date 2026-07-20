@@ -114,7 +114,6 @@ non-Taiga Django apps.
 | `src/lib/components/auth/DesktopLogin.svelte` | Desktop login UI (LinkedTrust + Google buttons) |
 | `src/lib/components/auth/MobileLogin.svelte` | Mobile login UI (same buttons) |
 | `src/routes/oauth/callback/+page.svelte` | Handles the IdP redirect — reads tokens from URL fragment |
-| `src/lib/auth/linkedtrust.ts` | Helper: authorize URL builder, CSRF state (used by older client-side flow) |
 | `src/lib/stores/auth.ts` | Auth state store (token storage, login/logout) |
 
 ## Environment Variables

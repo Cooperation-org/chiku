@@ -40,7 +40,7 @@ demo data.
 **Org scoping.** The dash is per-team: `workers.vc/dash/<org-slug>/`.
 The org slug is the shared tenant key across GovKit (`Org.slug`), amebo
 (`organizations.slug` / instance orgs), Taiga (project slug), and Odoo
-(DB `crm-<slug>_vc`, host `crm-<slug>.workers.vc`) — provisioned together by
+(DB `crm-<slug>`, host `crm-<slug>.workers.vc`) — provisioned together by
 `earnkit/playbooks/add-team.yml`. Components take the org via a
 `data-org` attribute where the owning app needs it (GovKit), or resolve
 it server-side from the authenticated identity (amebo — org is never a
