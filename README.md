@@ -94,6 +94,62 @@ npm run build
 npm run preview
 ```
 
+## Authentication (LinkedTrust OAuth)
+
+Marten uses **LinkedTrust** as its OIDC identity provider. LinkedTrust brokers
+Google, Bluesky (ATProto), and LinkedTrust accounts, so a single "Sign in with
+LinkedTrust" button covers all three.
+
+### How it works
+
+There are three pieces involved:
+
+1. **Frontend** (this repo) — redirects the user to the IdP and handles the callback
+2. **Backend plugin** (`taiga-back`: `taiga/auth/linkedtrust.py`) — exchanges the
+   authorization code for tokens and creates/finds the Taiga user
+3. **LinkedTrust IdP** (e.g. `live.linkedtrust.us`) — the OIDC server
+
+The flow:
+
+1. User clicks "Sign in with LinkedTrust" on the login page
+2. Frontend builds an OIDC authorize URL and redirects to
+   `{LINKEDTRUST_URL}/oauth/authorize` with `client_id`, `redirect_uri`, a CSRF
+   `state`, and scopes `openid email profile trust`
+3. User authenticates at the IdP (Google, Bluesky, or LinkedTrust credentials)
+4. IdP redirects back to `{origin}/oauth/callback` with tokens in the URL fragment
+5. The callback page (`src/routes/oauth/callback/+page.svelte`) extracts the
+   `auth_token` and `refresh` token, stores them, and navigates to `/`
+
+### Key source files
+
+| File | What it does |
+|------|-------------|
+| `src/lib/auth/linkedtrust.ts` | Builds the authorize URL, manages CSRF state |
+| `src/routes/oauth/callback/+page.svelte` | Handles the IdP redirect, extracts tokens |
+| `src/routes/login/+page.svelte` | Login page that renders the sign-in buttons |
+| `src/lib/components/auth/DesktopLogin.svelte` | Desktop login UI with LinkedTrust + Google buttons |
+| `src/lib/components/auth/MobileLogin.svelte` | Mobile login UI (same buttons) |
+| `src/lib/stores/auth.ts` | Auth state store (token storage, login/logout) |
+
+On the backend side (in taiga-back):
+
+| File | What it does |
+|------|-------------|
+| `taiga/auth/linkedtrust.py` | The auth plugin — code exchange, userinfo fetch, user creation |
+| `taiga/auth/token_denylist/apps.py` | Loads the plugin at startup via `register()` |
+| `taiga/auth/services.py` | `register_auth_plugin()` — registry that routes `{type:"linkedtrust"}` to the plugin |
+| `settings/config.py` | Backend settings: `LINKEDTRUST_URL`, `LINKEDTRUST_CLIENT_ID`, `LINKEDTRUST_CLIENT_SECRET` |
+
+### Setup for a new deployment
+
+1. Register a new confidential client in the IdP's `oidc_clients` table with
+   `redirect_uri` set to `{your_frontend_origin}/oauth/callback`
+2. Set the frontend env vars (see below) with the client ID and IdP URL
+3. Set the backend settings in `settings/config.py`:
+   - `LINKEDTRUST_URL` — IdP base URL
+   - `LINKEDTRUST_CLIENT_ID` — the client ID from step 1
+   - `LINKEDTRUST_CLIENT_SECRET` — the client secret (keep out of version control)
+
 ## Environment Variables
 
 | Variable | Description | Default |
