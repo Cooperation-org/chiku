@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
 	import { consumeReturnTo } from '$lib/auth/returnTo';
+	import { consumeRelayTarget } from '$lib/auth/relayTarget';
 
 	function fail(message: string) {
 		if (typeof window !== 'undefined') {
@@ -43,7 +44,16 @@
 				refresh: refresh || undefined
 			} as any);
 
-			// Return to the deep-linked page saved before the OIDC hop, if any
+			// SSO relay (a partner app sent us here to sign in and bounce back):
+			// return to that allowlisted external origin. A full-page nav is used
+			// because the target is off-origin; goto() is same-app only.
+			const relay = consumeRelayTarget();
+			if (relay) {
+				window.location.href = relay;
+				return;
+			}
+
+			// Otherwise return to the deep-linked page saved before the OIDC hop.
 			goto(consumeReturnTo() ?? '/', { replaceState: true });
 		} else {
 			fail('LinkedTrust sign-in failed. Please try again.');
