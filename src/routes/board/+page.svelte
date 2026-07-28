@@ -30,25 +30,26 @@
 	let isEditingName = false;
 	let editName = '';
 
-	// Handle URL story param
+	// The open story is whatever ?story= says. Deriving it from the URL (rather
+	// than only setting it when the param appears) is what makes navigating away
+	// close the detail view — otherwise clicking Board while a story is open does
+	// nothing visible, and the story only clears on a second click elsewhere.
 	$: storyParam = $page.url.searchParams.get('story');
-	$: if (storyParam && stories.length > 0 && !selectedStory) {
-		const storyRef = parseInt(storyParam);
-		const found = stories.find(s => s.ref === storyRef);
-		if (found) {
-			selectedStory = found;
-		}
-	}
+	$: selectedStory = storyParam
+		? stories.find(s => s.ref === parseInt(storyParam)) ?? null
+		: null;
 
 	// Reload when project changes
 	$: if ($currentProject && $currentProject.id !== loadedProjectId) {
 		loadData($currentProject.id);
 	}
+	// With no project there is nothing to load, so stop showing the spinner —
+	// otherwise the page sits on "Loading board..." forever with no way out.
+	$: if (!$currentProject) isLoading = false;
 
 	async function loadData(projectId: number) {
 		isLoading = true;
 		error = '';
-		selectedStory = null;
 		try {
 			const [statusesData, storiesData, membershipsData] = await Promise.all([
 				getUserStoryStatuses(projectId),
@@ -77,9 +78,7 @@
 	}
 
 	function handleStorySelect(e: CustomEvent<UserStory>) {
-		selectedStory = e.detail;
-		const base = $page.url.pathname;
-		goto(`${base}?story=${e.detail.ref}`, { replaceState: true, noScroll: true });
+		goto(`${$page.url.pathname}?story=${e.detail.ref}`, { replaceState: true, noScroll: true });
 	}
 
 	function handleStoryUpdate(e: CustomEvent<UserStory>) {
@@ -87,7 +86,6 @@
 		const exists = stories.some(s => s.id === updated.id);
 		if (exists) {
 			stories = stories.map(s => s.id === updated.id ? updated : s);
-			selectedStory = updated;
 		} else {
 			// New story (e.g. from duplicate)
 			stories = [...stories, updated];
@@ -97,11 +95,10 @@
 	function handleStoryDelete(e: CustomEvent<number>) {
 		const deletedId = e.detail;
 		stories = stories.filter(s => s.id !== deletedId);
-		selectedStory = null;
+		goto($page.url.pathname, { replaceState: true, noScroll: true });
 	}
 
 	function handleCloseDetail() {
-		selectedStory = null;
 		goto($page.url.pathname, { replaceState: true, noScroll: true });
 	}
 

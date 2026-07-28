@@ -18,20 +18,18 @@
 	let showCreateModal = false;
 	let selectedStory: UserStory | null = null;
 
-	// Handle URL story param
+	// The open story is whatever ?story= says, so navigating away closes it.
 	$: storyParam = $page.url.searchParams.get('story');
-	$: if (storyParam && stories.length > 0 && !selectedStory) {
-		const storyRef = parseInt(storyParam);
-		const found = stories.find(s => s.ref === storyRef);
-		if (found) {
-			selectedStory = found;
-		}
-	}
+	$: selectedStory = storyParam
+		? stories.find(s => s.ref === parseInt(storyParam)) ?? null
+		: null;
 
 	// Reload when project changes
 	$: if ($currentProject) {
 		loadData($currentProject.id);
 	}
+	// No project means nothing to load — don't sit on "Loading backlog..." forever.
+	$: if (!$currentProject) isLoading = false;
 
 	async function loadData(projectId: number) {
 		isLoading = true;
@@ -71,12 +69,11 @@
 
 	function handleStoryUpdate(e: CustomEvent<UserStory>) {
 		stories = stories.map(s => s.id === e.detail.id ? e.detail : s);
-		selectedStory = e.detail;
 	}
 
 	function handleStoryDelete(e: CustomEvent<number>) {
 		stories = stories.filter(s => s.id !== e.detail);
-		selectedStory = null;
+		goto($page.url.pathname, { replaceState: true, noScroll: true });
 	}
 
 	// Calculate totals
@@ -156,7 +153,7 @@
 				</thead>
 				<tbody class="divide-y divide-border">
 					{#each stories as story (story.id)}
-						<tr class="hover:bg-surface-2 transition-colors cursor-pointer group" on:click={() => { selectedStory = story; goto(`?story=${story.ref}`, { replaceState: true, noScroll: true }); }}>
+						<tr class="hover:bg-surface-2 transition-colors cursor-pointer group" on:click={() => goto(`${$page.url.pathname}?story=${story.ref}`, { replaceState: true, noScroll: true })}>
 							<td class="px-6 py-3">
 								<span class="text-zinc-500 text-sm">#{story.ref}</span>
 							</td>
@@ -249,7 +246,7 @@
 		story={selectedStory}
 		{statuses}
 		{projectMembers}
-		on:close={() => { selectedStory = null; goto('/backlog', { replaceState: true, noScroll: true }); }}
+		on:close={() => goto($page.url.pathname, { replaceState: true, noScroll: true })}
 		on:update={handleStoryUpdate}
 		on:delete={handleStoryDelete}
 	/>

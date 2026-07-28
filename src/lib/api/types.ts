@@ -25,6 +25,9 @@ export interface Project {
 	total_story_points: number;
 	is_kanban_activated: boolean;
 	is_backlog_activated: boolean;
+	is_epics_activated: boolean;
+	is_issues_activated: boolean;
+	is_wiki_activated: boolean;
 	us_statuses: UserStoryStatus[];
 	task_statuses: TaskStatus[];
 	points: Point[];

@@ -200,6 +200,9 @@
 			total_story_points: 0,
 			is_kanban_activated: true,
 			is_backlog_activated: true,
+			is_epics_activated: true,
+			is_issues_activated: true,
+			is_wiki_activated: true,
 			us_statuses: [],
 			task_statuses: [],
 			points: [],
@@ -422,6 +425,16 @@
 	function isView(view: string): boolean {
 		return currentView === view || currentView === view + '/';
 	}
+
+	// Only offer views the project actually has. Taiga lets a project switch
+	// modules off (a kanban-only project has no backlog and no epics); linking to
+	// them anyway leads to a page that can never load. Default to showing a view
+	// until the project is known, so nothing flickers away mid-load.
+	$: showBoard = $currentProject ? $currentProject.is_kanban_activated !== false : true;
+	$: showBacklog = $currentProject ? $currentProject.is_backlog_activated !== false : true;
+	$: showEpics = $currentProject ? $currentProject.is_epics_activated !== false : true;
+	// Velocity is sprint-based, and sprints only exist when the backlog is on.
+	$: showVelocity = showBacklog;
 </script>
 
 <svelte:window on:click={closeContextMenu} on:keydown={showCreateModal ? handleCreateKeydown : showEditModal ? handleEditKeydown : undefined} />
@@ -517,30 +530,38 @@
 					My Tasks
 				</a>
 				<div class="border-t border-border my-1"></div>
-				<a href="{projectBase}/board" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/board')} class:text-zinc-100={isView('/board')}>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-					</svg>
-					Board
-				</a>
-				<a href="{projectBase}/backlog" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/backlog')} class:text-zinc-100={isView('/backlog')}>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-					</svg>
-					Backlog
-				</a>
-				<a href="{projectBase}/epics" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/epics')} class:text-zinc-100={isView('/epics')}>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-					</svg>
-					Epics
-				</a>
-				<a href="{projectBase}/velocity" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/velocity')} class:text-zinc-100={isView('/velocity')}>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-					</svg>
-					Velocity
-				</a>
+					{#if showBoard}
+						<a href="{projectBase}/board" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/board')} class:text-zinc-100={isView('/board')}>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+							</svg>
+							Board
+						</a>
+					{/if}
+					{#if showBacklog}
+						<a href="{projectBase}/backlog" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/backlog')} class:text-zinc-100={isView('/backlog')}>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+							</svg>
+							Backlog
+						</a>
+					{/if}
+					{#if showEpics}
+						<a href="{projectBase}/epics" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/epics')} class:text-zinc-100={isView('/epics')}>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+							</svg>
+							Epics
+						</a>
+					{/if}
+					{#if showVelocity}
+						<a href="{projectBase}/velocity" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/velocity')} class:text-zinc-100={isView('/velocity')}>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+							</svg>
+							Velocity
+						</a>
+					{/if}
 				<button
 					on:click={() => showMembersModal = true}
 					disabled={!$currentProject}

@@ -18,6 +18,8 @@
 	$: if ($currentProject) {
 		loadData($currentProject.id);
 	}
+	// No project means nothing to load — don't sit on a loading message forever.
+	$: if (!$currentProject) isLoading = false;
 
 	async function loadData(projectId: number) {
 		isLoading = true;
