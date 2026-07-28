@@ -8,6 +8,9 @@ Repo: https://github.com/Cooperation-org/marten
 
 - Kanban board with drag-and-drop (PATCHes status/order with optimistic updates)
 - Story detail view with comments, deep-linkable via `?story=<ref>`; shows who created the story
+- Estimate a story from its card: pick from the project's points, or clear it. Taiga
+  stores an estimate per role and sums them; the card keeps one number by putting the
+  pick on the first counting role and blanking the others (`src/lib/api/points.ts`)
 - Attachments on stories: drag-and-drop or click to upload, download, remove.
   Markdown attachments render inline, other text files show as plain text,
   images show inline. Files are stored by Taiga (`/userstories/attachments`),
