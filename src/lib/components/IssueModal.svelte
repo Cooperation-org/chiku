@@ -3,7 +3,8 @@
 	import type { UserStory, UserStoryStatus, User } from '$lib/api/types';
 	import { updateUserStory, getUserStory, moveUserStory, getUserStoryStatuses } from '$lib/api/userstories';
 	import { getStoryComments } from '$lib/api/comments';
-	import { getProjects, isArchived } from '$lib/api/projects';
+	import { getProject, getProjects, isArchived } from '$lib/api/projects';
+	import { pointChoices, pointsPatch, storyPointId } from '$lib/api/points';
 	import type { Attachment, HistoryEntry, Project } from '$lib/api/types';
 	import {
 		getStoryAttachments,
@@ -29,6 +30,8 @@
 
 	let fullStory: UserStory = story;
 	let isLoadingDetail = true;
+	/** Carries the point catalog and the roles — both needed to set an estimate. */
+	let project: Project | null = null;
 
 	onMount(async () => {
 		try {
@@ -39,6 +42,12 @@
 			fullStory = story;
 		} finally {
 			isLoadingDetail = false;
+		}
+		try {
+			project = await getProject(fullStory.project);
+		} catch (err) {
+			// Without it the estimate stays read-only rather than the modal breaking.
+			console.error('Failed to load project:', err);
 		}
 		try {
 			comments = await getStoryComments(story.id);
@@ -209,6 +218,11 @@
 
 	$: isEditing = (field: string) => editingField === field || editingField === 'all';
 
+	// The estimate reads off the story's own per-role points, not total_points, so it
+	// updates the moment someone picks — no waiting on the server to recompute a total.
+	$: currentPointId = project ? storyPointId(fullStory, project) : null;
+	$: currentPointName = project?.points.find((p) => p.id === currentPointId)?.name ?? null;
+
 	function saveSubject() {
 		if (!editSubject.trim()) return;
 		if (editSubject.trim() === fullStory.subject) { if (!editingAll) editingField = null; return; }
@@ -236,6 +250,17 @@
 	function saveDueDate() {
 		if (editDueDate === (fullStory.due_date || '')) { if (!editingAll) editingField = null; return; }
 		saveField('due_date', { due_date: editDueDate || null });
+	}
+
+	function savePoints(e: Event) {
+		const raw = (e.target as HTMLSelectElement).value;
+		const pointId = raw === '' ? null : Number(raw);
+		const patch = project ? pointsPatch(pointId, project) : null;
+		if (!patch) {
+			editingField = null;
+			return;
+		}
+		saveField('points', { points: patch });
 	}
 
 	function saveTags() {
@@ -525,7 +550,32 @@
 					</div>
 				{/if}
 
-				{#if fullStory.total_points !== null}
+				<!-- Points -->
+				{#if isEditing('points') && project}
+					<select
+						value={currentPointId ?? ''}
+						on:change={savePoints}
+						on:blur={() => editingField = null}
+						class="px-2 py-1 text-sm border border-zinc-300 rounded bg-zinc-50 text-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						autofocus
+					>
+						<option value="">No estimate</option>
+						{#each pointChoices(project) as point}
+							{#if point.value !== null}
+								<option value={point.id}>{point.name} points</option>
+							{/if}
+						{/each}
+					</select>
+				{:else if project}
+					<button on:click={() => startEdit('points')} class="flex items-center gap-2 text-zinc-500 hover:bg-zinc-50 rounded px-2 py-1 -mx-2 transition-colors cursor-pointer" title="Click to estimate">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+						{#if currentPointName}
+							<span class="text-blue-600 font-medium">{currentPointName} points</span>
+						{:else}
+							<span class="text-zinc-400">No estimate</span>
+						{/if}
+					</button>
+				{:else if fullStory.total_points !== null}
 					<div class="flex items-center gap-2 text-zinc-500 px-2 py-1">
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
 						<span class="text-blue-600 font-medium">{fullStory.total_points} points</span>

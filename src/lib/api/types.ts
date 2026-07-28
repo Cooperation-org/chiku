@@ -31,6 +31,7 @@ export interface Project {
 	us_statuses: UserStoryStatus[];
 	task_statuses: TaskStatus[];
 	points: Point[];
+	roles: Role[];
 	tags: string[];
 	tags_colors: Record<string, string>;
 }
@@ -63,6 +64,15 @@ export interface Point {
 	project: number;
 }
 
+export interface Role {
+	id: number;
+	name: string;
+	/** Whether estimates given to this role count towards a story's total. */
+	computable: boolean;
+	order: number;
+	project: number;
+}
+
 export interface UserStory {
 	id: number;
 	ref: number;
@@ -89,6 +99,8 @@ export interface UserStory {
 	milestone_name: string | null;
 	milestone_slug: string | null;
 	is_closed: boolean;
+	/** Taiga estimates per role: role id (as a string) -> point option id. */
+	points: Record<string, number>;
 	total_points: number | null;
 	kanban_order: number;
 	backlog_order: number;

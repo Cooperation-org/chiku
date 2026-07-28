@@ -33,6 +33,7 @@ function createMockProject(overrides: Partial<Project> = {}): Project {
 		us_statuses: [],
 		task_statuses: [],
 		points: [],
+		roles: [],
 		tags: [],
 		tags_colors: {},
 		...overrides
