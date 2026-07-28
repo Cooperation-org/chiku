@@ -98,6 +98,31 @@ export interface UserStory {
 	epics: EpicRef[] | null;
 }
 
+/** Taiga attachment (userstories/tasks/issues share this shape). */
+export interface Attachment {
+	id: number;
+	project: number;
+	/** User id of whoever uploaded it — resolve against project members for a name. */
+	owner: number;
+	name: string;
+	/** Storage-relative path. Use `url` to fetch; it carries the access token. */
+	attached_file: string;
+	size: number;
+	/** Signed, absolute media URL — usable directly as href/src without an auth header. */
+	url: string;
+	preview_url: string | null;
+	thumbnail_card_url: string | null;
+	description: string;
+	is_deprecated: boolean;
+	from_comment: boolean;
+	created_date: string;
+	modified_date: string;
+	/** Id of the story/task/issue this is attached to. */
+	object_id: number;
+	order: number;
+	sha1: string;
+}
+
 export interface EpicRef {
 	id: number;
 	ref: number;

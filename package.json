@@ -39,6 +39,8 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.1.18"
+    "@tailwindcss/postcss": "^4.1.18",
+    "dompurify": "^3.4.12",
+    "marked": "^18.0.7"
   }
 }

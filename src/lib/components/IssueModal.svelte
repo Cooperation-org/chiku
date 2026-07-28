@@ -4,7 +4,17 @@
 	import { updateUserStory, getUserStory, moveUserStory, getUserStoryStatuses } from '$lib/api/userstories';
 	import { getStoryComments } from '$lib/api/comments';
 	import { getProjects, isArchived } from '$lib/api/projects';
-	import type { HistoryEntry, Project } from '$lib/api/types';
+	import type { Attachment, HistoryEntry, Project } from '$lib/api/types';
+	import {
+		getStoryAttachments,
+		uploadStoryAttachment,
+		deleteStoryAttachment,
+		isMarkdown,
+		isPreviewableText,
+		isImage,
+		formatFileSize
+	} from '$lib/api/attachments';
+	import { renderMarkdown } from '$lib/markdown';
 	import { api } from '$lib/api';
 
 	export let story: UserStory;
@@ -37,6 +47,7 @@
 		} finally {
 			isLoadingComments = false;
 		}
+		loadAttachments();
 	});
 
 	// --- Inline editing state ---
@@ -57,6 +68,99 @@
 	let isLoadingComments = true;
 	let newComment = '';
 	let isPostingComment = false;
+
+	// --- Attachments ---
+	let attachments: Attachment[] = [];
+	let isLoadingAttachments = true;
+	let attachmentError = '';
+	let uploadingNames: string[] = [];
+	let isDragOver = false;
+	let fileInput: HTMLInputElement;
+	let openAttachmentId: number | null = null;
+	/** Cached inline text per attachment id; `null` while loading, Error string on failure. */
+	let previewText: Record<number, string> = {};
+	let previewError: Record<number, string> = {};
+
+	async function loadAttachments() {
+		isLoadingAttachments = true;
+		try {
+			attachments = await getStoryAttachments(story.id, fullStory.project);
+			attachmentError = '';
+		} catch (err) {
+			console.error('Failed to load attachments:', err);
+			attachmentError = (err as Error).message;
+		} finally {
+			isLoadingAttachments = false;
+		}
+	}
+
+	async function uploadFiles(files: FileList | File[]) {
+		const list = Array.from(files);
+		if (list.length === 0) return;
+		uploadingNames = [...uploadingNames, ...list.map((f) => f.name)];
+		for (const file of list) {
+			try {
+				const created = await uploadStoryAttachment(story.id, fullStory.project, file);
+				attachments = [...attachments, created];
+				attachmentError = '';
+			} catch (err) {
+				console.error('Failed to upload attachment:', err);
+				attachmentError = `${file.name}: ${(err as Error).message}`;
+			} finally {
+				uploadingNames = uploadingNames.filter((n) => n !== file.name);
+			}
+		}
+	}
+
+	function handleFilePick(e: Event) {
+		const input = e.target as HTMLInputElement;
+		if (input.files) uploadFiles(input.files);
+		input.value = '';
+	}
+
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		isDragOver = false;
+		if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files);
+	}
+
+	async function removeAttachment(a: Attachment) {
+		const prev = attachments;
+		attachments = attachments.filter((x) => x.id !== a.id);
+		if (openAttachmentId === a.id) openAttachmentId = null;
+		try {
+			await deleteStoryAttachment(a.id);
+		} catch (err) {
+			console.error('Failed to delete attachment:', err);
+			attachments = prev;
+			attachmentError = `${a.name}: ${(err as Error).message}`;
+		}
+	}
+
+	async function toggleAttachment(a: Attachment) {
+		if (openAttachmentId === a.id) {
+			openAttachmentId = null;
+			return;
+		}
+		openAttachmentId = a.id;
+		if (!isPreviewableText(a) || previewText[a.id] !== undefined) return;
+		try {
+			const blob = await api.getBlob(a.url);
+			previewText = { ...previewText, [a.id]: await blob.text() };
+		} catch (err) {
+			// Media lives on the Taiga host; if it does not allow this origin the
+			// browser blocks the read. The download link still works.
+			previewError = { ...previewError, [a.id]: (err as Error).message };
+		}
+	}
+
+	function uploaderName(a: Attachment): string {
+		if (a.owner === fullStory.owner) {
+			return fullStory.owner_extra_info?.full_name_display || '';
+		}
+		const member = projectMembers.find((m) => m.id === a.owner);
+		return member?.full_name_display || member?.full_name || member?.username || '';
+	}
 
 	// Save a single field
 	async function saveField(field: string, data: Record<string, unknown>) {
@@ -413,6 +517,14 @@
 					</button>
 				{/if}
 
+				<!-- Creator (read-only — Taiga does not allow reassigning it) -->
+				{#if fullStory.owner_extra_info}
+					<div class="flex items-center gap-2 text-zinc-500 px-2 py-1" title="Created by">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+						<span class="text-zinc-700">{fullStory.owner_extra_info.full_name_display || fullStory.owner_extra_info.username}</span>
+					</div>
+				{/if}
+
 				{#if fullStory.total_points !== null}
 					<div class="flex items-center gap-2 text-zinc-500 px-2 py-1">
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
@@ -509,6 +621,123 @@
 				{/if}
 			</div>
 
+			<!-- Attachments -->
+			<div
+				class="pt-4 border-t border-zinc-200"
+				role="region"
+				aria-label="Attachments"
+				on:dragover|preventDefault={() => (isDragOver = true)}
+				on:dragleave={() => (isDragOver = false)}
+				on:drop={handleDrop}
+			>
+				<div class="flex items-center justify-between mb-3">
+					<h3 class="text-sm font-medium text-zinc-500">
+						Attachments{attachments.length ? ` (${attachments.length})` : ''}
+					</h3>
+					<button
+						on:click={() => fileInput.click()}
+						class="text-sm text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+					>Add file</button>
+					<input
+						bind:this={fileInput}
+						type="file"
+						multiple
+						class="sr-only"
+						on:change={handleFilePick}
+					/>
+				</div>
+
+				{#if attachmentError}
+					<p class="text-sm text-red-600 mb-2">{attachmentError}</p>
+				{/if}
+
+				{#if isLoadingAttachments}
+					<p class="text-zinc-400 text-sm">Loading attachments...</p>
+				{:else}
+					<div
+						class="rounded-md border border-dashed transition-colors {isDragOver
+							? 'border-blue-400 bg-blue-50'
+							: 'border-zinc-200'}"
+					>
+						{#if attachments.length === 0 && uploadingNames.length === 0}
+							<button
+								on:click={() => fileInput.click()}
+								class="w-full px-3 py-6 text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
+							>Drop a file here, or click to choose one. Markdown, images, documents.</button>
+						{:else}
+							<ul class="divide-y divide-zinc-100">
+								{#each attachments as a (a.id)}
+									<li>
+										<div class="flex items-center gap-3 px-3 py-2">
+											<button
+												on:click={() => toggleAttachment(a)}
+												class="flex-1 min-w-0 text-left group"
+												title={isPreviewableText(a) || isImage(a) ? 'Click to preview' : 'File'}
+											>
+												<span class="text-sm text-zinc-800 group-hover:text-blue-700 truncate block">{a.name}</span>
+												<span class="text-xs text-zinc-400">
+													{formatFileSize(a.size)}{#if uploaderName(a)} · {uploaderName(a)}{/if} · {formatCommentDate(a.created_date)}
+												</span>
+											</button>
+											<a
+												href={a.url}
+												download={a.name}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded transition-colors shrink-0"
+												title="Download"
+											>
+												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+											</a>
+											<button
+												on:click={() => removeAttachment(a)}
+												class="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-zinc-100 rounded transition-colors shrink-0"
+												title="Remove"
+											>
+												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+											</button>
+										</div>
+										{#if openAttachmentId === a.id}
+											<div class="px-3 pb-3">
+												{#if isImage(a)}
+													<img src={a.url} alt={a.name} class="max-w-full rounded border border-zinc-200" />
+												{:else if previewError[a.id]}
+													<p class="text-sm text-zinc-500">
+														Cannot show this file inline.
+														<a href={a.url} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open it</a>.
+													</p>
+												{:else if previewText[a.id] === undefined}
+													{#if isPreviewableText(a)}
+														<p class="text-sm text-zinc-400">Loading preview...</p>
+													{:else}
+														<p class="text-sm text-zinc-500">
+															No inline preview for this file type.
+															<a href={a.url} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Open it</a>.
+														</p>
+													{/if}
+												{:else if isMarkdown(a)}
+													<div class="md-body text-sm text-zinc-800 bg-zinc-50 border border-zinc-200 rounded p-4 overflow-x-auto">
+														{@html renderMarkdown(previewText[a.id])}
+													</div>
+												{:else}
+													<pre class="text-xs text-zinc-700 bg-zinc-50 border border-zinc-200 rounded p-3 overflow-x-auto whitespace-pre-wrap">{previewText[a.id]}</pre>
+												{/if}
+											</div>
+										{/if}
+									</li>
+								{/each}
+								{#each uploadingNames as name}
+									<li class="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400">
+										<span class="flex-1 truncate">{name}</span>
+										<span class="text-xs">Uploading...</span>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
 			<!-- Comments -->
 			<div class="pt-4 border-t border-zinc-200">
 				<h3 class="text-sm font-medium text-zinc-500 mb-3">Comments</h3>
@@ -543,8 +772,11 @@
 			</div>
 
 			<div class="pt-4 border-t border-zinc-200 text-xs text-zinc-400">
-				<div class="flex gap-4">
-					<span>Created: {new Date(fullStory.created_date).toLocaleDateString()}</span>
+				<div class="flex flex-wrap gap-4">
+					<span>
+						Created{#if fullStory.owner_extra_info} by <span class="text-zinc-600 font-medium">{fullStory.owner_extra_info.full_name_display || fullStory.owner_extra_info.username}</span>{/if}
+						on {new Date(fullStory.created_date).toLocaleDateString()}
+					</span>
 					<span>Updated: {new Date(fullStory.modified_date).toLocaleDateString()}</span>
 				</div>
 			</div>

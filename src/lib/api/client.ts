@@ -100,8 +100,12 @@ class TaigaClient {
 			}
 		}
 
+		// FormData sets its own multipart Content-Type (with boundary) — never override it.
+		const isFormData =
+			typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
+
 		const headers: HeadersInit = {
-			'Content-Type': 'application/json',
+			...(isFormData ? {} : { 'Content-Type': 'application/json' }),
 			...(options.headers || {})
 		};
 
@@ -168,6 +172,20 @@ class TaigaClient {
 			method: 'POST',
 			body: data ? JSON.stringify(data) : undefined
 		});
+	}
+
+	/** Multipart POST (file uploads). Goes through the same auth/refresh/error path as post(). */
+	postForm<T>(endpoint: string, form: FormData) {
+		return this.request<T>(endpoint, { method: 'POST', body: form });
+	}
+
+	/** Fetch a URL as a blob with the auth header attached (Taiga media may be access-controlled). */
+	async getBlob(url: string): Promise<Blob> {
+		const headers: Record<string, string> = {};
+		if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+		const response = await fetch(url, { headers });
+		if (!response.ok) throw new Error(`[${response.status}] Could not fetch file`);
+		return response.blob();
 	}
 
 	patch<T>(endpoint: string, data: unknown) {

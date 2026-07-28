@@ -7,7 +7,11 @@ Repo: https://github.com/Cooperation-org/marten
 ## Features
 
 - Kanban board with drag-and-drop (PATCHes status/order with optimistic updates)
-- Story detail view with comments, deep-linkable via `?story=<ref>`
+- Story detail view with comments, deep-linkable via `?story=<ref>`; shows who created the story
+- Attachments on stories: drag-and-drop or click to upload, download, remove.
+  Markdown attachments render inline, other text files show as plain text,
+  images show inline. Files are stored by Taiga (`/userstories/attachments`),
+  so anything that posts there — including amebo — shows up in the UI.
 - Backlog list view
 - Epics with progress tracking
 - Velocity charts and sprint projections
