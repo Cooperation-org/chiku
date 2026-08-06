@@ -9,6 +9,7 @@
 	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject, reorderProjects } from '$lib/api/projects';
 	import { getStatuses, createStatus, deleteStatus } from '$lib/api/statuses';
 	import MembersModal from '$lib/components/MembersModal.svelte';
+	import CohortNav from '$lib/components/CohortNav.svelte';
 	import type { Project, UserStoryStatus } from '$lib/api/types';
 
 	let projects: Project[] = [];
@@ -447,7 +448,8 @@
 		<div class="text-zinc-500">Loading...</div>
 	</div>
 {:else if $auth.isAuthenticated}
-	<div class="min-h-screen bg-surface-0 flex">
+	<CohortNav org={$currentProject?.slug || urlSlug} />
+	<div class="min-h-[calc(100vh-32px)] bg-surface-0 flex">
 		<!-- Sidebar -->
 		<aside class="w-56 bg-surface-1 border-r border-border flex flex-col">
 			<!-- Logo -->
