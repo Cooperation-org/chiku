@@ -17,6 +17,7 @@
 	} from '$lib/api/attachments';
 	import { renderMarkdown } from '$lib/markdown';
 	import { api } from '$lib/api';
+	import { auth } from '$lib/stores/auth';
 
 	export let story: UserStory;
 	export let statuses: UserStoryStatus[] = [];
@@ -77,6 +78,9 @@
 	let isLoadingComments = true;
 	let newComment = '';
 	let isPostingComment = false;
+	// Shown next to the box, not in an alert: an alert blocks the page and takes
+	// the words with it when it is dismissed.
+	let commentError = '';
 
 	// --- Attachments ---
 	let attachments: Attachment[] = [];
@@ -273,21 +277,54 @@
 		saveField('tags', { tags: newTags });
 	}
 
+	/**
+	 * Your words are in the thread the moment the write is accepted.
+	 *
+	 * Taiga's history feed lags a beat behind the write, so re-reading it right
+	 * after posting came back without the new comment and the post read as
+	 * having failed. The comment is shown from what was posted, and the server's
+	 * copy replaces it as soon as the feed catches up — the refetch is only
+	 * allowed to replace it once the comment is actually in there.
+	 */
 	async function postComment() {
-		if (!newComment.trim() || isPostingComment) return;
+		const text = newComment.trim();
+		if (!text || isPostingComment) return;
 		isPostingComment = true;
+		commentError = '';
 		try {
 			const updated = await updateUserStory(fullStory.id, {
-				comment: newComment.trim(),
+				comment: text,
 				version: fullStory.version
 			} as any);
 			fullStory = updated;
 			dispatch('update', updated);
 			newComment = '';
-			comments = await getStoryComments(story.id);
+
+			const me = $auth.user;
+			const pending: HistoryEntry = {
+				id: `pending-${updated.version}`,
+				user: {
+					pk: me?.id ?? 0,
+					username: me?.username ?? '',
+					name: me?.full_name || me?.username || 'you',
+					photo: null,
+					is_active: true
+				},
+				created_at: new Date().toISOString(),
+				comment: text,
+				comment_html: '',
+				delete_comment_date: null,
+				delete_comment_user: null,
+				type: 1,
+				values_diff: {}
+			} as HistoryEntry;
+			comments = [...comments, pending];
+
+			const fresh = await getStoryComments(story.id);
+			if (fresh.some(c => c.comment.trim() === text)) comments = fresh;
 		} catch (err) {
 			console.error('Failed to post comment:', err);
-			alert('Failed to post comment: ' + (err as Error).message);
+			commentError = (err as Error).message;
 		} finally {
 			isPostingComment = false;
 		}
@@ -792,11 +829,14 @@
 			<div class="pt-4 border-t border-zinc-200">
 				<h3 class="text-sm font-medium text-zinc-500 mb-3">Comments</h3>
 				<div class="flex gap-2 mb-4">
-					<textarea bind:value={newComment} rows="2" placeholder="Add a comment..." class="flex-1 px-3 py-2 bg-zinc-50 border border-zinc-300 rounded-md text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm" on:keydown={(e) => { if (e.key === 'Enter' && e.metaKey) postComment(); }}></textarea>
+					<textarea bind:value={newComment} rows="6" placeholder="Add a comment..." class="flex-1 px-3 py-2 bg-zinc-50 border border-zinc-300 rounded-md text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y text-sm" on:keydown={(e) => { if (e.key === 'Enter' && e.metaKey) postComment(); }}></textarea>
 					<button on:click={postComment} disabled={!newComment.trim() || isPostingComment} class="px-3 py-2 text-sm bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end">
 						{isPostingComment ? '...' : 'Post'}
 					</button>
 				</div>
+				{#if commentError}
+					<p class="mb-4 text-sm text-red-700">{commentError} — nothing you typed was lost.</p>
+				{/if}
 				{#if isLoadingComments}
 					<p class="text-zinc-400 text-sm">Loading comments...</p>
 				{:else if comments.length === 0}
