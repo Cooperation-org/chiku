@@ -1,4 +1,4 @@
-# Marten - Modern Taiga Frontend
+# Ash - Modern Taiga Frontend
 
 A fast, Linear-inspired frontend for Taiga built with SvelteKit. Drop-in replacement for the default Taiga frontend.
 
