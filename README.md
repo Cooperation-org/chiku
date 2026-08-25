@@ -2,7 +2,7 @@
 
 A fast, Linear-inspired frontend for Taiga built with SvelteKit. Drop-in replacement for the default Taiga frontend.
 
-Repo: https://github.com/Cooperation-org/marten
+Repo: https://github.com/Cooperation-org/ash
 
 ## Features
 
