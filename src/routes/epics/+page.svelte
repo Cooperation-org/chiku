@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { currentProject } from '$lib/stores/project';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import { getEpics, updateEpic } from '$lib/api/epics';
 	import { api } from '$lib/api';
 	import CreateEpicModal from '$lib/components/CreateEpicModal.svelte';
@@ -47,10 +48,6 @@
 	function handleEpicDelete(e: CustomEvent<number>) {
 		epics = epics.filter(ep => ep.id !== e.detail);
 		selectedEpic = null;
-	}
-
-	function getInitials(name: string): string {
-		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 	}
 
 	function getProgress(epic: Epic): number {
@@ -167,13 +164,12 @@
 									</span>
 								</div>
 								{#if epic.assigned_to_extra_info}
-									<div
-										class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
-										style="background-color: {epic.assigned_to_extra_info.color}"
-										title={epic.assigned_to_extra_info.full_name}
-									>
-										{getInitials(epic.assigned_to_extra_info.full_name)}
-									</div>
+									<Avatar
+										name={epic.assigned_to_extra_info.full_name_display || epic.assigned_to_extra_info.full_name}
+										photo={epic.assigned_to_extra_info.photo}
+										size="sm"
+										class="bg-lt-teal/20 text-lt-teal"
+									/>
 								{/if}
 							</div>
 						</div>

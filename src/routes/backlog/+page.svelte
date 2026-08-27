@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import { goto } from '$app/navigation';
 	import { currentProject } from '$lib/stores/project';
 	import { getUserStories, getUserStoryStatuses } from '$lib/api/userstories';
@@ -80,10 +81,6 @@
 	$: openStories = stories.filter(s => !s.is_closed);
 	$: totalPoints = stories.reduce((sum, s) => sum + (s.total_points || 0), 0);
 	$: openPoints = openStories.reduce((sum, s) => sum + (s.total_points || 0), 0);
-
-	function getInitials(name: string): string {
-		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-	}
 
 	function formatRelativeDate(dateStr: string): string {
 		const date = new Date(dateStr);
@@ -196,13 +193,13 @@
 							<td class="px-6 py-3">
 								{#if story.assigned_to_extra_info}
 									<div class="flex items-center gap-2">
-										<div
-											class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
-											style="background-color: {story.assigned_to_extra_info.color}"
-										>
-											{getInitials(story.assigned_to_extra_info.full_name)}
-										</div>
-										<span class="text-sm text-zinc-400">{story.assigned_to_extra_info.full_name.split(' ')[0]}</span>
+										<Avatar
+											name={story.assigned_to_extra_info.full_name_display}
+											photo={story.assigned_to_extra_info.photo}
+											size="sm"
+											class="bg-lt-teal/20 text-lt-teal"
+										/>
+										<span class="text-sm text-zinc-400">{story.assigned_to_extra_info.full_name_display.split(' ')[0]}</span>
 									</div>
 								{:else}
 									<span class="text-zinc-600 text-sm">Unassigned</span>

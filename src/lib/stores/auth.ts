@@ -145,6 +145,18 @@ function createAuthStore() {
 			}
 		},
 
+		/** Keep the stored user in step after the person edits their own profile. */
+		setProfile(profile: Partial<AuthResponse>) {
+			update(s => {
+				if (!s.user) return s;
+				const user = { ...s.user, ...profile };
+				if (typeof window !== 'undefined') {
+					localStorage.setItem('taiga_user', JSON.stringify(user));
+				}
+				return { ...s, user };
+			});
+		},
+
 		handleAuthSuccess(accessToken: string, refreshToken?: string, userData?: Partial<AuthResponse>) {
 			api.setToken(accessToken);
 			if (refreshToken) {

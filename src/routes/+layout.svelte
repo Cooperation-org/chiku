@@ -9,6 +9,8 @@
 	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject, reorderProjects } from '$lib/api/projects';
 	import { getStatuses, createStatus, deleteStatus } from '$lib/api/statuses';
 	import MembersModal from '$lib/components/MembersModal.svelte';
+	import ProfileModal from '$lib/components/ProfileModal.svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import CohortNav from '$lib/components/CohortNav.svelte';
 	import type { Project, UserStoryStatus } from '$lib/api/types';
 
@@ -36,6 +38,7 @@
 
 	// Members modal state
 	let showMembersModal = false;
+	let showProfileModal = false;
 	let deletingProject: Project | null = null;
 	let isDeleting = false;
 
@@ -102,11 +105,6 @@
 	function handleLogout() {
 		auth.logout();
 		goto('/login');
-	}
-
-	function getInitials(name: string | undefined | null): string {
-		if (!name) return '?';
-		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 	}
 
 	function handleContextMenu(event: MouseEvent, project: Project) {
@@ -580,12 +578,19 @@
 			<!-- User & Logout -->
 			<div class="p-3 border-t border-border">
 				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<div class="w-8 h-8 rounded-full bg-lt-cyan flex items-center justify-center text-xs font-medium text-zinc-900">
-							{$auth.user ? getInitials($auth.user.full_name || $auth.user.username) : '?'}
-						</div>
+					<button
+						class="flex items-center gap-2 min-w-0 text-left rounded-md px-1 py-1 -mx-1 hover:bg-surface-3 transition-colors"
+						on:click={() => showProfileModal = true}
+						title="Edit your name and icon"
+					>
+						<Avatar
+							name={$auth.user?.full_name || $auth.user?.username}
+							photo={$auth.user?.photo}
+							color={$auth.user?.color || '#22d3ee'}
+							class="text-zinc-900"
+						/>
 						<span class="text-sm text-zinc-400 truncate">{$auth.user?.username}</span>
-					</div>
+					</button>
 					<button
 						on:click={handleLogout}
 						class="p-1.5 text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -800,6 +805,18 @@
 		{/if}
 
 		<!-- Members Modal -->
+		{#if showProfileModal}
+			<ProfileModal
+				on:close={() => showProfileModal = false}
+				on:updated={(e) => auth.setProfile({
+					full_name: e.detail.full_name,
+					full_name_display: e.detail.full_name_display,
+					photo: e.detail.photo,
+					color: e.detail.color
+				})}
+			/>
+		{/if}
+
 		{#if showMembersModal && $currentProject}
 			<MembersModal
 				projectId={$currentProject.id}

@@ -1,11 +1,8 @@
 <script lang="ts">
 	import type { UserStory } from '$lib/api/types';
+	import Avatar from '../Avatar.svelte';
 
 	export let story: UserStory;
-
-	function getInitials(name: string): string {
-		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-	}
 
 	function formatDueDate(dateStr: string | null): { text: string; color: string } | null {
 		if (!dateStr) return null;
@@ -78,12 +75,12 @@
 
 		<!-- Assignee -->
 		{#if story.assigned_to_extra_info}
-			<div
-				class="w-6 h-6 rounded-full bg-lt-teal/20 text-lt-teal text-xs flex items-center justify-center"
-				title={story.assigned_to_extra_info.full_name_display}
-			>
-				{getInitials(story.assigned_to_extra_info.full_name_display)}
-			</div>
+			<Avatar
+				name={story.assigned_to_extra_info.full_name_display}
+				photo={story.assigned_to_extra_info.photo}
+				size="sm"
+				class="bg-lt-teal/20 text-lt-teal"
+			/>
 		{:else}
 			<div class="w-6 h-6 rounded-full bg-surface-3 text-zinc-600 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
 				+

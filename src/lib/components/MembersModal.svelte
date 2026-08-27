@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { getProjectMemberships, getProjectRoles, getAllUsers, searchUsers, addMembership, removeMembership } from '$lib/api/memberships';
 	import type { Membership, Role } from '$lib/api/memberships';
+	import Avatar from './Avatar.svelte';
 
 	export let projectId: number;
 	export let projectName: string = '';
@@ -124,11 +125,6 @@
 			dispatch('close');
 		}
 	}
-
-	function getInitials(name: string | null | undefined): string {
-		if (!name) return '?';
-		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-	}
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -168,12 +164,12 @@
 					<div class="space-y-2">
 						{#each memberships as member (member.id)}
 							<div class="flex items-center gap-3 p-2 rounded-md hover:bg-surface-2 group">
-								<div
-									class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white"
-									style="background-color: {member.color || '#666'}"
-								>
-									{getInitials(member.full_name)}
-								</div>
+								<Avatar
+									name={member.full_name}
+									photo={member.photo}
+									color={member.color || '#666'}
+									class="text-white"
+								/>
 								<div class="flex-1 min-w-0">
 									<div class="text-zinc-100 text-sm truncate">{member.full_name}</div>
 									<div class="text-zinc-500 text-xs">{member.role_name}</div>
@@ -202,9 +198,11 @@
 				{#if selectedUser}
 					<div class="flex items-center gap-2">
 						<div class="flex-1 flex items-center gap-2 px-3 py-2 bg-surface-2 border border-border rounded-md">
-							<div class="w-6 h-6 rounded-full bg-lt-teal/20 text-lt-teal text-xs flex items-center justify-center">
-								{getInitials(selectedUser.full_name || selectedUser.username)}
-							</div>
+							<Avatar
+								name={selectedUser.full_name || selectedUser.username}
+								size="sm"
+								class="bg-lt-teal/20 text-lt-teal"
+							/>
 							<span class="text-zinc-100">{selectedUser.full_name || selectedUser.username}</span>
 							<button on:click={() => selectedUser = null} class="ml-auto text-zinc-500 hover:text-zinc-300">
 								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,9 +242,11 @@
 									on:click={() => selectUser(user)}
 									class="w-full text-left px-3 py-2 hover:bg-surface-3 transition-colors flex items-center gap-2 border-b border-border last:border-b-0"
 								>
-									<div class="w-6 h-6 rounded-full bg-lt-teal/20 text-lt-teal text-xs flex items-center justify-center">
-										{getInitials(user.full_name || user.username)}
-									</div>
+										<Avatar
+											name={user.full_name || user.username}
+											size="sm"
+											class="bg-lt-teal/20 text-lt-teal"
+										/>
 									<div class="flex-1 min-w-0">
 										<div class="text-zinc-100 text-sm truncate">{user.full_name || user.username}</div>
 										<div class="text-zinc-500 text-xs">@{user.username}</div>

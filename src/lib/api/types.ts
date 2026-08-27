@@ -233,7 +233,10 @@ export interface AuthResponse {
 	id: number;
 	username: string;
 	full_name: string;
+	full_name_display?: string;
 	email: string;
+	photo?: string | null;
+	color?: string;
 	auth_token: string;
 	refresh: string;
 }

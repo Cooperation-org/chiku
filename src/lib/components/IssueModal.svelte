@@ -423,10 +423,6 @@
 		return date.toLocaleDateString();
 	}
 
-	function getInitials(name: string): string {
-		return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-	}
-
 	function getStatusName(statusId: number): string {
 		return statuses.find(s => s.id === statusId)?.name || 'Unknown';
 	}
