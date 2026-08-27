@@ -53,7 +53,7 @@ publish). No manual steps.
 ### Any Taiga server
 
 ```bash
-git clone git@github.com:Cooperation-org/marten.git
+git clone git@github.com:Cooperation-org/chiku.git
 cd marten
 npm install
 # Point the build at your Taiga API if it is not proxied at /api/v1:
