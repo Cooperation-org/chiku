@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import type { UserStory, UserStoryStatus } from '$lib/api/types';
 	import Column from './Column.svelte';
-	import { api } from '$lib/api';
+	import { setUserStoryStatus } from '$lib/api/userstories';
 
 	export let statuses: UserStoryStatus[] = [];
 	export let stories: UserStory[] = [];
@@ -49,10 +49,7 @@
 
 		// Send to API
 		try {
-			const updated = await api.patch<UserStory>(`/userstories/${storyId}`, {
-				status: newStatusId,
-				version: previousVersion
-			});
+			const updated = await setUserStoryStatus(storyId, newStatusId, previousVersion);
 			// Update version from response so subsequent drags work
 			const idx = stories.findIndex(s => s.id === storyId);
 			if (idx !== -1) {

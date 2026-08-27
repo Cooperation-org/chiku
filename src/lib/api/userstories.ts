@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, ApiError } from './client';
 import type { UserStory, UserStoryStatus } from './types';
 
 export async function getUserStories(projectId: number, limit: number = 100): Promise<UserStory[]> {
@@ -55,6 +55,43 @@ export async function getAllUserStoriesPaged(
 		if (batch.length < PAGE_SIZE) return { stories, complete: true };
 	}
 	return { stories, complete: false };
+}
+
+/**
+ * Taiga guards every story write with an optimistic-concurrency check: the
+ * `version` sent must be the story's current one, or an older one that did not
+ * touch the same fields. It answers a mismatch with
+ * `400 {"version": "The version parameter is not valid"}` (or
+ * `"The version doesn't match with the current one"`).
+ */
+function isVersionConflict(error: unknown): boolean {
+	return error instanceof ApiError && error.status === 400 && 'version' in error.body;
+}
+
+/**
+ * Set a story's status, surviving a version we no longer hold.
+ *
+ * The board caches each story's version from page load, so anything that has
+ * touched the story since — another drag, the detail view, a teammate, amebo —
+ * makes that number stale and Taiga rejects the move. Dropping a card is an
+ * explicit "put it in this column", so re-read the current version and send the
+ * move once more rather than failing in the user's face.
+ */
+export async function setUserStoryStatus(
+	storyId: number,
+	statusId: number,
+	version: number
+): Promise<UserStory> {
+	try {
+		return await api.patch<UserStory>(`/userstories/${storyId}`, { status: statusId, version });
+	} catch (error) {
+		if (!isVersionConflict(error)) throw error;
+		const current = await getUserStory(storyId);
+		return api.patch<UserStory>(`/userstories/${storyId}`, {
+			status: statusId,
+			version: current.version
+		});
+	}
 }
 
 export async function moveUserStory(storyId: number, targetProjectId: number, targetStatus: number, version: number): Promise<UserStory> {

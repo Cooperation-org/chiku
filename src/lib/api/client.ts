@@ -3,6 +3,23 @@
 // Use env variable in production, proxy in dev
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
+/**
+ * A non-2xx response, carrying the parsed body so callers can react to a
+ * specific error (e.g. Taiga's optimistic-concurrency `version` rejection)
+ * without matching on the message text.
+ */
+export class ApiError extends Error {
+	readonly status: number;
+	readonly body: Record<string, unknown>;
+
+	constructor(status: number, message: string, body: Record<string, unknown>) {
+		super(`[${status}] ${message}`);
+		this.name = 'ApiError';
+		this.status = status;
+		this.body = body;
+	}
+}
+
 interface RequestOptions extends RequestInit {
 	params?: Record<string, string | number | boolean | undefined>;
 	_isRetry?: boolean;
@@ -140,14 +157,17 @@ class TaigaClient {
 			} else if (error.error) {
 				message = error.error;
 			} else {
-				// Format field-level validation errors (e.g. {"description": ["This field is required."]})
+				// Field-level validation errors. Taiga sends the message either as a list
+				// ({"description": ["This field is required."]}) or as a bare string
+				// ({"version": "The version parameter is not valid"}) — read both, or the
+				// user is shown raw JSON.
 				const fieldErrors = Object.entries(error)
-					.filter(([, v]) => Array.isArray(v))
-					.map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+					.filter(([, v]) => Array.isArray(v) || typeof v === 'string')
+					.map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
 					.join('; ');
 				message = fieldErrors || JSON.stringify(error) || `HTTP ${response.status}`;
 			}
-			throw new Error(`[${response.status}] ${message}`);
+			throw new ApiError(response.status, message, error);
 		}
 
 		if (response.status === 204) {

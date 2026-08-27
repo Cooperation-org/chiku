@@ -238,7 +238,7 @@
 					<div class="text-zinc-500">Select a project to view the board</div>
 				</div>
 			{:else}
-				<Board {statuses} {stories} projectId={$currentProject.id} on:select={handleStorySelect} on:addToColumn={handleAddToColumn} />
+				<Board {statuses} bind:stories projectId={$currentProject.id} on:select={handleStorySelect} on:addToColumn={handleAddToColumn} />
 			{/if}
 		</div>
 	</div>
