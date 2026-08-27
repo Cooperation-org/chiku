@@ -34,6 +34,11 @@ export interface Project {
 	roles: Role[];
 	tags: string[];
 	tags_colors: Record<string, string>;
+	/** Taiga gates member changes on project admin; it tells us here. */
+	i_am_admin?: boolean;
+	i_am_owner?: boolean;
+	i_am_member?: boolean;
+	my_permissions?: string[];
 }
 
 export interface UserStoryStatus {

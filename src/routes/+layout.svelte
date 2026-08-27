@@ -821,6 +821,7 @@
 			<MembersModal
 				projectId={$currentProject.id}
 				projectName={$currentProject.name}
+				canManage={$currentProject.i_am_admin === true}
 				on:close={() => showMembersModal = false}
 			/>
 		{/if}

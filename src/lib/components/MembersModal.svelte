@@ -7,6 +7,9 @@
 	export let projectId: number;
 	export let projectName: string = '';
 
+	/** Taiga only lets a project admin add or remove members. */
+	export let canManage: boolean = false;
+
 	const dispatch = createEventDispatcher<{ close: void }>();
 
 	let memberships: Membership[] = [];
@@ -174,7 +177,7 @@
 									<div class="text-zinc-100 text-sm truncate">{member.full_name}</div>
 									<div class="text-zinc-500 text-xs">{member.role_name}</div>
 								</div>
-								{#if !member.is_owner}
+								{#if canManage && !member.is_owner}
 									<button
 										on:click={() => handleRemoveMember(member)}
 										class="p-1.5 text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
@@ -191,77 +194,83 @@
 				{/if}
 			</div>
 
-			<!-- Add New Member -->
-			<div class="p-4 space-y-3">
-				<div class="text-sm font-medium text-zinc-400">Add New Member</div>
+			{#if canManage}
+				<!-- Add New Member -->
+				<div class="p-4 space-y-3">
+					<div class="text-sm font-medium text-zinc-400">Add New Member</div>
 
-				{#if selectedUser}
-					<div class="flex items-center gap-2">
-						<div class="flex-1 flex items-center gap-2 px-3 py-2 bg-surface-2 border border-border rounded-md">
-							<Avatar
-								name={selectedUser.full_name || selectedUser.username}
-								size="sm"
-								class="bg-lt-teal/20 text-lt-teal"
-							/>
-							<span class="text-zinc-100">{selectedUser.full_name || selectedUser.username}</span>
-							<button on:click={() => selectedUser = null} class="ml-auto text-zinc-500 hover:text-zinc-300">
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-								</svg>
+					{#if selectedUser}
+						<div class="flex items-center gap-2">
+							<div class="flex-1 flex items-center gap-2 px-3 py-2 bg-surface-2 border border-border rounded-md">
+								<Avatar
+									name={selectedUser.full_name || selectedUser.username}
+									size="sm"
+									class="bg-lt-teal/20 text-lt-teal"
+								/>
+								<span class="text-zinc-100">{selectedUser.full_name || selectedUser.username}</span>
+								<button on:click={() => selectedUser = null} class="ml-auto text-zinc-500 hover:text-zinc-300">
+									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+									</svg>
+								</button>
+							</div>
+							<select
+								bind:value={selectedRole}
+								class="px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 text-sm"
+							>
+								{#each roles as role}
+									<option value={role.id}>{role.name}</option>
+								{/each}
+							</select>
+							<button
+								on:click={handleAddMember}
+								disabled={isAdding}
+								class="px-3 py-2 bg-lt-cyan text-zinc-900 font-medium rounded-md text-sm hover:bg-lt-cyan/90 disabled:opacity-50"
+							>
+								{isAdding ? '...' : 'Add'}
 							</button>
 						</div>
-						<select
-							bind:value={selectedRole}
-							class="px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 text-sm"
-						>
-							{#each roles as role}
-								<option value={role.id}>{role.name}</option>
-							{/each}
-						</select>
-						<button
-							on:click={handleAddMember}
-							disabled={isAdding}
-							class="px-3 py-2 bg-lt-cyan text-zinc-900 font-medium rounded-md text-sm hover:bg-lt-cyan/90 disabled:opacity-50"
-						>
-							{isAdding ? '...' : 'Add'}
-						</button>
-					</div>
-				{:else}
-					<input
-						type="text"
-						bind:value={searchQuery}
-						placeholder="Type 2+ chars to search by name or username..."
-						class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-lt-cyan"
-					/>
-					{#if isLoadingUsers}
-						<p class="text-zinc-500 text-sm mt-2">Loading users...</p>
-					{:else if filteredUsers.length > 0}
-						<div class="mt-2 max-h-48 overflow-y-auto border border-border rounded-md">
-							{#each filteredUsers as user}
-								<button
-									on:click={() => selectUser(user)}
-									class="w-full text-left px-3 py-2 hover:bg-surface-3 transition-colors flex items-center gap-2 border-b border-border last:border-b-0"
-								>
-										<Avatar
-											name={user.full_name || user.username}
-											size="sm"
-											class="bg-lt-teal/20 text-lt-teal"
-										/>
-									<div class="flex-1 min-w-0">
-										<div class="text-zinc-100 text-sm truncate">{user.full_name || user.username}</div>
-										<div class="text-zinc-500 text-xs">@{user.username}</div>
-									</div>
-									<span class="text-xs text-zinc-500">Click to add</span>
-								</button>
-							{/each}
-						</div>
-					{:else if searchQuery.length >= 2 && usersLoaded}
-						<p class="text-zinc-500 text-sm mt-2">No users found matching "{searchQuery}"</p>
-					{:else if searchQuery.length > 0 && searchQuery.length < 2}
-						<p class="text-zinc-600 text-sm mt-2">Type at least 2 characters to search</p>
+					{:else}
+						<input
+							type="text"
+							bind:value={searchQuery}
+							placeholder="Type 2+ chars to search by name or username..."
+							class="w-full px-3 py-2 bg-surface-2 border border-border rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-lt-cyan"
+						/>
+						{#if isLoadingUsers}
+							<p class="text-zinc-500 text-sm mt-2">Loading users...</p>
+						{:else if filteredUsers.length > 0}
+							<div class="mt-2 max-h-48 overflow-y-auto border border-border rounded-md">
+								{#each filteredUsers as user}
+									<button
+										on:click={() => selectUser(user)}
+										class="w-full text-left px-3 py-2 hover:bg-surface-3 transition-colors flex items-center gap-2 border-b border-border last:border-b-0"
+									>
+											<Avatar
+												name={user.full_name || user.username}
+												size="sm"
+												class="bg-lt-teal/20 text-lt-teal"
+											/>
+										<div class="flex-1 min-w-0">
+											<div class="text-zinc-100 text-sm truncate">{user.full_name || user.username}</div>
+											<div class="text-zinc-500 text-xs">@{user.username}</div>
+										</div>
+										<span class="text-xs text-zinc-500">Click to add</span>
+									</button>
+								{/each}
+							</div>
+						{:else if searchQuery.length >= 2 && usersLoaded}
+							<p class="text-zinc-500 text-sm mt-2">No users found matching "{searchQuery}"</p>
+						{:else if searchQuery.length > 0 && searchQuery.length < 2}
+							<p class="text-zinc-600 text-sm mt-2">Type at least 2 characters to search</p>
+						{/if}
 					{/if}
-				{/if}
-			</div>
+				</div>
+			{:else}
+				<p class="p-4 text-sm text-zinc-500">
+					Only an admin of {projectName || 'this project'} can add or remove its members.
+				</p>
+			{/if}
 		</div>
 	</div>
 </div>
