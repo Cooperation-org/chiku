@@ -4,6 +4,30 @@ A fast, Linear-inspired frontend for Taiga built with SvelteKit. Drop-in replace
 
 Repo: https://github.com/Cooperation-org/chiku
 
+**Chiku was called Marten.** The repo is `chiku`; the workers.vc deployment is still at
+`marten.workers.vc` and its update script is still `update-marten`. Both names refer to
+this app.
+
+## Its place in the workers.vc composition
+
+Chiku is an **expand target**, not an embedded component. It ships no web-component
+bundle. The dashboard's task card is GovKit's `<govkit-tasks>` (GovKit reads the team's
+Taiga through its own adapter); a row in that card opens the story here:
+
+```
+<tasks-app>/p/<project-slug>/board?story=<ref>
+```
+
+That URL shape is the contract — the dashboard passes its own base for `<tasks-app>` as
+`data-tasks-app`, and `?story=` deep links survive the SSO round trip. Changing the shape
+breaks every dashboard that links here.
+
+Chiku can also mount the cohort's cross-app bar so a person who arrived from a dashboard
+can get back out: set `VITE_COHORT_NAV_SRC` (build-time). Unset, Chiku is standalone.
+
+**`govkit/docs/COMPOSITION.md`** is the master document for the whole composition — the
+diagram, the component catalog, the contracts, and how to run the set locally.
+
 ## Features
 
 - Kanban board with drag-and-drop (PATCHes status/order with optimistic updates)
@@ -54,7 +78,7 @@ publish). No manual steps.
 
 ```bash
 git clone git@github.com:Cooperation-org/chiku.git
-cd marten
+cd chiku
 npm install
 # Point the build at your Taiga API if it is not proxied at /api/v1:
 # echo 'VITE_API_URL=https://taiga.example.com/api/v1' > .env
