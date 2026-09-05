@@ -18,7 +18,6 @@ import { Avatar } from "@/components/app/avatar"
 import { SidebarItem } from "@/components/sidebar/sidebar-item"
 import { SidebarSection } from "@/components/sidebar/sidebar-section"
 import { ProfileDialog } from "@/components/app/profile-dialog"
-import { MembersDialog } from "@/components/app/members-dialog"
 import { useAuth } from "@/lib/stores/auth"
 import { useTheme } from "@/lib/stores/theme"
 import { useSidebarStore } from "@/lib/stores/sidebar"
@@ -57,7 +56,6 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
   const setSelectedSlug = useProjectStore((s) => s.setSelectedSlug)
 
   const [showProfile, setShowProfile] = useState(false)
-  const [showMembers, setShowMembers] = useState(false)
 
   const urlSlug = (params as { slug?: string }).slug ?? null
   const selectedSlug = useProjectStore((s) => s.selectedSlug)
@@ -70,7 +68,7 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
     navigate({ to, params: slug ? { slug } : undefined })
   }
 
-  function projectView(view: "board" | "backlog" | "epics" | "velocity") {
+  function projectView(view: "board" | "backlog" | "epics" | "velocity" | "members") {
     const slug = urlSlug ?? selectedSlug
     if (!slug) return
     go(`/p/${slug}/${view}`, slug)
@@ -104,6 +102,13 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
               />
             ))}
             <SidebarItem collapsed icon={<ListTodo />} label="My Tasks" onClick={() => go("/tasks")} />
+            <SidebarItem
+              collapsed
+              icon={<Users />}
+              label="Members"
+              disabled={!(urlSlug ?? selectedSlug)}
+              onClick={() => projectView("members")}
+            />
           </>
         ) : (
           <>
@@ -124,8 +129,8 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
               <SidebarItem
                 icon={<Users />}
                 label="Members"
-                disabled={!project}
-                onClick={() => setShowMembers(true)}
+                disabled={!(urlSlug ?? selectedSlug)}
+                onClick={() => projectView("members")}
               />
             </SidebarSection>
           </>
@@ -208,7 +213,6 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
           })
         }
       />
-      {project && <MembersDialog open={showMembers} onOpenChange={setShowMembers} project={project} />}
     </div>
   )
 }

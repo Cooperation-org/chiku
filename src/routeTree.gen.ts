@@ -21,6 +21,7 @@ import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/cal
 import { Route as AppPSlugBacklogRouteImport } from './routes/_app/p/$slug/backlog'
 import { Route as AppPSlugBoardRouteImport } from './routes/_app/p/$slug/board'
 import { Route as AppPSlugEpicsRouteImport } from './routes/_app/p/$slug/epics'
+import { Route as AppPSlugMembersRouteImport } from './routes/_app/p/$slug/members'
 import { Route as AppPSlugVelocityRouteImport } from './routes/_app/p/$slug/velocity'
 
 const AppRouteRoute = AppRouteRouteImport.update({
@@ -82,6 +83,11 @@ const AppPSlugEpicsRoute = AppPSlugEpicsRouteImport.update({
   path: '/p/$slug/epics',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppPSlugMembersRoute = AppPSlugMembersRouteImport.update({
+  id: '/p/$slug/members',
+  path: '/p/$slug/members',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppPSlugVelocityRoute = AppPSlugVelocityRouteImport.update({
   id: '/p/$slug/velocity',
   path: '/p/$slug/velocity',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/p/$slug/backlog': typeof AppPSlugBacklogRoute
   '/p/$slug/board': typeof AppPSlugBoardRoute
   '/p/$slug/epics': typeof AppPSlugEpicsRoute
+  '/p/$slug/members': typeof AppPSlugMembersRoute
   '/p/$slug/velocity': typeof AppPSlugVelocityRoute
 }
 export interface FileRoutesByTo {
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/p/$slug/backlog': typeof AppPSlugBacklogRoute
   '/p/$slug/board': typeof AppPSlugBoardRoute
   '/p/$slug/epics': typeof AppPSlugEpicsRoute
+  '/p/$slug/members': typeof AppPSlugMembersRoute
   '/p/$slug/velocity': typeof AppPSlugVelocityRoute
 }
 export interface FileRoutesById {
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/_app/p/$slug/backlog': typeof AppPSlugBacklogRoute
   '/_app/p/$slug/board': typeof AppPSlugBoardRoute
   '/_app/p/$slug/epics': typeof AppPSlugEpicsRoute
+  '/_app/p/$slug/members': typeof AppPSlugMembersRoute
   '/_app/p/$slug/velocity': typeof AppPSlugVelocityRoute
 }
 export interface FileRouteTypes {
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/p/$slug/backlog'
     | '/p/$slug/board'
     | '/p/$slug/epics'
+    | '/p/$slug/members'
     | '/p/$slug/velocity'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/p/$slug/backlog'
     | '/p/$slug/board'
     | '/p/$slug/epics'
+    | '/p/$slug/members'
     | '/p/$slug/velocity'
   id:
     | '__root__'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/_app/p/$slug/backlog'
     | '/_app/p/$slug/board'
     | '/_app/p/$slug/epics'
+    | '/_app/p/$slug/members'
     | '/_app/p/$slug/velocity'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPSlugEpicsRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/p/$slug/members': {
+      id: '/_app/p/$slug/members'
+      path: '/p/$slug/members'
+      fullPath: '/p/$slug/members'
+      preLoaderRoute: typeof AppPSlugMembersRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/p/$slug/velocity': {
       id: '/_app/p/$slug/velocity'
       path: '/p/$slug/velocity'
@@ -290,6 +309,7 @@ interface AppRouteRouteChildren {
   AppPSlugBacklogRoute: typeof AppPSlugBacklogRoute
   AppPSlugBoardRoute: typeof AppPSlugBoardRoute
   AppPSlugEpicsRoute: typeof AppPSlugEpicsRoute
+  AppPSlugMembersRoute: typeof AppPSlugMembersRoute
   AppPSlugVelocityRoute: typeof AppPSlugVelocityRoute
 }
 
@@ -299,6 +319,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppPSlugBacklogRoute: AppPSlugBacklogRoute,
   AppPSlugBoardRoute: AppPSlugBoardRoute,
   AppPSlugEpicsRoute: AppPSlugEpicsRoute,
+  AppPSlugMembersRoute: AppPSlugMembersRoute,
   AppPSlugVelocityRoute: AppPSlugVelocityRoute,
 }
 
