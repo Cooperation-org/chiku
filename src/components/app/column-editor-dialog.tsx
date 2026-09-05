@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { DragDropProvider } from "@dnd-kit/react"
+import { DragDropProvider, KeyboardSensor, PointerSensor } from "@dnd-kit/react"
+import { PointerActivationConstraints } from "@dnd-kit/dom"
 import { useSortable } from "@dnd-kit/react/sortable"
 import { GripVertical, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,15 @@ import {
 } from "@/components/ui/select"
 import { bulkUpdateStatusOrder, createStatus, deleteStatus, getStatuses, updateStatus } from "@/lib/api/statuses"
 import type { UserStoryStatus } from "@/lib/api/types"
+
+// Same 8px activation threshold as the board: prevents pointer jitter from
+// starting accidental column reorder drags.
+const columnEditorSensors = [
+  PointerSensor.configure({
+    activationConstraints: [new PointerActivationConstraints.Distance({ value: 8 })],
+  }),
+  KeyboardSensor,
+]
 
 const presetColors = [
   "#999999", "#70CF97", "#40A8E5", "#F57D7D",
@@ -197,6 +207,7 @@ export function ColumnEditorDialog({ open, onOpenChange, projectId, onUpdated }:
           ) : (
             <>
               <DragDropProvider
+                sensors={columnEditorSensors}
                 onDragEnd={(event) => {
                   const { source, target } = event.operation
                   if (!source || !target || source.id === target.id) return

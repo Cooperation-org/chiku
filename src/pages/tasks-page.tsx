@@ -42,11 +42,12 @@ export default function TasksPage() {
   const navigate = useNavigate()
   const search = useRouterState({ select: (s) => s.location.search }) as Record<string, string>
   const { user } = useAuth()
-  const { data, isLoading, error } = useMyTasks()
 
   // The filter starts from the URL so filtered views are shareable links; a
-  // bare /tasks defaults to "assigned to me".
+  // bare /tasks defaults to "assigned to me". Closed stories are excluded
+  // server-side unless the closed flag is on (status__is_closed param).
   const [filter, setFilter] = useState<StoryFilter>(() => filterFromParams(new URLSearchParams(search)))
+  const { data, isLoading, error } = useMyTasks(filter.showClosed)
   const ready = useRef(false)
   const searchInput = useRef<HTMLInputElement>(null)
 
@@ -110,7 +111,7 @@ export default function TasksPage() {
     const slug = story.project_extra_info?.slug
     if (slug) {
       navigate({
-        to: "/p/$slug/board/$storyRef",
+        to: "/projects/$slug/board/$storyRef",
         params: { slug, storyRef: String(story.ref) },
       })
     }

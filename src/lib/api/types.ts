@@ -1,4 +1,4 @@
-// Taiga API types
+﻿// Taiga API types
 
 export interface User {
 	id: number;
@@ -116,19 +116,27 @@ export interface UserStory {
 	due_date_status: string | null;
 	tags: [string, string | null][];
 	epics: EpicRef[] | null;
+	is_blocked: boolean;
+	blocked_note: string | null;
+	
+	/** Prev/next story in the project nav chain. */
+	neighbors: {
+		next: { id: number; ref: number; subject: string } | null;
+		previous: { id: number; ref: number; subject: string } | null;
+	} | null;
 }
 
 /** Taiga attachment (userstories/tasks/issues share this shape). */
 export interface Attachment {
 	id: number;
 	project: number;
-	/** User id of whoever uploaded it â€” resolve against project members for a name. */
+	/** User id of whoever uploaded it Ã¢â‚¬â€ resolve against project members for a name. */
 	owner: number;
 	name: string;
 	/** Storage-relative path. Use `url` to fetch; it carries the access token. */
 	attached_file: string;
 	size: number;
-	/** Signed, absolute media URL â€” usable directly as href/src without an auth header. */
+	/** Signed, absolute media URL Ã¢â‚¬â€ usable directly as href/src without an auth header. */
 	url: string;
 	preview_url: string | null;
 	thumbnail_card_url: string | null;

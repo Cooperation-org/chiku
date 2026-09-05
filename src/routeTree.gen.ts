@@ -9,155 +9,246 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteRouteImport } from './routes/_app/route'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AuthDevTokenRouteImport } from './routes/auth/dev-token'
-import { Route as LoginIndexRouteImport } from './routes/login/index'
-import { Route as OauthCallbackRouteImport } from './routes/oauth/callback'
-import { Route as SsoRelayRouteImport } from './routes/sso/relay'
-import { Route as AppAccountIndexRouteImport } from './routes/_app/account/index'
-import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
-import { Route as AuthAtprotoCallbackRouteImport } from './routes/auth/atproto/callback'
-import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
-import { Route as AppPSlugBacklogRouteImport } from './routes/_app/p/$slug/backlog'
-import { Route as AppPSlugEpicsRouteImport } from './routes/_app/p/$slug/epics'
-import { Route as AppPSlugMembersRouteImport } from './routes/_app/p/$slug/members'
-import { Route as AppPSlugVelocityRouteImport } from './routes/_app/p/$slug/velocity'
-import { Route as AppPSlugBoardIndexRouteImport } from './routes/_app/p/$slug/board/index'
-import { Route as AppPSlugBoardStoryRefRouteImport } from './routes/_app/p/$slug/board/$storyRef'
+import { Route as _authedRouteRouteImport } from './routes/(_authed)/route'
+import { Route as _authedIndexRouteImport } from './routes/(_authed)/index'
+import { Route as _authedAccountIndexRouteImport } from './routes/(_authed)/account/index'
+import { Route as _authedTasksIndexRouteImport } from './routes/(_authed)/tasks/index'
+import { Route as PublicAuthDevTokenRouteImport } from './routes/_public/auth/dev-token'
+import { Route as PublicLoginIndexRouteImport } from './routes/_public/login/index'
+import { Route as PublicOauthCallbackRouteImport } from './routes/_public/oauth/callback'
+import { Route as PublicSsoRelayRouteImport } from './routes/_public/sso/relay'
+import { Route as _authedPSlugIndexRouteImport } from './routes/(_authed)/p/$slug/index'
+import { Route as _authedPSlugBacklogRouteImport } from './routes/(_authed)/p/$slug/backlog'
+import { Route as _authedPSlugEpicsRouteImport } from './routes/(_authed)/p/$slug/epics'
+import { Route as _authedPSlugMembersRouteImport } from './routes/(_authed)/p/$slug/members'
+import { Route as _authedPSlugVelocityRouteImport } from './routes/(_authed)/p/$slug/velocity'
+import { Route as _authedProjectsSlugIndexRouteImport } from './routes/(_authed)/projects/$slug/index'
+import { Route as _authedProjectsSlugBacklogRouteImport } from './routes/(_authed)/projects/$slug/backlog'
+import { Route as _authedProjectsSlugEpicsRouteImport } from './routes/(_authed)/projects/$slug/epics'
+import { Route as _authedProjectsSlugMembersRouteImport } from './routes/(_authed)/projects/$slug/members'
+import { Route as _authedProjectsSlugVelocityRouteImport } from './routes/(_authed)/projects/$slug/velocity'
+import { Route as _authedSStoryIdIndexRouteImport } from './routes/(_authed)/s/$storyId/index'
+import { Route as PublicAuthAtprotoCallbackRouteImport } from './routes/_public/auth/atproto/callback'
+import { Route as PublicAuthGoogleCallbackRouteImport } from './routes/_public/auth/google/callback'
+import { Route as _authedPSlugBoardIndexRouteImport } from './routes/(_authed)/p/$slug/board/index'
+import { Route as _authedPSlugBoardStoryRefRouteImport } from './routes/(_authed)/p/$slug/board/$storyRef'
+import { Route as _authedProjectsSlugBoardIndexRouteImport } from './routes/(_authed)/projects/$slug/board/index'
+import { Route as _authedProjectsSlugBoardStoryRefRouteImport } from './routes/(_authed)/projects/$slug/board/$storyRef'
 
-const AppRouteRoute = AppRouteRouteImport.update({
-  id: '/_app',
+const _authedRouteRoute = _authedRouteRouteImport.update({
+  id: '/(_authed)',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const _authedIndexRoute = _authedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => _authedRouteRoute,
 } as any)
-const AuthDevTokenRoute = AuthDevTokenRouteImport.update({
-  id: '/auth/dev-token',
+const _authedAccountIndexRoute = _authedAccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => _authedRouteRoute,
+} as any)
+const _authedTasksIndexRoute = _authedTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => _authedRouteRoute,
+} as any)
+const PublicAuthDevTokenRoute = PublicAuthDevTokenRouteImport.update({
+  id: '/_public/auth/dev-token',
   path: '/auth/dev-token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginIndexRoute = LoginIndexRouteImport.update({
-  id: '/login/',
+const PublicLoginIndexRoute = PublicLoginIndexRouteImport.update({
+  id: '/_public/login/',
   path: '/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OauthCallbackRoute = OauthCallbackRouteImport.update({
-  id: '/oauth/callback',
+const PublicOauthCallbackRoute = PublicOauthCallbackRouteImport.update({
+  id: '/_public/oauth/callback',
   path: '/oauth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SsoRelayRoute = SsoRelayRouteImport.update({
-  id: '/sso/relay',
+const PublicSsoRelayRoute = PublicSsoRelayRouteImport.update({
+  id: '/_public/sso/relay',
   path: '/sso/relay',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppAccountIndexRoute = AppAccountIndexRouteImport.update({
-  id: '/account/',
-  path: '/account/',
-  getParentRoute: () => AppRouteRoute,
+const _authedPSlugIndexRoute = _authedPSlugIndexRouteImport.update({
+  id: '/p/$slug/',
+  path: '/p/$slug/',
+  getParentRoute: () => _authedRouteRoute,
 } as any)
-const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
-  id: '/tasks/',
-  path: '/tasks/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AuthAtprotoCallbackRoute = AuthAtprotoCallbackRouteImport.update({
-  id: '/auth/atproto/callback',
-  path: '/auth/atproto/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
-  id: '/auth/google/callback',
-  path: '/auth/google/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppPSlugBacklogRoute = AppPSlugBacklogRouteImport.update({
+const _authedPSlugBacklogRoute = _authedPSlugBacklogRouteImport.update({
   id: '/p/$slug/backlog',
   path: '/p/$slug/backlog',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => _authedRouteRoute,
 } as any)
-const AppPSlugEpicsRoute = AppPSlugEpicsRouteImport.update({
+const _authedPSlugEpicsRoute = _authedPSlugEpicsRouteImport.update({
   id: '/p/$slug/epics',
   path: '/p/$slug/epics',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => _authedRouteRoute,
 } as any)
-const AppPSlugMembersRoute = AppPSlugMembersRouteImport.update({
+const _authedPSlugMembersRoute = _authedPSlugMembersRouteImport.update({
   id: '/p/$slug/members',
   path: '/p/$slug/members',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => _authedRouteRoute,
 } as any)
-const AppPSlugVelocityRoute = AppPSlugVelocityRouteImport.update({
+const _authedPSlugVelocityRoute = _authedPSlugVelocityRouteImport.update({
   id: '/p/$slug/velocity',
   path: '/p/$slug/velocity',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => _authedRouteRoute,
 } as any)
-const AppPSlugBoardIndexRoute = AppPSlugBoardIndexRouteImport.update({
+const _authedProjectsSlugIndexRoute =
+  _authedProjectsSlugIndexRouteImport.update({
+    id: '/projects/$slug/',
+    path: '/projects/$slug/',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedProjectsSlugBacklogRoute =
+  _authedProjectsSlugBacklogRouteImport.update({
+    id: '/projects/$slug/backlog',
+    path: '/projects/$slug/backlog',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedProjectsSlugEpicsRoute =
+  _authedProjectsSlugEpicsRouteImport.update({
+    id: '/projects/$slug/epics',
+    path: '/projects/$slug/epics',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedProjectsSlugMembersRoute =
+  _authedProjectsSlugMembersRouteImport.update({
+    id: '/projects/$slug/members',
+    path: '/projects/$slug/members',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedProjectsSlugVelocityRoute =
+  _authedProjectsSlugVelocityRouteImport.update({
+    id: '/projects/$slug/velocity',
+    path: '/projects/$slug/velocity',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedSStoryIdIndexRoute = _authedSStoryIdIndexRouteImport.update({
+  id: '/s/$storyId/',
+  path: '/s/$storyId/',
+  getParentRoute: () => _authedRouteRoute,
+} as any)
+const PublicAuthAtprotoCallbackRoute =
+  PublicAuthAtprotoCallbackRouteImport.update({
+    id: '/_public/auth/atproto/callback',
+    path: '/auth/atproto/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const PublicAuthGoogleCallbackRoute =
+  PublicAuthGoogleCallbackRouteImport.update({
+    id: '/_public/auth/google/callback',
+    path: '/auth/google/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const _authedPSlugBoardIndexRoute = _authedPSlugBoardIndexRouteImport.update({
   id: '/p/$slug/board/',
   path: '/p/$slug/board/',
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => _authedRouteRoute,
 } as any)
-const AppPSlugBoardStoryRefRoute = AppPSlugBoardStoryRefRouteImport.update({
-  id: '/p/$slug/board/$storyRef',
-  path: '/p/$slug/board/$storyRef',
-  getParentRoute: () => AppRouteRoute,
-} as any)
+const _authedPSlugBoardStoryRefRoute =
+  _authedPSlugBoardStoryRefRouteImport.update({
+    id: '/p/$slug/board/$storyRef',
+    path: '/p/$slug/board/$storyRef',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedProjectsSlugBoardIndexRoute =
+  _authedProjectsSlugBoardIndexRouteImport.update({
+    id: '/projects/$slug/board/',
+    path: '/projects/$slug/board/',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedProjectsSlugBoardStoryRefRoute =
+  _authedProjectsSlugBoardStoryRefRouteImport.update({
+    id: '/projects/$slug/board/$storyRef',
+    path: '/projects/$slug/board/$storyRef',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
-  '/auth/dev-token': typeof AuthDevTokenRoute
-  '/oauth/callback': typeof OauthCallbackRoute
-  '/sso/relay': typeof SsoRelayRoute
-  '/login/': typeof LoginIndexRoute
-  '/auth/atproto/callback': typeof AuthAtprotoCallbackRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/account/': typeof AppAccountIndexRoute
-  '/tasks/': typeof AppTasksIndexRoute
-  '/p/$slug/backlog': typeof AppPSlugBacklogRoute
-  '/p/$slug/epics': typeof AppPSlugEpicsRoute
-  '/p/$slug/members': typeof AppPSlugMembersRoute
-  '/p/$slug/velocity': typeof AppPSlugVelocityRoute
-  '/p/$slug/board/$storyRef': typeof AppPSlugBoardStoryRefRoute
-  '/p/$slug/board/': typeof AppPSlugBoardIndexRoute
+  '/': typeof _authedIndexRoute
+  '/auth/dev-token': typeof PublicAuthDevTokenRoute
+  '/oauth/callback': typeof PublicOauthCallbackRoute
+  '/sso/relay': typeof PublicSsoRelayRoute
+  '/account/': typeof _authedAccountIndexRoute
+  '/tasks/': typeof _authedTasksIndexRoute
+  '/login/': typeof PublicLoginIndexRoute
+  '/p/$slug/backlog': typeof _authedPSlugBacklogRoute
+  '/p/$slug/epics': typeof _authedPSlugEpicsRoute
+  '/p/$slug/members': typeof _authedPSlugMembersRoute
+  '/p/$slug/velocity': typeof _authedPSlugVelocityRoute
+  '/projects/$slug/backlog': typeof _authedProjectsSlugBacklogRoute
+  '/projects/$slug/epics': typeof _authedProjectsSlugEpicsRoute
+  '/projects/$slug/members': typeof _authedProjectsSlugMembersRoute
+  '/projects/$slug/velocity': typeof _authedProjectsSlugVelocityRoute
+  '/auth/atproto/callback': typeof PublicAuthAtprotoCallbackRoute
+  '/auth/google/callback': typeof PublicAuthGoogleCallbackRoute
+  '/p/$slug/': typeof _authedPSlugIndexRoute
+  '/projects/$slug/': typeof _authedProjectsSlugIndexRoute
+  '/s/$storyId/': typeof _authedSStoryIdIndexRoute
+  '/p/$slug/board/$storyRef': typeof _authedPSlugBoardStoryRefRoute
+  '/projects/$slug/board/$storyRef': typeof _authedProjectsSlugBoardStoryRefRoute
+  '/p/$slug/board/': typeof _authedPSlugBoardIndexRoute
+  '/projects/$slug/board/': typeof _authedProjectsSlugBoardIndexRoute
 }
 export interface FileRoutesByTo {
-  '/auth/dev-token': typeof AuthDevTokenRoute
-  '/oauth/callback': typeof OauthCallbackRoute
-  '/sso/relay': typeof SsoRelayRoute
-  '/': typeof AppIndexRoute
-  '/login': typeof LoginIndexRoute
-  '/auth/atproto/callback': typeof AuthAtprotoCallbackRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/account': typeof AppAccountIndexRoute
-  '/tasks': typeof AppTasksIndexRoute
-  '/p/$slug/backlog': typeof AppPSlugBacklogRoute
-  '/p/$slug/epics': typeof AppPSlugEpicsRoute
-  '/p/$slug/members': typeof AppPSlugMembersRoute
-  '/p/$slug/velocity': typeof AppPSlugVelocityRoute
-  '/p/$slug/board/$storyRef': typeof AppPSlugBoardStoryRefRoute
-  '/p/$slug/board': typeof AppPSlugBoardIndexRoute
+  '/': typeof _authedIndexRoute
+  '/auth/dev-token': typeof PublicAuthDevTokenRoute
+  '/oauth/callback': typeof PublicOauthCallbackRoute
+  '/sso/relay': typeof PublicSsoRelayRoute
+  '/account': typeof _authedAccountIndexRoute
+  '/tasks': typeof _authedTasksIndexRoute
+  '/login': typeof PublicLoginIndexRoute
+  '/p/$slug/backlog': typeof _authedPSlugBacklogRoute
+  '/p/$slug/epics': typeof _authedPSlugEpicsRoute
+  '/p/$slug/members': typeof _authedPSlugMembersRoute
+  '/p/$slug/velocity': typeof _authedPSlugVelocityRoute
+  '/projects/$slug/backlog': typeof _authedProjectsSlugBacklogRoute
+  '/projects/$slug/epics': typeof _authedProjectsSlugEpicsRoute
+  '/projects/$slug/members': typeof _authedProjectsSlugMembersRoute
+  '/projects/$slug/velocity': typeof _authedProjectsSlugVelocityRoute
+  '/auth/atproto/callback': typeof PublicAuthAtprotoCallbackRoute
+  '/auth/google/callback': typeof PublicAuthGoogleCallbackRoute
+  '/p/$slug': typeof _authedPSlugIndexRoute
+  '/projects/$slug': typeof _authedProjectsSlugIndexRoute
+  '/s/$storyId': typeof _authedSStoryIdIndexRoute
+  '/p/$slug/board/$storyRef': typeof _authedPSlugBoardStoryRefRoute
+  '/projects/$slug/board/$storyRef': typeof _authedProjectsSlugBoardStoryRefRoute
+  '/p/$slug/board': typeof _authedPSlugBoardIndexRoute
+  '/projects/$slug/board': typeof _authedProjectsSlugBoardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteRouteWithChildren
-  '/auth/dev-token': typeof AuthDevTokenRoute
-  '/oauth/callback': typeof OauthCallbackRoute
-  '/sso/relay': typeof SsoRelayRoute
-  '/_app/': typeof AppIndexRoute
-  '/login/': typeof LoginIndexRoute
-  '/auth/atproto/callback': typeof AuthAtprotoCallbackRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/_app/account/': typeof AppAccountIndexRoute
-  '/_app/tasks/': typeof AppTasksIndexRoute
-  '/_app/p/$slug/backlog': typeof AppPSlugBacklogRoute
-  '/_app/p/$slug/epics': typeof AppPSlugEpicsRoute
-  '/_app/p/$slug/members': typeof AppPSlugMembersRoute
-  '/_app/p/$slug/velocity': typeof AppPSlugVelocityRoute
-  '/_app/p/$slug/board/$storyRef': typeof AppPSlugBoardStoryRefRoute
-  '/_app/p/$slug/board/': typeof AppPSlugBoardIndexRoute
+  '/(_authed)': typeof _authedRouteRouteWithChildren
+  '/(_authed)/': typeof _authedIndexRoute
+  '/_public/auth/dev-token': typeof PublicAuthDevTokenRoute
+  '/_public/oauth/callback': typeof PublicOauthCallbackRoute
+  '/_public/sso/relay': typeof PublicSsoRelayRoute
+  '/(_authed)/account/': typeof _authedAccountIndexRoute
+  '/(_authed)/tasks/': typeof _authedTasksIndexRoute
+  '/_public/login/': typeof PublicLoginIndexRoute
+  '/(_authed)/p/$slug/backlog': typeof _authedPSlugBacklogRoute
+  '/(_authed)/p/$slug/epics': typeof _authedPSlugEpicsRoute
+  '/(_authed)/p/$slug/members': typeof _authedPSlugMembersRoute
+  '/(_authed)/p/$slug/velocity': typeof _authedPSlugVelocityRoute
+  '/(_authed)/projects/$slug/backlog': typeof _authedProjectsSlugBacklogRoute
+  '/(_authed)/projects/$slug/epics': typeof _authedProjectsSlugEpicsRoute
+  '/(_authed)/projects/$slug/members': typeof _authedProjectsSlugMembersRoute
+  '/(_authed)/projects/$slug/velocity': typeof _authedProjectsSlugVelocityRoute
+  '/_public/auth/atproto/callback': typeof PublicAuthAtprotoCallbackRoute
+  '/_public/auth/google/callback': typeof PublicAuthGoogleCallbackRoute
+  '/(_authed)/p/$slug/': typeof _authedPSlugIndexRoute
+  '/(_authed)/projects/$slug/': typeof _authedProjectsSlugIndexRoute
+  '/(_authed)/s/$storyId/': typeof _authedSStoryIdIndexRoute
+  '/(_authed)/p/$slug/board/$storyRef': typeof _authedPSlugBoardStoryRefRoute
+  '/(_authed)/projects/$slug/board/$storyRef': typeof _authedProjectsSlugBoardStoryRefRoute
+  '/(_authed)/p/$slug/board/': typeof _authedPSlugBoardIndexRoute
+  '/(_authed)/projects/$slug/board/': typeof _authedProjectsSlugBoardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,217 +257,325 @@ export interface FileRouteTypes {
     | '/auth/dev-token'
     | '/oauth/callback'
     | '/sso/relay'
-    | '/login/'
-    | '/auth/atproto/callback'
-    | '/auth/google/callback'
     | '/account/'
     | '/tasks/'
+    | '/login/'
     | '/p/$slug/backlog'
     | '/p/$slug/epics'
     | '/p/$slug/members'
     | '/p/$slug/velocity'
+    | '/projects/$slug/backlog'
+    | '/projects/$slug/epics'
+    | '/projects/$slug/members'
+    | '/projects/$slug/velocity'
+    | '/auth/atproto/callback'
+    | '/auth/google/callback'
+    | '/p/$slug/'
+    | '/projects/$slug/'
+    | '/s/$storyId/'
     | '/p/$slug/board/$storyRef'
+    | '/projects/$slug/board/$storyRef'
     | '/p/$slug/board/'
+    | '/projects/$slug/board/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/auth/dev-token'
     | '/oauth/callback'
     | '/sso/relay'
-    | '/'
-    | '/login'
-    | '/auth/atproto/callback'
-    | '/auth/google/callback'
     | '/account'
     | '/tasks'
+    | '/login'
     | '/p/$slug/backlog'
     | '/p/$slug/epics'
     | '/p/$slug/members'
     | '/p/$slug/velocity'
-    | '/p/$slug/board/$storyRef'
-    | '/p/$slug/board'
-  id:
-    | '__root__'
-    | '/_app'
-    | '/auth/dev-token'
-    | '/oauth/callback'
-    | '/sso/relay'
-    | '/_app/'
-    | '/login/'
+    | '/projects/$slug/backlog'
+    | '/projects/$slug/epics'
+    | '/projects/$slug/members'
+    | '/projects/$slug/velocity'
     | '/auth/atproto/callback'
     | '/auth/google/callback'
-    | '/_app/account/'
-    | '/_app/tasks/'
-    | '/_app/p/$slug/backlog'
-    | '/_app/p/$slug/epics'
-    | '/_app/p/$slug/members'
-    | '/_app/p/$slug/velocity'
-    | '/_app/p/$slug/board/$storyRef'
-    | '/_app/p/$slug/board/'
+    | '/p/$slug'
+    | '/projects/$slug'
+    | '/s/$storyId'
+    | '/p/$slug/board/$storyRef'
+    | '/projects/$slug/board/$storyRef'
+    | '/p/$slug/board'
+    | '/projects/$slug/board'
+  id:
+    | '__root__'
+    | '/(_authed)'
+    | '/(_authed)/'
+    | '/_public/auth/dev-token'
+    | '/_public/oauth/callback'
+    | '/_public/sso/relay'
+    | '/(_authed)/account/'
+    | '/(_authed)/tasks/'
+    | '/_public/login/'
+    | '/(_authed)/p/$slug/backlog'
+    | '/(_authed)/p/$slug/epics'
+    | '/(_authed)/p/$slug/members'
+    | '/(_authed)/p/$slug/velocity'
+    | '/(_authed)/projects/$slug/backlog'
+    | '/(_authed)/projects/$slug/epics'
+    | '/(_authed)/projects/$slug/members'
+    | '/(_authed)/projects/$slug/velocity'
+    | '/_public/auth/atproto/callback'
+    | '/_public/auth/google/callback'
+    | '/(_authed)/p/$slug/'
+    | '/(_authed)/projects/$slug/'
+    | '/(_authed)/s/$storyId/'
+    | '/(_authed)/p/$slug/board/$storyRef'
+    | '/(_authed)/projects/$slug/board/$storyRef'
+    | '/(_authed)/p/$slug/board/'
+    | '/(_authed)/projects/$slug/board/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AppRouteRoute: typeof AppRouteRouteWithChildren
-  AuthDevTokenRoute: typeof AuthDevTokenRoute
-  OauthCallbackRoute: typeof OauthCallbackRoute
-  SsoRelayRoute: typeof SsoRelayRoute
-  LoginIndexRoute: typeof LoginIndexRoute
-  AuthAtprotoCallbackRoute: typeof AuthAtprotoCallbackRoute
-  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
+  _authedRouteRoute: typeof _authedRouteRouteWithChildren
+  PublicAuthDevTokenRoute: typeof PublicAuthDevTokenRoute
+  PublicOauthCallbackRoute: typeof PublicOauthCallbackRoute
+  PublicSsoRelayRoute: typeof PublicSsoRelayRoute
+  PublicLoginIndexRoute: typeof PublicLoginIndexRoute
+  PublicAuthAtprotoCallbackRoute: typeof PublicAuthAtprotoCallbackRoute
+  PublicAuthGoogleCallbackRoute: typeof PublicAuthGoogleCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_app': {
-      id: '/_app'
+    '/(_authed)': {
+      id: '/(_authed)'
       path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteRouteImport
+      fullPath: ''
+      preLoaderRoute: typeof _authedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/(_authed)/': {
+      id: '/(_authed)/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/auth/dev-token': {
-      id: '/auth/dev-token'
-      path: '/auth/dev-token'
-      fullPath: '/auth/dev-token'
-      preLoaderRoute: typeof AuthDevTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login/': {
-      id: '/login/'
-      path: '/login'
-      fullPath: '/login/'
-      preLoaderRoute: typeof LoginIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/callback': {
-      id: '/oauth/callback'
-      path: '/oauth/callback'
-      fullPath: '/oauth/callback'
-      preLoaderRoute: typeof OauthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sso/relay': {
-      id: '/sso/relay'
-      path: '/sso/relay'
-      fullPath: '/sso/relay'
-      preLoaderRoute: typeof SsoRelayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/account/': {
-      id: '/_app/account/'
+    '/(_authed)/account/': {
+      id: '/(_authed)/account/'
       path: '/account'
       fullPath: '/account/'
-      preLoaderRoute: typeof AppAccountIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedAccountIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/_app/tasks/': {
-      id: '/_app/tasks/'
+    '/(_authed)/tasks/': {
+      id: '/(_authed)/tasks/'
       path: '/tasks'
       fullPath: '/tasks/'
-      preLoaderRoute: typeof AppTasksIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedTasksIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/auth/atproto/callback': {
-      id: '/auth/atproto/callback'
-      path: '/auth/atproto/callback'
-      fullPath: '/auth/atproto/callback'
-      preLoaderRoute: typeof AuthAtprotoCallbackRouteImport
+    '/_public/auth/dev-token': {
+      id: '/_public/auth/dev-token'
+      path: '/auth/dev-token'
+      fullPath: '/auth/dev-token'
+      preLoaderRoute: typeof PublicAuthDevTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/google/callback': {
-      id: '/auth/google/callback'
-      path: '/auth/google/callback'
-      fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+    '/_public/login/': {
+      id: '/_public/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof PublicLoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/p/$slug/backlog': {
-      id: '/_app/p/$slug/backlog'
+    '/_public/oauth/callback': {
+      id: '/_public/oauth/callback'
+      path: '/oauth/callback'
+      fullPath: '/oauth/callback'
+      preLoaderRoute: typeof PublicOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/sso/relay': {
+      id: '/_public/sso/relay'
+      path: '/sso/relay'
+      fullPath: '/sso/relay'
+      preLoaderRoute: typeof PublicSsoRelayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(_authed)/p/$slug/': {
+      id: '/(_authed)/p/$slug/'
+      path: '/p/$slug'
+      fullPath: '/p/$slug/'
+      preLoaderRoute: typeof _authedPSlugIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/p/$slug/backlog': {
+      id: '/(_authed)/p/$slug/backlog'
       path: '/p/$slug/backlog'
       fullPath: '/p/$slug/backlog'
-      preLoaderRoute: typeof AppPSlugBacklogRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedPSlugBacklogRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/_app/p/$slug/epics': {
-      id: '/_app/p/$slug/epics'
+    '/(_authed)/p/$slug/epics': {
+      id: '/(_authed)/p/$slug/epics'
       path: '/p/$slug/epics'
       fullPath: '/p/$slug/epics'
-      preLoaderRoute: typeof AppPSlugEpicsRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedPSlugEpicsRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/_app/p/$slug/members': {
-      id: '/_app/p/$slug/members'
+    '/(_authed)/p/$slug/members': {
+      id: '/(_authed)/p/$slug/members'
       path: '/p/$slug/members'
       fullPath: '/p/$slug/members'
-      preLoaderRoute: typeof AppPSlugMembersRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedPSlugMembersRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/_app/p/$slug/velocity': {
-      id: '/_app/p/$slug/velocity'
+    '/(_authed)/p/$slug/velocity': {
+      id: '/(_authed)/p/$slug/velocity'
       path: '/p/$slug/velocity'
       fullPath: '/p/$slug/velocity'
-      preLoaderRoute: typeof AppPSlugVelocityRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedPSlugVelocityRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/_app/p/$slug/board/': {
-      id: '/_app/p/$slug/board/'
+    '/(_authed)/projects/$slug/': {
+      id: '/(_authed)/projects/$slug/'
+      path: '/projects/$slug'
+      fullPath: '/projects/$slug/'
+      preLoaderRoute: typeof _authedProjectsSlugIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/projects/$slug/backlog': {
+      id: '/(_authed)/projects/$slug/backlog'
+      path: '/projects/$slug/backlog'
+      fullPath: '/projects/$slug/backlog'
+      preLoaderRoute: typeof _authedProjectsSlugBacklogRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/projects/$slug/epics': {
+      id: '/(_authed)/projects/$slug/epics'
+      path: '/projects/$slug/epics'
+      fullPath: '/projects/$slug/epics'
+      preLoaderRoute: typeof _authedProjectsSlugEpicsRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/projects/$slug/members': {
+      id: '/(_authed)/projects/$slug/members'
+      path: '/projects/$slug/members'
+      fullPath: '/projects/$slug/members'
+      preLoaderRoute: typeof _authedProjectsSlugMembersRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/projects/$slug/velocity': {
+      id: '/(_authed)/projects/$slug/velocity'
+      path: '/projects/$slug/velocity'
+      fullPath: '/projects/$slug/velocity'
+      preLoaderRoute: typeof _authedProjectsSlugVelocityRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/s/$storyId/': {
+      id: '/(_authed)/s/$storyId/'
+      path: '/s/$storyId'
+      fullPath: '/s/$storyId/'
+      preLoaderRoute: typeof _authedSStoryIdIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/_public/auth/atproto/callback': {
+      id: '/_public/auth/atproto/callback'
+      path: '/auth/atproto/callback'
+      fullPath: '/auth/atproto/callback'
+      preLoaderRoute: typeof PublicAuthAtprotoCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/auth/google/callback': {
+      id: '/_public/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof PublicAuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(_authed)/p/$slug/board/': {
+      id: '/(_authed)/p/$slug/board/'
       path: '/p/$slug/board'
       fullPath: '/p/$slug/board/'
-      preLoaderRoute: typeof AppPSlugBoardIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedPSlugBoardIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
-    '/_app/p/$slug/board/$storyRef': {
-      id: '/_app/p/$slug/board/$storyRef'
+    '/(_authed)/p/$slug/board/$storyRef': {
+      id: '/(_authed)/p/$slug/board/$storyRef'
       path: '/p/$slug/board/$storyRef'
       fullPath: '/p/$slug/board/$storyRef'
-      preLoaderRoute: typeof AppPSlugBoardStoryRefRouteImport
-      parentRoute: typeof AppRouteRoute
+      preLoaderRoute: typeof _authedPSlugBoardStoryRefRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/projects/$slug/board/': {
+      id: '/(_authed)/projects/$slug/board/'
+      path: '/projects/$slug/board'
+      fullPath: '/projects/$slug/board/'
+      preLoaderRoute: typeof _authedProjectsSlugBoardIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/projects/$slug/board/$storyRef': {
+      id: '/(_authed)/projects/$slug/board/$storyRef'
+      path: '/projects/$slug/board/$storyRef'
+      fullPath: '/projects/$slug/board/$storyRef'
+      preLoaderRoute: typeof _authedProjectsSlugBoardStoryRefRouteImport
+      parentRoute: typeof _authedRouteRoute
     }
   }
 }
 
-interface AppRouteRouteChildren {
-  AppIndexRoute: typeof AppIndexRoute
-  AppAccountIndexRoute: typeof AppAccountIndexRoute
-  AppTasksIndexRoute: typeof AppTasksIndexRoute
-  AppPSlugBacklogRoute: typeof AppPSlugBacklogRoute
-  AppPSlugEpicsRoute: typeof AppPSlugEpicsRoute
-  AppPSlugMembersRoute: typeof AppPSlugMembersRoute
-  AppPSlugVelocityRoute: typeof AppPSlugVelocityRoute
-  AppPSlugBoardStoryRefRoute: typeof AppPSlugBoardStoryRefRoute
-  AppPSlugBoardIndexRoute: typeof AppPSlugBoardIndexRoute
+interface _authedRouteRouteChildren {
+  _authedIndexRoute: typeof _authedIndexRoute
+  _authedAccountIndexRoute: typeof _authedAccountIndexRoute
+  _authedTasksIndexRoute: typeof _authedTasksIndexRoute
+  _authedPSlugBacklogRoute: typeof _authedPSlugBacklogRoute
+  _authedPSlugEpicsRoute: typeof _authedPSlugEpicsRoute
+  _authedPSlugMembersRoute: typeof _authedPSlugMembersRoute
+  _authedPSlugVelocityRoute: typeof _authedPSlugVelocityRoute
+  _authedProjectsSlugBacklogRoute: typeof _authedProjectsSlugBacklogRoute
+  _authedProjectsSlugEpicsRoute: typeof _authedProjectsSlugEpicsRoute
+  _authedProjectsSlugMembersRoute: typeof _authedProjectsSlugMembersRoute
+  _authedProjectsSlugVelocityRoute: typeof _authedProjectsSlugVelocityRoute
+  _authedPSlugIndexRoute: typeof _authedPSlugIndexRoute
+  _authedProjectsSlugIndexRoute: typeof _authedProjectsSlugIndexRoute
+  _authedSStoryIdIndexRoute: typeof _authedSStoryIdIndexRoute
+  _authedPSlugBoardStoryRefRoute: typeof _authedPSlugBoardStoryRefRoute
+  _authedProjectsSlugBoardStoryRefRoute: typeof _authedProjectsSlugBoardStoryRefRoute
+  _authedPSlugBoardIndexRoute: typeof _authedPSlugBoardIndexRoute
+  _authedProjectsSlugBoardIndexRoute: typeof _authedProjectsSlugBoardIndexRoute
 }
 
-const AppRouteRouteChildren: AppRouteRouteChildren = {
-  AppIndexRoute: AppIndexRoute,
-  AppAccountIndexRoute: AppAccountIndexRoute,
-  AppTasksIndexRoute: AppTasksIndexRoute,
-  AppPSlugBacklogRoute: AppPSlugBacklogRoute,
-  AppPSlugEpicsRoute: AppPSlugEpicsRoute,
-  AppPSlugMembersRoute: AppPSlugMembersRoute,
-  AppPSlugVelocityRoute: AppPSlugVelocityRoute,
-  AppPSlugBoardStoryRefRoute: AppPSlugBoardStoryRefRoute,
-  AppPSlugBoardIndexRoute: AppPSlugBoardIndexRoute,
+const _authedRouteRouteChildren: _authedRouteRouteChildren = {
+  _authedIndexRoute: _authedIndexRoute,
+  _authedAccountIndexRoute: _authedAccountIndexRoute,
+  _authedTasksIndexRoute: _authedTasksIndexRoute,
+  _authedPSlugBacklogRoute: _authedPSlugBacklogRoute,
+  _authedPSlugEpicsRoute: _authedPSlugEpicsRoute,
+  _authedPSlugMembersRoute: _authedPSlugMembersRoute,
+  _authedPSlugVelocityRoute: _authedPSlugVelocityRoute,
+  _authedProjectsSlugBacklogRoute: _authedProjectsSlugBacklogRoute,
+  _authedProjectsSlugEpicsRoute: _authedProjectsSlugEpicsRoute,
+  _authedProjectsSlugMembersRoute: _authedProjectsSlugMembersRoute,
+  _authedProjectsSlugVelocityRoute: _authedProjectsSlugVelocityRoute,
+  _authedPSlugIndexRoute: _authedPSlugIndexRoute,
+  _authedProjectsSlugIndexRoute: _authedProjectsSlugIndexRoute,
+  _authedSStoryIdIndexRoute: _authedSStoryIdIndexRoute,
+  _authedPSlugBoardStoryRefRoute: _authedPSlugBoardStoryRefRoute,
+  _authedProjectsSlugBoardStoryRefRoute: _authedProjectsSlugBoardStoryRefRoute,
+  _authedPSlugBoardIndexRoute: _authedPSlugBoardIndexRoute,
+  _authedProjectsSlugBoardIndexRoute: _authedProjectsSlugBoardIndexRoute,
 }
 
-const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
-  AppRouteRouteChildren,
+const _authedRouteRouteWithChildren = _authedRouteRoute._addFileChildren(
+  _authedRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  AppRouteRoute: AppRouteRouteWithChildren,
-  AuthDevTokenRoute: AuthDevTokenRoute,
-  OauthCallbackRoute: OauthCallbackRoute,
-  SsoRelayRoute: SsoRelayRoute,
-  LoginIndexRoute: LoginIndexRoute,
-  AuthAtprotoCallbackRoute: AuthAtprotoCallbackRoute,
-  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
+  _authedRouteRoute: _authedRouteRouteWithChildren,
+  PublicAuthDevTokenRoute: PublicAuthDevTokenRoute,
+  PublicOauthCallbackRoute: PublicOauthCallbackRoute,
+  PublicSsoRelayRoute: PublicSsoRelayRoute,
+  PublicLoginIndexRoute: PublicLoginIndexRoute,
+  PublicAuthAtprotoCallbackRoute: PublicAuthAtprotoCallbackRoute,
+  PublicAuthGoogleCallbackRoute: PublicAuthGoogleCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

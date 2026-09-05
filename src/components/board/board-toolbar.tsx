@@ -1,6 +1,6 @@
 ﻿import { Check, Moon, Settings2, Sun } from "lucide-react"
-import { ProjectSwitcher } from "@/components/board/project-switcher"
 import { SearchField } from "@/components/layout/search-field"
+import { SearchPalette } from "@/components/board/search-palette"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -19,7 +19,7 @@ interface BoardToolbarProps {
   onEditColumns: () => void
 }
 
-/** The single consolidated bar: project switcher · search · view options · settings. */
+/** The single consolidated bar: search · view options · settings. */
 export function BoardToolbar({ slug, search, onSearchChange, onEditColumns }: BoardToolbarProps) {
   const showLabels = useBoardStore((s) => s.showLabels)
   const setShowLabels = useBoardStore((s) => s.setShowLabels)
@@ -28,14 +28,16 @@ export function BoardToolbar({ slug, search, onSearchChange, onEditColumns }: Bo
   return (
     <div className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
       <SidebarTrigger aria-label="Toggle sidebar" />
-      <ProjectSwitcher slug={slug} />
 
-      <SearchField
-        value={search}
-        onChange={onSearchChange}
-        placeholder="Search or go to…"
-        className="max-w-xl flex-1"
-      />
+      <div className="relative max-w-xl flex-1">
+        <SearchField
+          value={search}
+          onChange={onSearchChange}
+          placeholder="Search or go to…"
+          className="w-full"
+        />
+        <SearchPalette slug={slug} text={search} />
+      </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <Button

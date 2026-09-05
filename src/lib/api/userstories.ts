@@ -1,4 +1,4 @@
-import { api, ApiError } from './client';
+﻿import { api, ApiError } from './client';
 import type { UserStory, UserStoryStatus } from './types';
 
 export async function getUserStories(projectId: number, limit: number = 100): Promise<UserStory[]> {
@@ -72,7 +72,7 @@ function isVersionConflict(error: unknown): boolean {
  * Set a story's status, surviving a version we no longer hold.
  *
  * The board caches each story's version from page load, so anything that has
- * touched the story since â€” another drag, the detail view, a teammate, amebo â€”
+ * touched the story since Ã¢â‚¬â€ another drag, the detail view, a teammate, amebo Ã¢â‚¬â€
  * makes that number stale and Taiga rejects the move. Dropping a card is an
  * explicit "put it in this column", so re-read the current version and send the
  * move once more rather than failing in the user's face.
@@ -110,4 +110,37 @@ export async function createUserStory(data: {
 	assigned_to?: number | null;
 }): Promise<UserStory> {
 	return api.post<UserStory>('/userstories', data);
+}
+
+/** Deep-link resolution: fetch one story by its human ref, no list needed. */
+export async function getUserStoryByRef(projectId: number, ref: number): Promise<UserStory> {
+	return api.get<UserStory>('/userstories/by_ref', { ref, project: projectId });
+}
+
+/**
+ * Persist a kanban column's card order in one call. The server takes the new
+ * order as a flat id array (position = order) plus the column, NOT objects:
+ * `{ project_id, status_id, bulk_userstories: [id, id, ...] }`.
+ */
+export async function bulkUpdateKanbanOrder(
+	projectId: number,
+	statusId: number,
+	storyIds: number[]
+): Promise<UserStory[]> {
+	return api.post<UserStory[]>('/userstories/bulk_update_kanban_order', {
+		project_id: projectId,
+		status_id: statusId,
+		bulk_userstories: storyIds
+	});
+}
+
+/** Persist the backlog's story order in one call (flat id array likewise). */
+export async function bulkUpdateBacklogOrder(
+	projectId: number,
+	storyIds: number[]
+): Promise<UserStory[]> {
+	return api.post<UserStory[]>('/userstories/bulk_update_backlog_order', {
+		project_id: projectId,
+		bulk_userstories: storyIds
+	});
 }

@@ -8,7 +8,7 @@ import { ColumnEditorDialog } from "@/components/app/column-editor-dialog"
 import { Button } from "@/components/ui/button"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { isArchived, unarchiveProject } from "@/lib/api/projects"
-import { useSetStoryStatus, useStories, useStatuses } from "@/lib/queries/stories"
+import { useReorderKanbanOrder, useSetStoryStatus, useStories, useStatuses } from "@/lib/queries/stories"
 import { EMPTY_FILTER, filterStories } from "@/lib/filters/stories"
 import { qk, queryClient } from "@/lib/query"
 import type { UserStory } from "@/lib/api/types"
@@ -25,6 +25,7 @@ export default function BoardPage({ slug }: BoardPageProps) {
   const { data: statuses = [], isLoading: statusesLoading } = useStatuses(projectId)
   const { data: stories, isLoading: storiesLoading } = useStories(projectId)
   const setStatus = useSetStoryStatus(projectId ?? 0)
+  const reorderKanban = useReorderKanbanOrder(projectId ?? 0)
 
   const [search, setSearch] = useState("")
   const [showCreate, setShowCreate] = useState(false)
@@ -34,9 +35,13 @@ export default function BoardPage({ slug }: BoardPageProps) {
   const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q: search })
 
   function handleMoveStory(story: UserStory, newStatusId: number) {
+    const statusName = statuses.find((s) => s.id === newStatusId)?.name ?? "another column"
     setStatus.mutate(
       { storyId: story.id, statusId: newStatusId, version: story.version },
       {
+        onSuccess: () => {
+          toast.success(`#${story.ref} moved to ${statusName}`)
+        },
         onError: (err) => {
           const msg = err instanceof Error ? err.message : "Failed to update story"
           if (msg.toLowerCase().includes("permission")) {
@@ -44,6 +49,46 @@ export default function BoardPage({ slug }: BoardPageProps) {
           } else {
             toast.error(msg)
           }
+        },
+      }
+    )
+  }
+
+  /**
+   * In-column reorder: splice the dragged card before the card dropped upon
+   * (or at the column end when dropped on empty space), then persist the
+   * column's order through bulk_update_kanban_order — reverting on failure.
+   * Positions are computed against the column's own cards from the full
+   * cache, so a search filter hiding cards can't misplace the drop.
+   */
+  function handleReorderStory(storyId: number, overId: number | null, statusId: number) {
+    if (!projectId) return
+    const key = qk.stories(projectId)
+    const all = queryClient.getQueryData<UserStory[]>(key)
+    if (!all) return
+    const moving = all.find((s) => s.id === storyId)
+    if (!moving) return
+    const column = all
+      .filter((s) => s.status === statusId && s.id !== storyId)
+      .sort((a, b) => a.kanban_order - b.kanban_order)
+    const overIdx = overId == null ? -1 : column.findIndex((s) => s.id === overId)
+    const insertAt = overIdx === -1 ? column.length : overIdx
+    const reordered = [...column.slice(0, insertAt), moving, ...column.slice(insertAt)]
+    const reorderedIds = new Set(reordered.map((s) => s.id))
+    const next = [...all.filter((s) => !reorderedIds.has(s.id)), ...reordered]
+    queryClient.setQueryData(key, next)
+    const columnOrder = reordered.map((s) => s.id)
+    const position = columnOrder.indexOf(storyId) + 1
+    const statusName = statuses.find((s) => s.id === statusId)?.name ?? "the column"
+    reorderKanban.mutate(
+      { storyIds: columnOrder, statusId },
+      {
+        onSuccess: () => {
+          toast.success(`#${moving.ref} moved to position ${position} in ${statusName}`)
+        },
+        onError: (err) => {
+          queryClient.invalidateQueries({ queryKey: key })
+          toast.error(err instanceof Error ? err.message : "Failed to save order")
         },
       }
     )
@@ -97,9 +142,10 @@ export default function BoardPage({ slug }: BoardPageProps) {
             statuses={statuses}
             stories={visible}
             onMoveStory={handleMoveStory}
+            onReorderStory={handleReorderStory}
             onSelect={(story) =>
               navigate({
-                to: "/p/$slug/board/$storyRef",
+                to: "/projects/$slug/board/$storyRef",
                 params: { slug, storyRef: String(story.ref) },
               })
             }

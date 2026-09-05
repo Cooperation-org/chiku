@@ -85,7 +85,7 @@ export default function BacklogPage({ slug }: BacklogPageProps) {
                   className="group hover:bg-accent/40 cursor-pointer transition-colors"
                   onClick={() =>
                     navigate({
-                      to: "/p/$slug/board/$storyRef",
+                      to: "/projects/$slug/board/$storyRef",
                       params: { slug, storyRef: String(story.ref) },
                     })
                   }

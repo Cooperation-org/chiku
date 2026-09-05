@@ -13,6 +13,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -20,6 +21,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Avatar } from "@/components/app/avatar"
+import { ProjectSwitcher } from "@/components/sidebar/project-switcher"
 import { useAuth } from "@/lib/stores/auth"
 import { useSidebarStore } from "@/lib/stores/sidebar"
 import { useProjectStore } from "@/lib/stores/project"
@@ -101,7 +103,7 @@ export function AppSidebar() {
 
   function projectView(view: string) {
     if (!activeSlug) return
-    go(`/p/${activeSlug}/${view}`, activeSlug)
+    go(`/projects/${activeSlug}/${view}`, activeSlug)
   }
 
   const views = [
@@ -133,12 +135,15 @@ export function AppSidebar() {
     // Desktop panel is viewport-fixed; the cohort top bar owns the first 2rem,
     // so the sidebar starts below it.
     <Sidebar collapsible="icon" style={{ top: "2rem", height: "calc(100svh - 2rem)" }}>
+      <SidebarHeader>
+        <ProjectSwitcher slug={activeSlug ?? ""} />
+      </SidebarHeader>
       <SidebarContent>
         <CollapsibleGroup id="views" label="Views" forceOpen={rail}>
           {views.map((v) => (
             <SidebarMenuItem key={v.key}>
               <SidebarMenuButton
-                isActive={location.pathname === `/p/${activeSlug}/${v.key}`}
+                isActive={location.pathname === `/projects/${activeSlug}/${v.key}`}
                 disabled={!v.enabled}
                 tooltip={v.label}
                 onClick={() => projectView(v.key)}
@@ -163,7 +168,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              isActive={location.pathname === `/p/${activeSlug}/members`}
+                isActive={location.pathname === `/projects/${activeSlug}/members`}
               disabled={!activeSlug}
               tooltip="Members"
               onClick={() => projectView("members")}

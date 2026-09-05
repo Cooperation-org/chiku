@@ -1,7 +1,17 @@
 ﻿import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import {
-  ArrowLeft, Calendar, Clock, Copy, Download, Pencil, Trash2, User as UserIcon,
+  ArrowLeft,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Copy,
+  Download,
+  OctagonAlert,
+  Pencil,
+  Trash2,
+  User as UserIcon,
 } from "lucide-react"
 import type { Attachment, HistoryEntry, Project, UserStory, UserStoryStatus } from "@/lib/api/types"
 import { getUserStory, moveUserStory, updateUserStory, getUserStoryStatuses } from "@/lib/api/userstories"
@@ -53,6 +63,8 @@ interface IssueModalProps {
   onClose: () => void
   onUpdate: (story: UserStory) => void
   onDelete: (id: number) => void
+  /** Jump to another story by human ref — renders prev/next nav when set. */
+  onNavigateRef?: (ref: number) => void
 }
 
 function formatRelative(dateStr: string): string {
@@ -68,7 +80,7 @@ function formatRelative(dateStr: string): string {
   return date.toLocaleDateString()
 }
 
-export function IssueModal({ story, statuses, members, onClose, onUpdate, onDelete }: IssueModalProps) {
+export function IssueModal({ story, statuses, members, onClose, onUpdate, onDelete, onNavigateRef }: IssueModalProps) {
   const [fullStory, setFullStory] = useState<UserStory>(story)
   const [project, setProject] = useState<Project | null>(null)
 
@@ -414,6 +426,32 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
           </Button>
           <span className="text-muted-foreground font-mono text-sm">#{fullStory.ref}</span>
 
+          {/* Prev/next from the server's neighbors chain — no list walk */}
+          {onNavigateRef && fullStory.neighbors && (
+            <span className="flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                disabled={!fullStory.neighbors.previous}
+                title={fullStory.neighbors.previous ? `#${fullStory.neighbors.previous.ref} ${fullStory.neighbors.previous.subject}` : "No previous story"}
+                onClick={() => fullStory.neighbors?.previous && onNavigateRef(fullStory.neighbors.previous.ref)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                disabled={!fullStory.neighbors.next}
+                title={fullStory.neighbors.next ? `#${fullStory.neighbors.next.ref} ${fullStory.neighbors.next.subject}` : "No next story"}
+                onClick={() => fullStory.neighbors?.next && onNavigateRef(fullStory.neighbors.next.ref)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </span>
+          )}
+
           {/* Project name â€” opens the move menu */}
           <DropdownMenu>
           <DropdownMenuTrigger
@@ -485,6 +523,15 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
           </Button>
         </div>
       </div>
+
+      {/* Blocked banner — from the server's is_blocked + blocked_note */}
+      {fullStory.is_blocked && (
+        <div className="flex shrink-0 items-center gap-2 border-b bg-amber-500/10 px-6 py-2 text-sm text-amber-600 dark:text-amber-400">
+          <OctagonAlert className="h-4 w-4 shrink-0" />
+          <span className="font-medium">Blocked</span>
+          {fullStory.blocked_note && <span className="truncate">— {fullStory.blocked_note}</span>}
+        </div>
+      )}
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">

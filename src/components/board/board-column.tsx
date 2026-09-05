@@ -1,5 +1,5 @@
 import { useDroppable } from "@dnd-kit/react"
-import { ChevronLeft, ChevronRight, Plus, Settings2 } from "lucide-react"
+import { ChevronRight, Plus, Settings2 } from "lucide-react"
 import { BoardCard } from "./board-card"
 import { useBoardStore } from "@/lib/stores/board"
 import type { UserStory, UserStoryStatus } from "@/lib/api/types"
@@ -25,7 +25,7 @@ export function BoardColumn({ status, stories, onSelect, onAdd, onEditColumns }:
     return (
       <div className="flex w-10 shrink-0 flex-col">
         <div
-          className="bg-muted/50 hover:bg-muted/70 flex h-full cursor-pointer flex-col items-center gap-3 rounded-lg border-t-4 py-2 transition-colors"
+          className="bg-muted/50 hover:bg-muted/70 border-border flex h-full cursor-pointer flex-col items-center gap-3 rounded-lg border border-t-4 py-2 transition-colors"
           style={{ borderTopColor: status.color || "#666" }}
           onClick={() => toggleColumn(status.id)}
           title={`Expand ${status.name}`}
@@ -60,11 +60,11 @@ export function BoardColumn({ status, stories, onSelect, onAdd, onEditColumns }:
   }
 
   return (
-    <div className="flex w-72 shrink-0 flex-col">
+    <div className="flex max-h-full w-72 shrink-0 flex-col">
       <div
         ref={ref}
-        className={`bg-muted/40 flex h-full min-h-0 flex-col overflow-hidden rounded-lg transition-shadow ${
-          isDropTarget ? "ring-primary/40 ring-2" : ""
+        className={`bg-muted/40 border-border flex h-full min-h-0 flex-col overflow-hidden rounded-lg border transition-shadow ${
+          isDropTarget ? "bg-primary/10 ring-primary/50 ring-2" : ""
         }`}
       >
         {/* Colored top strip — the status colour, GitLab label-list style */}
@@ -76,7 +76,7 @@ export function BoardColumn({ status, stories, onSelect, onAdd, onEditColumns }:
               aria-label={`Collapse ${status.name}`}
               title="Collapse"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 -rotate-90 transition-transform" />
             </button>
             <span
               className="min-w-0 flex-1 truncate rounded-full px-2 py-0.5 text-xs font-semibold"

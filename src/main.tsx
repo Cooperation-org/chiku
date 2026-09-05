@@ -1,9 +1,10 @@
 ﻿import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
-import { QueryClientProvider } from "@tanstack/react-query"
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
+import { broadcastQueryClient } from "@tanstack/query-broadcast-client-experimental"
 import { routeTree } from "./routeTree.gen"
-import { queryClient } from "@/lib/query"
+import { queryClient, queryPersistOptions } from "@/lib/query"
 import { useAuth } from "@/lib/stores/auth"
 import { BrandLogo } from "@/components/app/brand-logo"
 import "./index.css"
@@ -29,10 +30,17 @@ declare module "@tanstack/react-router" {
   }
 }
 
+// Sync the query cache across open tabs: a mutation in one tab lands in the
+// others instantly (which then refetch fresh server data). Module scope —
+// runs once for the app lifetime, never re-subscribed by StrictMode.
+if (typeof BroadcastChannel !== "undefined") {
+  broadcastQueryClient({ queryClient })
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={queryPersistOptions}>
       <RouterProvider router={router} />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>
 )

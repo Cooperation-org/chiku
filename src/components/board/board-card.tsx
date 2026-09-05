@@ -1,21 +1,32 @@
-import { useDraggable } from "@dnd-kit/react"
+import { useDraggable, useDroppable, useDragOperation } from "@dnd-kit/react"
+import { OctagonAlert } from "lucide-react"
 import { Avatar } from "@/components/app/avatar"
 import { useBoardStore } from "@/lib/stores/board"
 import type { UserStory } from "@/lib/api/types"
 
-export function BoardCard({ story, onSelect }: { story: UserStory; onSelect: (story: UserStory) => void }) {
-  const { ref, isDragging } = useDraggable({ id: story.id, data: { story } })
+/**
+ * Pure card visual — no drag hooks, so it is safe to mount inside the
+ * DragOverlay (which would otherwise double-register the same draggable id).
+ */
+export function StoryCardView({ story, onClick }: { story: UserStory; onClick?: () => void }) {
   const showLabels = useBoardStore((s) => s.showLabels)
 
   return (
     <div
-      ref={ref}
-      onClick={() => onSelect(story)}
-      className={`group bg-card hover:bg-accent/60 relative cursor-grab rounded-lg border p-3 shadow-xs transition-colors active:cursor-grabbing ${
-        isDragging ? "opacity-40" : ""
-      }`}
+      onClick={onClick}
+      className="group bg-card hover:bg-accent/60 relative cursor-grab rounded-lg border p-3 shadow-xs transition-colors active:cursor-grabbing"
     >
       <h4 className="mr-6 line-clamp-2 text-sm leading-snug font-medium">{story.subject}</h4>
+
+      {story.is_blocked && (
+        <div
+          className="mt-1.5 inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400"
+          title={story.blocked_note || "Blocked"}
+        >
+          <OctagonAlert className="h-3 w-3" />
+          Blocked
+        </div>
+      )}
 
       {showLabels && story.tags && story.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -50,5 +61,39 @@ export function BoardCard({ story, onSelect }: { story: UserStory; onSelect: (st
         )}
       </div>
     </div>
+  )
+}
+
+export function BoardCard({ story, onSelect }: { story: UserStory; onSelect: (story: UserStory) => void }) {
+  const { ref: dragRef, isDragging } = useDraggable({ id: story.id, data: { story } })
+  // Cards are droppable too (in addition to columns) so a drop onto another
+  // card reports the exact insert position for in-column reorders.
+  // `isDropTarget` reacts to hover; `source` lets us ignore the dragged card
+  // flagging itself — all signal-driven, no component state.
+  const { ref: dropRef, isDropTarget } = useDroppable({
+    id: `card-${story.id}`,
+    data: { storyId: story.id, statusId: story.status },
+  })
+  const { source } = useDragOperation()
+  const showInsertLine = isDropTarget && source?.id !== story.id
+
+  return (
+    <>
+      {showInsertLine && (
+        <div
+          aria-hidden
+          className="bg-primary h-0.5 shrink-0 rounded-full"
+        />
+      )}
+      <div
+        ref={(el) => {
+          dragRef(el)
+          dropRef(el)
+        }}
+        className={isDragging ? "opacity-40" : ""}
+      >
+        <StoryCardView story={story} onClick={() => onSelect(story)} />
+      </div>
+    </>
   )
 }

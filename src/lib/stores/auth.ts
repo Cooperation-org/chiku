@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import type { AuthResponse, AtprotoAuthorizeResponse, AtprotoSession } from "@/lib/api/types"
 import { api } from "@/lib/api/client"
+import { queryPersister } from "@/lib/query"
 
 interface AuthState {
   user: AuthResponse | null
@@ -160,6 +161,9 @@ export const useAuth = create<AuthState>((set, get) => ({
       localStorage.removeItem("taiga_user")
       localStorage.removeItem("atproto_session")
     }
+    // Drop the persisted query cache so the next account never sees this
+    // one's projects flash by.
+    void queryPersister.removeClient()
     set({ user: null, isAuthenticated: false, isLoading: false })
   },
 

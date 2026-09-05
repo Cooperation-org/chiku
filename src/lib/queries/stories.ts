@@ -1,10 +1,13 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { qk } from "@/lib/query"
+import { searchProject } from "@/lib/api/search"
 import {
+  bulkUpdateKanbanOrder,
   createUserStory,
   getAllUserStoriesPaged,
   getUserStories,
   getUserStory,
+  getUserStoryByRef,
   getUserStoryStatuses,
   moveUserStory,
   setUserStoryStatus,
@@ -32,17 +35,39 @@ export function useStories(projectId: number | null) {
 
 export function useStory(id: number | null) {
   return useQuery({
-    queryKey: qk.story(id ?? 0),
+    queryKey: ["story", id ?? 0] as const,
     queryFn: () => getUserStory(id!),
     enabled: id != null,
   })
 }
 
-export function useMyTasks() {
+/** One story by its human ref — deep links resolve without a full list. */
+export function useStoryByRef(projectId: number | null, ref: number | null) {
   return useQuery({
-    queryKey: qk.myTasks(),
+    queryKey: qk.storyRef(projectId ?? 0, ref ?? 0),
+    queryFn: () => getUserStoryByRef(projectId!, ref!),
+    enabled: projectId != null && ref != null,
+  })
+}
+
+/** Project-scoped server search for the palette. Caller gates on text length. */
+export function useSearch(projectId: number | null, text: string) {
+  const trimmed = text.trim()
+  return useQuery({
+    queryKey: qk.search(projectId ?? 0, trimmed),
+    queryFn: () => searchProject(projectId!, trimmed),
+    enabled: projectId != null && trimmed.length >= 2,
+  })
+}
+
+export function useMyTasks(includeClosed: boolean) {
+  return useQuery({
+    queryKey: [...qk.myTasks(), includeClosed] as const,
     queryFn: async () => {
-      const [storyResult, projects] = await Promise.all([getAllUserStoriesPaged(), getProjects()])
+      const [storyResult, projects] = await Promise.all([
+        getAllUserStoriesPaged(includeClosed ? {} : { status__is_closed: false }),
+        getProjects(),
+      ])
       return {
         stories: storyResult.stories,
         loadedEverything: storyResult.complete,
@@ -167,6 +192,35 @@ export function useDuplicateStory(projectId: number) {
     onSuccess: (copy) => {
       qc.setQueryData<UserStory[]>(key, (old) => [...(old ?? []), copy])
     },
+  })
+}
+
+/**
+ * Persist a reordered kanban column in one call. The caller passes the new
+ * card-id order; this writes it through the bulk endpoint and reverts the
+ * stories cache on failure.
+ */
+export function useReorderKanbanOrder(projectId: number) {
+  const qc = useQueryClient()
+  const key = qk.stories(projectId)
+  return useMutation({
+    mutationFn: ({ storyIds, statusId }: { storyIds: number[]; statusId: number }) =>
+      bulkUpdateKanbanOrder(projectId, statusId, storyIds),
+    onMutate: async ({ storyIds }) => {
+      const previous = qc.getQueryData<UserStory[]>(key)
+      const orderOf = new Map(storyIds.map((id, i) => [id, (i + 1) * 10] as const))
+      qc.setQueryData<UserStory[]>(key, (old) =>
+        old?.map((s) => {
+          const order = orderOf.get(s.id)
+          return order !== undefined ? { ...s, kanban_order: order } : s
+        })
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(key, context.previous)
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
   })
 }
 
