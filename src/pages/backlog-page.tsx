@@ -1,0 +1,217 @@
+﻿import { useState } from "react"
+import { CirclePlus } from "lucide-react"
+import { Avatar } from "@/components/app/avatar"
+import { CreateStoryDialog } from "@/components/app/create-story-dialog"
+import { IssueModal } from "@/components/app/issue-modal"
+import { Button } from "@/components/ui/button"
+import { useResolvedProject } from "@/lib/queries/projects"
+import { useMemberships } from "@/lib/queries/memberships"
+import { useStories, useStatuses } from "@/lib/queries/stories"
+import { qk, queryClient } from "@/lib/query"
+import type { UserStory } from "@/lib/api/types"
+
+function formatRelativeDate(dateStr: string): string {
+  const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays === 0) return "today"
+  if (diffDays === 1) return "1d"
+  if (diffDays < 7) return `${diffDays}d`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo`
+  return `${Math.floor(diffDays / 365)}y`
+}
+
+interface BacklogPageProps {
+  slug: string
+  /** The `?story=` deep-link ref, owned by the route. */
+  storyRef: number | undefined
+  onStoryRefChange: (ref: number | undefined) => void
+}
+
+export default function BacklogPage({ slug, storyRef, onStoryRefChange }: BacklogPageProps) {
+  const { project: currentProject } = useResolvedProject(slug)
+  const projectId = currentProject?.id ?? null
+
+  const { data: statuses = [] } = useStatuses(projectId)
+  const { data: stories, isLoading } = useStories(projectId)
+  const { data: memberships } = useMemberships(projectId)
+  const [showCreate, setShowCreate] = useState(false)
+
+  const sorted = [...(stories ?? [])].sort((a, b) => (a.backlog_order ?? 0) - (b.backlog_order ?? 0))
+  const openStories = sorted.filter((s) => !s.is_closed)
+  const totalPoints = sorted.reduce((sum, s) => sum + (s.total_points || 0), 0)
+  const openPoints = openStories.reduce((sum, s) => sum + (s.total_points || 0), 0)
+
+  const members = (memberships ?? []).map((m) => ({
+    id: m.user,
+    full_name: m.full_name,
+    username: m.full_name || "user",
+  }))
+
+  const selectedStory: UserStory | null = storyRef
+    ? (sorted.find((s) => s.ref === storyRef) ?? null)
+    : null
+
+  if (!currentProject) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-muted-foreground">Select a project to view the backlog</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="flex items-center justify-between border-b px-6 py-4">
+        <div>
+          <h1 className="text-lg font-semibold">{currentProject.name}</h1>
+          <p className="text-muted-foreground text-sm">
+            Backlog Â· {openStories.length} stories Â· {openPoints} points
+          </p>
+        </div>
+        <Button onClick={() => setShowCreate(true)}>
+          <CirclePlus className="h-4 w-4" />
+          New Story
+        </Button>
+      </header>
+
+      <div className="flex-1 overflow-auto">
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-muted-foreground">Loading backlog...</div>
+          </div>
+        ) : !stories || sorted.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-muted-foreground">No stories in backlog</div>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-background/95 sticky top-0 border-b backdrop-blur">
+              <tr className="text-muted-foreground text-left text-xs tracking-wider uppercase">
+                <th className="w-16 px-6 py-3">Ref</th>
+                <th className="px-6 py-3">Story</th>
+                <th className="w-32 px-6 py-3">Status</th>
+                <th className="w-32 px-6 py-3">Assignee</th>
+                <th className="w-16 px-6 py-3 text-right">Points</th>
+                <th className="w-16 px-6 py-3 text-right">Updated</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {sorted.map((story) => (
+                <tr
+                  key={story.id}
+                  className="group hover:bg-accent/40 cursor-pointer transition-colors"
+                  onClick={() => onStoryRefChange(story.ref)}
+                >
+                  <td className="px-6 py-3">
+                    <span className="text-muted-foreground text-sm">#{story.ref}</span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <div className="flex flex-col gap-1">
+                      <span className="group-hover:text-primary transition-colors">{story.subject}</span>
+                      <div className="flex items-center gap-2">
+                        {story.epics?.map((epic) => (
+                          <span
+                            key={epic.id}
+                            className="rounded px-1.5 py-0.5 text-xs"
+                            style={{ backgroundColor: `${epic.color}20`, color: epic.color }}
+                          >
+                            {epic.subject}
+                          </span>
+                        ))}
+                        {story.tags?.map(([tag, color]) => (
+                          <span
+                            key={tag}
+                            className="rounded px-1.5 py-0.5 text-xs"
+                            style={{ backgroundColor: `${color || "#666"}20`, color: color || "#999" }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3">
+                    {story.status_extra_info && (
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs"
+                        style={{
+                          backgroundColor: `${story.status_extra_info.color}20`,
+                          color: story.status_extra_info.color,
+                        }}
+                      >
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ backgroundColor: story.status_extra_info.color }}
+                        />
+                        {story.status_extra_info.name}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3">
+                    {story.assigned_to_extra_info ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar
+                          name={story.assigned_to_extra_info.full_name_display}
+                          photo={story.assigned_to_extra_info.photo}
+                          size="sm"
+                          className="text-white"
+                        />
+                        <span className="text-muted-foreground text-sm">
+                          {story.assigned_to_extra_info.full_name_display.split(" ")[0]}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/60 text-sm">Unassigned</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3 text-right font-medium">{story.total_points || "-"}</td>
+                  <td className="text-muted-foreground px-6 py-3 text-right text-xs">
+                    {formatRelativeDate(story.modified_date)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {sorted.length > 0 && (
+        <footer className="bg-background/95 flex items-center justify-between border-t px-6 py-3 text-sm">
+          <span className="text-muted-foreground">{sorted.length} total stories</span>
+          <span className="text-muted-foreground">
+            Total: <span className="font-medium">{totalPoints} points</span>
+          </span>
+        </footer>
+      )}
+
+      <CreateStoryDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        projectId={currentProject.id}
+        statuses={statuses}
+        defaultStatusId={null}
+        members={members}
+      />
+
+      {selectedStory && (
+        <IssueModal
+          story={selectedStory}
+          statuses={statuses}
+          members={members}
+          onClose={() => onStoryRefChange(undefined)}
+          onUpdate={(updated) => {
+            queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
+              old?.map((s) => (s.id === updated.id ? updated : s))
+            )
+          }}
+          onDelete={(id) => {
+            onStoryRefChange(undefined)
+            queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
+              old?.filter((s) => s.id !== id)
+            )
+          }}
+        />
+      )}
+    </div>
+  )
+}

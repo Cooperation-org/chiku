@@ -1,10 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Default brand: the Taiga favicon. The workersvc leaf only on the
+         workers.vc deployment — this bundle is shared, so every other host
+         (linkedtrust.us, localhost, …) keeps the default. DNS-safe match:
+         workers.vc and *.workers.vc only. -->
+    <link rel="icon" href="/favicon.ico" />
+    <script>
+      (function () {
+        if (!/(^|\.)workers\.vc$/.test(location.hostname)) return;
+        var svg = document.createElement("link");
+        svg.rel = "icon";
+        svg.type = "image/svg+xml";
+        svg.href = "/favicon.svg";
+        document.head.appendChild(svg);
+        var ico = document.querySelector('link[rel="icon"]:not([type])');
+        if (ico) ico.href = "/favicon-workersvc.ico";
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vite-app</title>
+    <title>TaigaLT</title>
   </head>
   <body>
     <div id="root"></div>

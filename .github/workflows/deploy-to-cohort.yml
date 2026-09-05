@@ -1,0 +1,19 @@
+name: Deploy to cohort VM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via earnkit update script
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.COHORT_SSH_HOST }}
+          port: ${{ secrets.COHORT_SSH_PORT }}
+          username: deploy
+          key: ${{ secrets.COHORT_SSH_KEY }}
+          script: sudo /opt/earnkit/bin/update-marten
