@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { qk } from "@/lib/query"
 import {
   createUserStory,
@@ -52,7 +52,7 @@ export function useMyTasks() {
   })
 }
 
-/** Optimistic column move — the board PATCHes status with rollback on failure. */
+/** Optimistic column move â€” the board PATCHes status with rollback on failure. */
 export function useSetStoryStatus(projectId: number) {
   const qc = useQueryClient()
   const key = qk.stories(projectId)
@@ -168,12 +168,6 @@ export function useDuplicateStory(projectId: number) {
       qc.setQueryData<UserStory[]>(key, (old) => [...(old ?? []), copy])
     },
   })
-}
-
-/** Story lookup by human ref within the loaded board stories. */
-export function findStoryByRef(stories: UserStory[] | undefined, ref: number | undefined): UserStory | null {
-  if (!stories || ref === undefined) return null
-  return stories.find((s) => s.ref === ref) ?? null
 }
 
 export type { UserStoryStatus }

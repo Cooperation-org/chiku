@@ -11,23 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { StoryStatusSelect } from "@/components/inputs/story-status-select"
+import { AssigneeSelect } from "@/components/inputs/assignee-select"
 import { useCreateStory } from "@/lib/queries/stories"
-import type { UserStory, UserStoryStatus } from "@/lib/api/types"
+import type { UserStory } from "@/lib/api/types"
 
 interface CreateStoryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   projectId: number
-  statuses: UserStoryStatus[]
   defaultStatusId: number | null
-  members: { id: number; full_name: string; username: string }[]
   onCreated?: (story: UserStory) => void
 }
 
@@ -35,26 +28,22 @@ export function CreateStoryDialog({
   open,
   onOpenChange,
   projectId,
-  statuses,
   defaultStatusId,
-  members,
   onCreated,
 }: CreateStoryDialogProps) {
   const createStory = useCreateStory(projectId)
   const [subject, setSubject] = useState("")
   const [description, setDescription] = useState("")
-  const [status, setStatus] = useState<string>("")
-  const [assignedTo, setAssignedTo] = useState<string>("unassigned")
-
-  const sortedStatuses = [...statuses].sort((a, b) => a.order - b.order)
+  const [statusId, setStatusId] = useState<number | null>(null)
+  const [assignedTo, setAssignedTo] = useState<number | null>(null)
 
   useEffect(() => {
     if (!open) return
     setSubject("")
     setDescription("")
-    setStatus(defaultStatusId ? String(defaultStatusId) : sortedStatuses[0] ? String(sortedStatuses[0].id) : "")
-    setAssignedTo("unassigned")
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+    setStatusId(defaultStatusId)
+    setAssignedTo(null)
+  }, [open, defaultStatusId])
 
   async function handleCreate() {
     if (!subject.trim() || createStory.isPending) return
@@ -63,8 +52,8 @@ export function CreateStoryDialog({
         project: projectId,
         subject: subject.trim(),
         description: description.trim(),
-        status: status ? Number(status) : undefined,
-        assigned_to: assignedTo !== "unassigned" ? Number(assignedTo) : null,
+        status: statusId ?? undefined,
+        assigned_to: assignedTo,
       })
       toast(`Created #${story.ref}`)
       onCreated?.(story)
@@ -75,10 +64,7 @@ export function CreateStoryDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>New Story</DialogTitle>
@@ -99,42 +85,23 @@ export function CreateStoryDialog({
             />
           </div>
 
-          {sortedStatuses.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortedStatuses.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <StoryStatusSelect
+              projectId={projectId}
+              value={statusId}
+              onValueChange={setStatusId}
+            />
+          </div>
 
-          {members.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Assignee</Label>
-              <Select value={assignedTo} onValueChange={(v) => setAssignedTo(v ?? "unassigned")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.id} value={String(m.id)}>
-                      {m.full_name || m.username}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label>Assignee</Label>
+            <AssigneeSelect
+              projectId={projectId}
+              value={assignedTo}
+              onValueChange={setAssignedTo}
+            />
+          </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="story-desc">Description</Label>

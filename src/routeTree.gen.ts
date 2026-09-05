@@ -15,14 +15,16 @@ import { Route as AuthDevTokenRouteImport } from './routes/auth/dev-token'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as OauthCallbackRouteImport } from './routes/oauth/callback'
 import { Route as SsoRelayRouteImport } from './routes/sso/relay'
+import { Route as AppAccountIndexRouteImport } from './routes/_app/account/index'
 import { Route as AppTasksIndexRouteImport } from './routes/_app/tasks/index'
 import { Route as AuthAtprotoCallbackRouteImport } from './routes/auth/atproto/callback'
 import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
 import { Route as AppPSlugBacklogRouteImport } from './routes/_app/p/$slug/backlog'
-import { Route as AppPSlugBoardRouteImport } from './routes/_app/p/$slug/board'
 import { Route as AppPSlugEpicsRouteImport } from './routes/_app/p/$slug/epics'
 import { Route as AppPSlugMembersRouteImport } from './routes/_app/p/$slug/members'
 import { Route as AppPSlugVelocityRouteImport } from './routes/_app/p/$slug/velocity'
+import { Route as AppPSlugBoardIndexRouteImport } from './routes/_app/p/$slug/board/index'
+import { Route as AppPSlugBoardStoryRefRouteImport } from './routes/_app/p/$slug/board/$storyRef'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -53,6 +55,11 @@ const SsoRelayRoute = SsoRelayRouteImport.update({
   path: '/sso/relay',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAccountIndexRoute = AppAccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
@@ -73,11 +80,6 @@ const AppPSlugBacklogRoute = AppPSlugBacklogRouteImport.update({
   path: '/p/$slug/backlog',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppPSlugBoardRoute = AppPSlugBoardRouteImport.update({
-  id: '/p/$slug/board',
-  path: '/p/$slug/board',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppPSlugEpicsRoute = AppPSlugEpicsRouteImport.update({
   id: '/p/$slug/epics',
   path: '/p/$slug/epics',
@@ -93,6 +95,16 @@ const AppPSlugVelocityRoute = AppPSlugVelocityRouteImport.update({
   path: '/p/$slug/velocity',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppPSlugBoardIndexRoute = AppPSlugBoardIndexRouteImport.update({
+  id: '/p/$slug/board/',
+  path: '/p/$slug/board/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppPSlugBoardStoryRefRoute = AppPSlugBoardStoryRefRouteImport.update({
+  id: '/p/$slug/board/$storyRef',
+  path: '/p/$slug/board/$storyRef',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -102,12 +114,14 @@ export interface FileRoutesByFullPath {
   '/login/': typeof LoginIndexRoute
   '/auth/atproto/callback': typeof AuthAtprotoCallbackRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/account/': typeof AppAccountIndexRoute
   '/tasks/': typeof AppTasksIndexRoute
   '/p/$slug/backlog': typeof AppPSlugBacklogRoute
-  '/p/$slug/board': typeof AppPSlugBoardRoute
   '/p/$slug/epics': typeof AppPSlugEpicsRoute
   '/p/$slug/members': typeof AppPSlugMembersRoute
   '/p/$slug/velocity': typeof AppPSlugVelocityRoute
+  '/p/$slug/board/$storyRef': typeof AppPSlugBoardStoryRefRoute
+  '/p/$slug/board/': typeof AppPSlugBoardIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth/dev-token': typeof AuthDevTokenRoute
@@ -117,12 +131,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexRoute
   '/auth/atproto/callback': typeof AuthAtprotoCallbackRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/account': typeof AppAccountIndexRoute
   '/tasks': typeof AppTasksIndexRoute
   '/p/$slug/backlog': typeof AppPSlugBacklogRoute
-  '/p/$slug/board': typeof AppPSlugBoardRoute
   '/p/$slug/epics': typeof AppPSlugEpicsRoute
   '/p/$slug/members': typeof AppPSlugMembersRoute
   '/p/$slug/velocity': typeof AppPSlugVelocityRoute
+  '/p/$slug/board/$storyRef': typeof AppPSlugBoardStoryRefRoute
+  '/p/$slug/board': typeof AppPSlugBoardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,12 +150,14 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexRoute
   '/auth/atproto/callback': typeof AuthAtprotoCallbackRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/_app/account/': typeof AppAccountIndexRoute
   '/_app/tasks/': typeof AppTasksIndexRoute
   '/_app/p/$slug/backlog': typeof AppPSlugBacklogRoute
-  '/_app/p/$slug/board': typeof AppPSlugBoardRoute
   '/_app/p/$slug/epics': typeof AppPSlugEpicsRoute
   '/_app/p/$slug/members': typeof AppPSlugMembersRoute
   '/_app/p/$slug/velocity': typeof AppPSlugVelocityRoute
+  '/_app/p/$slug/board/$storyRef': typeof AppPSlugBoardStoryRefRoute
+  '/_app/p/$slug/board/': typeof AppPSlugBoardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,12 +169,14 @@ export interface FileRouteTypes {
     | '/login/'
     | '/auth/atproto/callback'
     | '/auth/google/callback'
+    | '/account/'
     | '/tasks/'
     | '/p/$slug/backlog'
-    | '/p/$slug/board'
     | '/p/$slug/epics'
     | '/p/$slug/members'
     | '/p/$slug/velocity'
+    | '/p/$slug/board/$storyRef'
+    | '/p/$slug/board/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth/dev-token'
@@ -166,12 +186,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/auth/atproto/callback'
     | '/auth/google/callback'
+    | '/account'
     | '/tasks'
     | '/p/$slug/backlog'
-    | '/p/$slug/board'
     | '/p/$slug/epics'
     | '/p/$slug/members'
     | '/p/$slug/velocity'
+    | '/p/$slug/board/$storyRef'
+    | '/p/$slug/board'
   id:
     | '__root__'
     | '/_app'
@@ -182,12 +204,14 @@ export interface FileRouteTypes {
     | '/login/'
     | '/auth/atproto/callback'
     | '/auth/google/callback'
+    | '/_app/account/'
     | '/_app/tasks/'
     | '/_app/p/$slug/backlog'
-    | '/_app/p/$slug/board'
     | '/_app/p/$slug/epics'
     | '/_app/p/$slug/members'
     | '/_app/p/$slug/velocity'
+    | '/_app/p/$slug/board/$storyRef'
+    | '/_app/p/$slug/board/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -244,6 +268,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SsoRelayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/account/': {
+      id: '/_app/account/'
+      path: '/account'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AppAccountIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/tasks/': {
       id: '/_app/tasks/'
       path: '/tasks'
@@ -272,13 +303,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPSlugBacklogRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/p/$slug/board': {
-      id: '/_app/p/$slug/board'
-      path: '/p/$slug/board'
-      fullPath: '/p/$slug/board'
-      preLoaderRoute: typeof AppPSlugBoardRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/_app/p/$slug/epics': {
       id: '/_app/p/$slug/epics'
       path: '/p/$slug/epics'
@@ -300,27 +324,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPSlugVelocityRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/p/$slug/board/': {
+      id: '/_app/p/$slug/board/'
+      path: '/p/$slug/board'
+      fullPath: '/p/$slug/board/'
+      preLoaderRoute: typeof AppPSlugBoardIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/p/$slug/board/$storyRef': {
+      id: '/_app/p/$slug/board/$storyRef'
+      path: '/p/$slug/board/$storyRef'
+      fullPath: '/p/$slug/board/$storyRef'
+      preLoaderRoute: typeof AppPSlugBoardStoryRefRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
 interface AppRouteRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppAccountIndexRoute: typeof AppAccountIndexRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
   AppPSlugBacklogRoute: typeof AppPSlugBacklogRoute
-  AppPSlugBoardRoute: typeof AppPSlugBoardRoute
   AppPSlugEpicsRoute: typeof AppPSlugEpicsRoute
   AppPSlugMembersRoute: typeof AppPSlugMembersRoute
   AppPSlugVelocityRoute: typeof AppPSlugVelocityRoute
+  AppPSlugBoardStoryRefRoute: typeof AppPSlugBoardStoryRefRoute
+  AppPSlugBoardIndexRoute: typeof AppPSlugBoardIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppAccountIndexRoute: AppAccountIndexRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
   AppPSlugBacklogRoute: AppPSlugBacklogRoute,
-  AppPSlugBoardRoute: AppPSlugBoardRoute,
   AppPSlugEpicsRoute: AppPSlugEpicsRoute,
   AppPSlugMembersRoute: AppPSlugMembersRoute,
   AppPSlugVelocityRoute: AppPSlugVelocityRoute,
+  AppPSlugBoardStoryRefRoute: AppPSlugBoardStoryRefRoute,
+  AppPSlugBoardIndexRoute: AppPSlugBoardIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

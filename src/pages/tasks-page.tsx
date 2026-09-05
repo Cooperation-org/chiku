@@ -5,13 +5,8 @@ import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { OptionsSelect, type SelectOption } from "@/components/inputs/options-select"
+import { ProjectSelect } from "@/components/inputs/project-select"
 import { useMyTasks } from "@/lib/queries/stories"
 import { useAuth } from "@/lib/stores/auth"
 import {
@@ -114,7 +109,10 @@ export default function TasksPage() {
   function openStory(story: UserStory) {
     const slug = story.project_extra_info?.slug
     if (slug) {
-      navigate({ to: "/p/$slug/board", params: { slug }, search: { story: story.ref } })
+      navigate({
+        to: "/p/$slug/board/$storyRef",
+        params: { slug, storyRef: String(story.ref) },
+      })
     }
   }
 
@@ -157,76 +155,51 @@ export default function TasksPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Select
+          <OptionsSelect
             value={filter.assignee === null ? "any" : String(filter.assignee)}
             onValueChange={(v) =>
               setFilter((f) => ({ ...f, assignee: v === "any" ? null : v === "unassigned" ? UNASSIGNED : Number(v) }))
             }
-          >
-            <SelectTrigger className={selectTriggerClass} aria-label="Assignee">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Anyone assigned</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {assignees.map((person) => (
-                <SelectItem key={person.id} value={String(person.id)}>
-                  {person.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "any", label: "Anyone assigned" },
+              { value: "unassigned", label: "Unassigned" },
+              ...assignees.map((person) => ({ value: String(person.id), label: person.name })),
+            ] as SelectOption[]}
+            triggerClassName={selectTriggerClass}
+            ariaLabel="Assignee"
+          />
 
-          <Select
+          <OptionsSelect
             value={filter.creator === null ? "any" : String(filter.creator)}
             onValueChange={(v) => setFilter((f) => ({ ...f, creator: v === "any" ? null : Number(v) }))}
-          >
-            <SelectTrigger className={selectTriggerClass} aria-label="Created by">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any creator</SelectItem>
-              {creators.map((person) => (
-                <SelectItem key={person.id} value={String(person.id)}>
-                  {person.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "any", label: "Any creator" },
+              ...creators.map((person) => ({ value: String(person.id), label: person.name })),
+            ] as SelectOption[]}
+            triggerClassName={selectTriggerClass}
+            ariaLabel="Created by"
+          />
 
-          <Select
-            value={filter.project === null ? "any" : String(filter.project)}
-            onValueChange={(v) => setFilter((f) => ({ ...f, project: v === "any" ? null : Number(v) }))}
-          >
-            <SelectTrigger className={selectTriggerClass} aria-label="Project">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">All projects</SelectItem>
-              {(data?.projects ?? []).map((p) => (
-                <SelectItem key={p.id} value={String(p.id)}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ProjectSelect
+            valueKey="id"
+            value={filter.project === null ? "none" : String(filter.project)}
+            onValueChange={(v) => setFilter((f) => ({ ...f, project: v === "none" ? null : Number(v) }))}
+            includeNone
+            noneLabel="All projects"
+            triggerClassName={selectTriggerClass}
+            ariaLabel="Project"
+          />
 
-          <Select
+          <OptionsSelect
             value={filter.status || "any"}
-            onValueChange={(v) => setFilter((f) => ({ ...f, status: !v || v === "any" ? "" : v }))}
-          >
-            <SelectTrigger className={selectTriggerClass} aria-label="Status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any status</SelectItem>
-              {statuses.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={(v) => setFilter((f) => ({ ...f, status: v === "any" ? "" : v }))}
+            options={[
+              { value: "any", label: "Any status" },
+              ...statuses.map((name) => ({ value: name, label: name })),
+            ] as SelectOption[]}
+            triggerClassName={selectTriggerClass}
+            ariaLabel="Status"
+          />
 
           <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
             <span>Due</span>

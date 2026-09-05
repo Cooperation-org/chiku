@@ -1,18 +1,18 @@
-﻿import BacklogPage from "@/pages/backlog-page";
+﻿import BoardPage from "@/pages/board-page";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-/** Legacy `?story=<ref>` deep links redirect to the canonical story view. */
-type BacklogSearch = { story?: number };
+/** Legacy `?story=<ref>` deep links redirect to the canonical /board/<ref>. */
+type BoardSearch = { story?: number };
 
-export const Route = createFileRoute("/_app/p/$slug/backlog")({
-  validateSearch: (search: Record<string, unknown>): BacklogSearch => {
+export const Route = createFileRoute("/_app/p/$slug/board/")({
+  validateSearch: (search: Record<string, unknown>): BoardSearch => {
     const raw = search.story;
     if (raw === undefined || raw === null || raw === "") return {};
     const story = Number(raw);
     return Number.isFinite(story) ? { story } : {};
   },
   beforeLoad: ({ params, search }) => {
-    const { story } = search as BacklogSearch;
+    const { story } = search as BoardSearch;
     if (story !== undefined) {
       throw redirect({
         to: "/p/$slug/board/$storyRef",
@@ -26,5 +26,5 @@ export const Route = createFileRoute("/_app/p/$slug/backlog")({
 
 function RouteComponent() {
   const { slug } = Route.useParams();
-  return <BacklogPage slug={slug} />;
+  return <BoardPage slug={slug} />;
 }

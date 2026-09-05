@@ -1,17 +1,11 @@
-import { useState } from "react"
+﻿import { useState } from "react"
 import { toast } from "sonner"
 import { UserPlus, X } from "lucide-react"
 import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { MemberRoleSelect } from "@/components/inputs/member-role-select"
 import {
   Table,
   TableBody,
@@ -20,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useAddMembership, useMemberships, useRemoveMembership, useRoles, searchUsers } from "@/lib/queries/memberships"
+import { useAddMembership, useMemberships, useRemoveMembership, searchUsers } from "@/lib/queries/memberships"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import type { Project } from "@/lib/api/types"
 
@@ -47,7 +41,7 @@ export default function MembersPage({ slug }: MembersPageProps) {
       <header className="flex shrink-0 items-center justify-between border-b px-6 py-4">
         <div>
           <h1 className="text-lg font-semibold">Members</h1>
-          <p className="text-muted-foreground text-sm">{project.name} · who is on the team</p>
+          <p className="text-muted-foreground text-sm">{project.name} Â· who is on the team</p>
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -61,7 +55,6 @@ export default function MembersPage({ slug }: MembersPageProps) {
 }
 
 function AddMemberPanel({ project }: { project: Project }) {
-  const { data: roles = [] } = useRoles(project.id)
   const addMembership = useAddMembership(project.id)
 
   const [query, setQuery] = useState("")
@@ -127,18 +120,12 @@ function AddMemberPanel({ project }: { project: Project }) {
         </div>
         <div className="w-40 space-y-1.5">
           <Label className="text-xs">Role</Label>
-          <Select value={roleId} onValueChange={(v) => setRoleId(v ?? "")}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              {roles.map((r) => (
-                <SelectItem key={r.id} value={String(r.id)}>
-                  {r.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MemberRoleSelect
+            projectId={project.id}
+            value={roleId}
+            onValueChange={setRoleId}
+            disabled={!selected}
+          />
         </div>
         <Button onClick={handleAdd} disabled={!selected || !roleId || addMembership.isPending}>
           {addMembership.isPending ? "Adding..." : "Add"}
@@ -212,7 +199,7 @@ function MembersTable({ project, canManage }: { project: Project; canManage: boo
               <TableRow key={m.id}>
                 <TableCell>
                   <div className="flex min-w-0 items-center gap-2">
-                    <Avatar name={m.full_name} photo={m.photo} color={m.color} size="sm" className="shrink-0 text-white" />
+                    <Avatar name={m.full_name} photo={m.photo} size="sm" className="shrink-0" />
                     <div className="min-w-0">
                       <span className="block truncate text-sm">{m.full_name || `user ${m.user}`}</span>
                       {m.email && <span className="text-muted-foreground block truncate text-xs">{m.email}</span>}

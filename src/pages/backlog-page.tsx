@@ -1,14 +1,11 @@
 ﻿import { useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { CirclePlus } from "lucide-react"
 import { Avatar } from "@/components/app/avatar"
 import { CreateStoryDialog } from "@/components/app/create-story-dialog"
-import { IssueModal } from "@/components/app/issue-modal"
 import { Button } from "@/components/ui/button"
 import { useProjectBySlug } from "@/lib/queries/projects"
-import { useMemberships } from "@/lib/queries/memberships"
-import { useStories, useStatuses } from "@/lib/queries/stories"
-import { qk, queryClient } from "@/lib/query"
-import type { UserStory } from "@/lib/api/types"
+import { useStories } from "@/lib/queries/stories"
 
 function formatRelativeDate(dateStr: string): string {
   const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
@@ -22,34 +19,20 @@ function formatRelativeDate(dateStr: string): string {
 
 interface BacklogPageProps {
   slug: string
-  /** The `?story=` deep-link ref, owned by the route. */
-  storyRef: number | undefined
-  onStoryRefChange: (ref: number | undefined) => void
 }
 
-export default function BacklogPage({ slug, storyRef, onStoryRefChange }: BacklogPageProps) {
+export default function BacklogPage({ slug }: BacklogPageProps) {
+  const navigate = useNavigate()
   const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
 
-  const { data: statuses = [] } = useStatuses(projectId)
   const { data: stories, isLoading } = useStories(projectId)
-  const { data: memberships } = useMemberships(projectId)
   const [showCreate, setShowCreate] = useState(false)
 
   const sorted = [...(stories ?? [])].sort((a, b) => (a.backlog_order ?? 0) - (b.backlog_order ?? 0))
   const openStories = sorted.filter((s) => !s.is_closed)
   const totalPoints = sorted.reduce((sum, s) => sum + (s.total_points || 0), 0)
   const openPoints = openStories.reduce((sum, s) => sum + (s.total_points || 0), 0)
-
-  const members = (memberships ?? []).map((m) => ({
-    id: m.user,
-    full_name: m.full_name,
-    username: m.full_name || "user",
-  }))
-
-  const selectedStory: UserStory | null = storyRef
-    ? (sorted.find((s) => s.ref === storyRef) ?? null)
-    : null
 
   if (!currentProject) {
     return (
@@ -65,7 +48,7 @@ export default function BacklogPage({ slug, storyRef, onStoryRefChange }: Backlo
         <div>
           <h1 className="text-lg font-semibold">{currentProject.name}</h1>
           <p className="text-muted-foreground text-sm">
-            Backlog Â· {openStories.length} stories Â· {openPoints} points
+            Backlog · {openStories.length} stories · {openPoints} points
           </p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
@@ -74,7 +57,7 @@ export default function BacklogPage({ slug, storyRef, onStoryRefChange }: Backlo
         </Button>
       </header>
 
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
             <div className="text-muted-foreground">Loading backlog...</div>
@@ -100,7 +83,12 @@ export default function BacklogPage({ slug, storyRef, onStoryRefChange }: Backlo
                 <tr
                   key={story.id}
                   className="group hover:bg-accent/40 cursor-pointer transition-colors"
-                  onClick={() => onStoryRefChange(story.ref)}
+                  onClick={() =>
+                    navigate({
+                      to: "/p/$slug/board/$storyRef",
+                      params: { slug, storyRef: String(story.ref) },
+                    })
+                  }
                 >
                   <td className="px-6 py-3">
                     <span className="text-muted-foreground text-sm">#{story.ref}</span>
@@ -188,30 +176,8 @@ export default function BacklogPage({ slug, storyRef, onStoryRefChange }: Backlo
         open={showCreate}
         onOpenChange={setShowCreate}
         projectId={currentProject.id}
-        statuses={statuses}
         defaultStatusId={null}
-        members={members}
       />
-
-      {selectedStory && (
-        <IssueModal
-          story={selectedStory}
-          statuses={statuses}
-          members={members}
-          onClose={() => onStoryRefChange(undefined)}
-          onUpdate={(updated) => {
-            queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
-              old?.map((s) => (s.id === updated.id ? updated : s))
-            )
-          }}
-          onDelete={(id) => {
-            onStoryRefChange(undefined)
-            queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
-              old?.filter((s) => s.id !== id)
-            )
-          }}
-        />
-      )}
     </div>
   )
 }

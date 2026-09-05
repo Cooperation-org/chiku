@@ -1,4 +1,4 @@
-import { useState } from "react"
+﻿import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { ChevronDown, CirclePlus, Settings2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -22,13 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { ProjectSelect } from "@/components/inputs/project-select"
 import { useProjects } from "@/lib/queries/projects"
 import { isArchived } from "@/lib/api/projects"
 import { createStatus, deleteStatus, getStatuses } from "@/lib/api/statuses"
@@ -243,19 +238,21 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
           <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel>Switch project</DropdownMenuLabel>
-          {activeProjects.map((p) => (
-            <DropdownMenuItem
-              key={p.id}
-              onClick={() => switchTo(p.slug)}
-              className={p.slug === slug ? "bg-accent" : ""}
-            >
-              <span className="min-w-0 flex-1 truncate">{p.name}</span>
-            </DropdownMenuItem>
-          ))}
-          {activeProjects.length === 0 && (
-            <div className="text-muted-foreground px-2 py-2 text-xs">No projects yet</div>
-          )}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Switch project</DropdownMenuLabel>
+            {activeProjects.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => switchTo(p.slug)}
+                className={p.slug === slug ? "bg-accent" : ""}
+              >
+                <span className="min-w-0 flex-1 truncate">{p.name}</span>
+              </DropdownMenuItem>
+            ))}
+            {activeProjects.length === 0 && (
+              <div className="text-muted-foreground px-2 py-2 text-xs">No projects yet</div>
+            )}
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {
@@ -303,19 +300,12 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
             </div>
             <div className="space-y-1.5">
               <Label>Copy columns from</Label>
-              <Select value={cloneFrom} onValueChange={(v) => setCloneFrom(v ?? "none")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Default columns</SelectItem>
-                  {activeProjects.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ProjectSelect
+                value={cloneFrom}
+                onValueChange={setCloneFrom}
+                includeNone
+                noneLabel="Default columns"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -329,7 +319,7 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Project settings — edit, archive, delete for the current project */}
+      {/* Project settings â€” edit, archive, delete for the current project */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent className="max-w-md">
           <DialogHeader>

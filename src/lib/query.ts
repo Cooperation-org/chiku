@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query"
+﻿import { QueryClient } from "@tanstack/react-query"
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,7 +11,7 @@ export const queryClient = new QueryClient({
   },
 })
 
-/** Canonical query keys — every hook must build keys from these. */
+/** Canonical query keys â€” every hook must build keys from these. */
 export const qk = {
   projects: ["projects"] as const,
   project: (id: number) => ["project", id] as const,
@@ -24,5 +24,6 @@ export const qk = {
   comments: (storyId: number) => ["story", storyId, "comments"] as const,
   attachments: (storyId: number) => ["story", storyId, "attachments"] as const,
   myTasks: () => ["my-tasks"] as const,
+  me: ["me"] as const,
   users: (projectId: number) => ["project", projectId, "users"] as const,
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+﻿import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import {
   ArrowLeft, Calendar, Clock, Copy, Download, Pencil, Trash2, User as UserIcon,
@@ -7,7 +7,7 @@ import type { Attachment, HistoryEntry, Project, UserStory, UserStoryStatus } fr
 import { getUserStory, moveUserStory, updateUserStory, getUserStoryStatuses } from "@/lib/api/userstories"
 import { getStoryComments } from "@/lib/api/comments"
 import { getProject, getProjects, isArchived } from "@/lib/api/projects"
-import { pointChoices, pointsPatch, storyPointId } from "@/lib/api/points"
+import { pointsPatch, storyPointId } from "@/lib/api/points"
 import {
   deleteStoryAttachment,
   formatFileSize,
@@ -37,17 +37,14 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { StoryStatusSelect } from "@/components/inputs/story-status-select"
+import { AssigneeSelect } from "@/components/inputs/assignee-select"
+import { PointsSelect } from "@/components/inputs/points-select"
 
 interface IssueModalProps {
   story: UserStory
@@ -99,7 +96,6 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   const [previewError, setPreviewError] = useState<Record<number, string>>({})
   const fileInput = useRef<HTMLInputElement>(null)
 
-  const sortedStatuses = useMemo(() => [...statuses].sort((a, b) => a.order - b.order), [statuses])
   const { user: me } = useAuth()
 
   useEffect(() => {
@@ -216,16 +212,14 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     saveField("description", { description: editDescription.trim() })
   }
 
-  function saveStatus(val: string) {
-    const parsed = Number(val)
-    if (parsed === fullStory.status) return
-    saveField("status", { status: parsed })
+  function saveStatus(statusId: number) {
+    if (statusId === fullStory.status) return
+    saveField("status", { status: statusId })
   }
 
-  function saveAssignee(raw: string) {
-    const val = raw === "unassigned" ? null : Number(raw)
-    if (val === fullStory.assigned_to) return
-    saveField("assigned_to", { assigned_to: val })
+  function saveAssignee(userId: number | null) {
+    if (userId === fullStory.assigned_to) return
+    saveField("assigned_to", { assigned_to: userId })
   }
 
   function saveDueDate() {
@@ -236,8 +230,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     saveField("due_date", { due_date: editDueDate || null })
   }
 
-  function savePoints(raw: string) {
-    const pointId = raw === "none" ? null : Number(raw)
+  function savePoints(pointId: number | null) {
     const patch = project ? pointsPatch(pointId, project) : null
     if (!patch) {
       setEditingField(null)
@@ -421,7 +414,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
           </Button>
           <span className="text-muted-foreground font-mono text-sm">#{fullStory.ref}</span>
 
-          {/* Project name — opens the move menu */}
+          {/* Project name â€” opens the move menu */}
           <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -434,32 +427,25 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
             {fullStory.project_extra_info?.name || "Project"}
           </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="max-h-60 min-w-52 overflow-y-auto">
-              <DropdownMenuLabel>Move to…</DropdownMenuLabel>
-              <MoveMenuItems currentProjectId={fullStory.project} onMove={handleMove} />
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Move to…</DropdownMenuLabel>
+                <MoveMenuItems currentProjectId={fullStory.project} onMove={handleMove} />
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Status — click to change */}
+          {/* Status â€” click to change */}
           {isEditing("status") ? (
-            <Select
-              value={String(fullStory.status)}
-              onValueChange={(v) => {
-                if (v === null) return
-                saveStatus(v)
+            <StoryStatusSelect
+              projectId={fullStory.project}
+              value={fullStory.status}
+              onValueChange={(statusId) => {
+                saveStatus(statusId)
+                if (!editingAll) setEditingField(null)
               }}
               defaultOpen
-            >
-              <SelectTrigger className="h-7 w-auto text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {sortedStatuses.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              triggerClassName="h-7 w-auto text-xs"
+            />
           ) : (
             <button
               onClick={() => startEdit("status")}
@@ -543,27 +529,16 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {/* Assignee */}
             {isEditing("assignee") ? (
-              <Select
-                value={fullStory.assigned_to ? String(fullStory.assigned_to) : "unassigned"}
-                onValueChange={(v) => {
-                  if (v === null) return
-                  saveAssignee(v)
+              <AssigneeSelect
+                projectId={fullStory.project}
+                value={fullStory.assigned_to ?? null}
+                onValueChange={(userId) => {
+                  saveAssignee(userId)
                   if (!editingAll) setEditingField(null)
                 }}
                 defaultOpen
-              >
-                <SelectTrigger className="h-8 w-44">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.id} value={String(m.id)}>
-                      {m.full_name || m.username}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                triggerClassName="h-8 w-44"
+              />
             ) : (
               <button
                 onClick={() => startEdit("assignee")}
@@ -589,29 +564,16 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
 
             {/* Points */}
             {isEditing("points") && project ? (
-              <Select
-                value={currentPointId ? String(currentPointId) : "none"}
-                onValueChange={(v) => {
-                  if (v === null) return
-                  savePoints(v)
+              <PointsSelect
+                project={project}
+                value={currentPointId}
+                onValueChange={(pointId) => {
+                  savePoints(pointId)
                   if (!editingAll) setEditingField(null)
                 }}
                 defaultOpen
-              >
-                <SelectTrigger className="h-8 w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No estimate</SelectItem>
-                  {pointChoices(project)
-                    .filter((p) => p.value !== null)
-                    .map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name} points
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+                triggerClassName="h-8 w-40"
+              />
             ) : project ? (
               <button
                 onClick={() => startEdit("points")}
@@ -791,7 +753,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                           <span className="group-hover:text-primary block truncate text-sm">{a.name}</span>
                           <span className="text-muted-foreground text-xs">
                             {formatFileSize(a.size)}
-                            {uploaderName(a) && ` · ${uploaderName(a)}`} · {formatRelative(a.created_date)}
+                            {uploaderName(a) && ` Â· ${uploaderName(a)}`} Â· {formatRelative(a.created_date)}
                           </span>
                         </button>
                         <a
@@ -875,7 +837,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
               </Button>
             </div>
             {commentError && (
-              <p className="text-destructive mb-4 text-sm">{commentError} — nothing you typed was lost.</p>
+              <p className="text-destructive mb-4 text-sm">{commentError} â€” nothing you typed was lost.</p>
             )}
             {!commentsLoaded ? (
               <p className="text-muted-foreground text-sm">Loading comments...</p>

@@ -1,4 +1,5 @@
 import { initialsFor } from "@/lib/utils/initials"
+import { marbleGradient } from "@/lib/utils/marble"
 
 const boxes = {
   sm: "h-6 w-6 text-[10px]",
@@ -12,15 +13,29 @@ interface AvatarProps {
   name?: string | null
   /** Taiga's uploaded picture, when the person has one. */
   photo?: string | null
-  /** Background for the initials. Taiga gives every user a colour. */
+  /**
+   * Explicit solid background (Taiga's monotone choice, or a project
+   * identicon colour). When absent, a deterministic marble gradient derived
+   * from the full name is used — two people with the same initials still get
+   * different backgrounds.
+   */
   color?: string | null
+  /**
+   * "auto" (default): photo > mono colour > marble.
+   * "marble": always the name-derived marble, ignoring photo and colour.
+   */
+  variant?: "auto" | "marble"
   size?: keyof typeof boxes
   className?: string
 }
 
-export function Avatar({ name, photo, color, size = "md", className = "" }: AvatarProps) {
+export function Avatar({ name, photo, color, variant = "auto", size = "md", className = "" }: AvatarProps) {
   const label = name ?? ""
-  if (photo) {
+
+  const showPhoto = variant === "auto" && !!photo
+  const solid = variant === "auto" && !!color
+
+  if (showPhoto) {
     return (
       <img
         src={photo}
@@ -30,11 +45,18 @@ export function Avatar({ name, photo, color, size = "md", className = "" }: Avat
       />
     )
   }
+
+  // Marble: a name-derived gradient, with white initials kept readable over
+  // the blobs. Used by default, or forced with variant="marble".
+  const style = solid
+    ? { backgroundColor: color as string }
+    : { background: marbleGradient(label), color: "white", textShadow: "0 1px 2px rgb(0 0 0 / 0.35)" }
+
   return (
     <div
       title={label}
       className={`flex shrink-0 items-center justify-center rounded-full font-medium ${boxes[size]} ${className}`}
-      style={color ? { backgroundColor: color } : undefined}
+      style={style}
     >
       {initialsFor(name)}
     </div>

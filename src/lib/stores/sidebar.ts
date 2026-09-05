@@ -1,11 +1,11 @@
 import { create } from "zustand"
 
-const COLLAPSED_KEY = "sidebar_collapsed"
+const EXPANDED_KEY = "sidebar_expanded"
 const SECTIONS_KEY = "sidebar_sections"
 
-function readCollapsed(): boolean {
-  if (typeof window === "undefined") return false
-  return localStorage.getItem(COLLAPSED_KEY) === "true"
+function readExpanded(): boolean {
+  if (typeof window === "undefined") return true
+  return localStorage.getItem(EXPANDED_KEY) !== "false"
 }
 
 function readSections(): Record<string, boolean> {
@@ -22,28 +22,22 @@ function persistSections(sections: Record<string, boolean>) {
 }
 
 interface SidebarState {
-  /** Icon rail mode (desktop). */
-  collapsed: boolean
-  /** Overlay sheet open (mobile). */
-  mobileOpen: boolean
-  /** Open/closed collapsible sections, keyed by section id. */
+  /** Expanded (vs the icon rail). Drives the shadcn SidebarProvider. */
+  expanded: boolean
+  /** Open/closed collapsible groups, keyed by section id. */
   sections: Record<string, boolean>
-  toggle: () => void
-  setMobileOpen: (open: boolean) => void
+  setExpanded: (open: boolean) => void
   isSectionOpen: (id: string) => boolean
   toggleSection: (id: string) => void
 }
 
 export const useSidebarStore = create<SidebarState>((set, get) => ({
-  collapsed: readCollapsed(),
-  mobileOpen: false,
+  expanded: readExpanded(),
   sections: readSections(),
-  toggle: () => {
-    const next = !get().collapsed
-    localStorage.setItem(COLLAPSED_KEY, String(next))
-    set({ collapsed: next })
+  setExpanded: (open) => {
+    localStorage.setItem(EXPANDED_KEY, String(open))
+    set({ expanded: open })
   },
-  setMobileOpen: (open) => set({ mobileOpen: open }),
   isSectionOpen: (id) => get().sections[id] ?? true,
   toggleSection: (id) => {
     const sections = { ...get().sections, [id]: !(get().sections[id] ?? true) }

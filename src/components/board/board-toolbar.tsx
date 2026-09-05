@@ -1,7 +1,8 @@
-﻿import { Check, Settings2 } from "lucide-react"
+﻿import { Check, Moon, Settings2, Sun } from "lucide-react"
 import { ProjectSwitcher } from "@/components/board/project-switcher"
 import { SearchField } from "@/components/layout/search-field"
 import { Button } from "@/components/ui/button"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useBoardStore } from "@/lib/stores/board"
+import { useTheme } from "@/lib/stores/theme"
 
 interface BoardToolbarProps {
   slug: string
@@ -21,9 +23,11 @@ interface BoardToolbarProps {
 export function BoardToolbar({ slug, search, onSearchChange, onEditColumns }: BoardToolbarProps) {
   const showLabels = useBoardStore((s) => s.showLabels)
   const setShowLabels = useBoardStore((s) => s.setShowLabels)
+  const { theme, toggle } = useTheme()
 
   return (
     <div className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+      <SidebarTrigger aria-label="Toggle sidebar" />
       <ProjectSwitcher slug={slug} />
 
       <SearchField
@@ -34,6 +38,16 @@ export function BoardToolbar({ slug, search, onSearchChange, onEditColumns }: Bo
       />
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggle}
+          title="Toggle theme"
+          aria-label="Toggle theme"
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+
         <DropdownMenu>
           <DropdownMenuTrigger
             render={

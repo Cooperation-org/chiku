@@ -146,7 +146,7 @@ export function ProfileDialog({ open, onOpenChange, onUpdated }: ProfileDialogPr
                   onChange={(e) => setDisplayName(e.target.value)}
                 />
                 <p className="text-muted-foreground text-xs">
-                  Two words give two letters: "Jefferson Richards" shows as JR.
+                  Two words give two letters: "John Mole" shows as JM.
                 </p>
               </div>
 

@@ -5,9 +5,7 @@ import { Board } from "@/components/board/board"
 import { BoardToolbar } from "@/components/board/board-toolbar"
 import { CreateStoryDialog } from "@/components/app/create-story-dialog"
 import { ColumnEditorDialog } from "@/components/app/column-editor-dialog"
-import { IssueModal } from "@/components/app/issue-modal"
 import { Button } from "@/components/ui/button"
-import { useMemberships } from "@/lib/queries/memberships"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { isArchived, unarchiveProject } from "@/lib/api/projects"
 import { useSetStoryStatus, useStories, useStatuses } from "@/lib/queries/stories"
@@ -17,19 +15,15 @@ import type { UserStory } from "@/lib/api/types"
 
 interface BoardPageProps {
   slug: string
-  /** The `?story=` deep-link ref, owned by the route. */
-  storyRef: number | undefined
-  onStoryRefChange: (ref: number | undefined) => void
 }
 
-export default function BoardPage({ slug, storyRef, onStoryRefChange }: BoardPageProps) {
+export default function BoardPage({ slug }: BoardPageProps) {
   const navigate = useNavigate()
   const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
 
   const { data: statuses = [], isLoading: statusesLoading } = useStatuses(projectId)
   const { data: stories, isLoading: storiesLoading } = useStories(projectId)
-  const { data: memberships } = useMemberships(projectId)
   const setStatus = useSetStoryStatus(projectId ?? 0)
 
   const [search, setSearch] = useState("")
@@ -37,17 +31,7 @@ export default function BoardPage({ slug, storyRef, onStoryRefChange }: BoardPag
   const [createStatusId, setCreateStatusId] = useState<number | null>(null)
   const [showColumnEditor, setShowColumnEditor] = useState(false)
 
-  const members = (memberships ?? []).map((m) => ({
-    id: m.user,
-    full_name: m.full_name,
-    username: m.full_name || "user",
-  }))
-
   const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q: search })
-
-  const selectedStory: UserStory | null = storyRef
-    ? (visible.find((s) => s.ref === storyRef) ?? null)
-    : null
 
   function handleMoveStory(story: UserStory, newStatusId: number) {
     setStatus.mutate(
@@ -114,7 +98,10 @@ export default function BoardPage({ slug, storyRef, onStoryRefChange }: BoardPag
             stories={visible}
             onMoveStory={handleMoveStory}
             onSelect={(story) =>
-              navigate({ to: ".", search: { story: story.ref }, replace: true })
+              navigate({
+                to: "/p/$slug/board/$storyRef",
+                params: { slug, storyRef: String(story.ref) },
+              })
             }
             onAddToColumn={(statusId) => {
               setCreateStatusId(statusId)
@@ -126,33 +113,11 @@ export default function BoardPage({ slug, storyRef, onStoryRefChange }: BoardPag
         )}
       </div>
 
-      {selectedStory && (
-        <IssueModal
-          story={selectedStory}
-          statuses={statuses}
-          members={members}
-          onClose={() => onStoryRefChange(undefined)}
-          onUpdate={(updated) => {
-            queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
-              old?.map((s) => (s.id === updated.id ? updated : s))
-            )
-          }}
-          onDelete={(id) => {
-            onStoryRefChange(undefined)
-            queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
-              old?.filter((s) => s.id !== id)
-            )
-          }}
-        />
-      )}
-
       <CreateStoryDialog
         open={showCreate}
         onOpenChange={setShowCreate}
         projectId={currentProject.id}
-        statuses={statuses}
         defaultStatusId={createStatusId}
-        members={members}
       />
 
       <ColumnEditorDialog
