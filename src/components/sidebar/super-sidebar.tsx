@@ -17,7 +17,6 @@ import {
 import { Avatar } from "@/components/app/avatar"
 import { SidebarItem } from "@/components/sidebar/sidebar-item"
 import { SidebarSection } from "@/components/sidebar/sidebar-section"
-import { ProjectsSection } from "@/components/sidebar/projects-section"
 import { ProfileDialog } from "@/components/app/profile-dialog"
 import { MembersDialog } from "@/components/app/members-dialog"
 import { useAuth } from "@/lib/stores/auth"
@@ -84,29 +83,13 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
     { key: "velocity", label: "Velocity", icon: <LineChart />, enabled: viewEnabled(project, "velocity") },
   ] as const
 
-  // Deterministic identicon colour per project, GitLab style.
-  const identiconPalette = ["#40A8E5", "#54D1DB", "#70CF97", "#FFC66D", "#FF9F43", "#F57D7D", "#C49ADE"]
-  const identiconColor = project ? identiconPalette[project.id % identiconPalette.length] : "#29c033"
+  function signOut() {
+    logout()
+    navigate({ to: "/login" })
+  }
 
   return (
     <div className="text-sidebar-foreground flex h-full flex-col">
-      {/* Context header — the current project, click goes to its board */}
-      <div className="border-b p-3">
-        <SidebarItem
-          collapsed={collapsed}
-          icon={
-            <Avatar
-              name={project?.name}
-              color={identiconColor}
-              size="sm"
-              className="text-white"
-            />
-          }
-          label={project?.name ?? "TaigaLT"}
-          onClick={() => (urlSlug ? go(`/p/${urlSlug}/board`, urlSlug) : go("/"))}
-        />
-      </div>
-
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
         {collapsed ? (
           <>
@@ -124,7 +107,7 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
           </>
         ) : (
           <>
-            <SidebarSection id="pinned" label="Views">
+            <SidebarSection id="views" label="Views">
               {views.map((v) => (
                 <SidebarItem
                   key={v.key}
@@ -145,27 +128,18 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
                 onClick={() => setShowMembers(true)}
               />
             </SidebarSection>
-
-            <SidebarSection id="projects" label="Projects">
-              <ProjectsSection activeSlug={urlSlug ?? selectedSlug} onNavigate={onNavigate} />
-            </SidebarSection>
           </>
         )}
       </div>
 
+      {/* Footer: fixed-size controls, nothing overflows */}
       <div className="border-t p-2">
         {collapsed ? (
           <div className="flex flex-col items-center gap-1">
-            <SidebarItem collapsed icon={theme === "dark" ? <Sun /> : <Moon />} label="Toggle theme" onClick={toggle} />
-            <SidebarItem collapsed icon={<LogOut />} label="Sign out" onClick={() => { logout(); navigate({ to: "/login" }) }} />
-            <SidebarItem collapsed icon={<PanelLeftOpen />} label="Expand sidebar" onClick={() => useSidebarStore.getState().toggle()} />
-          </div>
-        ) : (
-          <>
             <button
               onClick={() => setShowProfile(true)}
-              className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
-              title="Edit your name and icon"
+              className="hover:bg-sidebar-accent flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+              title="Your profile"
             >
               <Avatar
                 name={user?.full_name || user?.username}
@@ -174,22 +148,46 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
                 size="sm"
                 className="text-zinc-900"
               />
+            </button>
+            <FooterIconButton
+              icon={theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              label="Toggle theme"
+              onClick={toggle}
+            />
+            <FooterIconButton icon={<LogOut className="h-4 w-4" />} label="Sign out" onClick={signOut} />
+            <FooterIconButton
+              icon={<PanelLeftOpen className="h-4 w-4" />}
+              label="Expand sidebar"
+              onClick={() => useSidebarStore.getState().toggle()}
+            />
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={() => setShowProfile(true)}
+              className="hover:bg-sidebar-accent flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+              title="Edit your name and icon"
+            >
+              <Avatar
+                name={user?.full_name || user?.username}
+                photo={user?.photo}
+                color={user?.color || "#22d3ee"}
+                size="sm"
+                className="shrink-0 text-zinc-900"
+              />
               <span className="text-sidebar-foreground/80 min-w-0 flex-1 truncate text-sm">
-                {user?.full_name_display || user?.username}
+                {user?.full_name_display || user?.username || "Signed in"}
               </span>
             </button>
-            <div className="mt-1 flex items-center justify-between">
-              <SidebarItem icon={theme === "dark" ? <Sun /> : <Moon />} label="Theme" onClick={toggle} />
-              <SidebarItem
-                icon={<LogOut />}
-                label="Sign out"
-                onClick={() => {
-                  logout()
-                  navigate({ to: "/login" })
-                }}
+            <div className="mt-1 flex items-center justify-end gap-0.5">
+              <FooterIconButton
+                icon={theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                label="Toggle theme"
+                onClick={toggle}
               />
-              <SidebarItem
-                icon={<PanelLeftClose />}
+              <FooterIconButton icon={<LogOut className="h-4 w-4" />} label="Sign out" onClick={signOut} />
+              <FooterIconButton
+                icon={<PanelLeftClose className="h-4 w-4" />}
                 label="Collapse sidebar"
                 onClick={() => useSidebarStore.getState().toggle()}
               />
@@ -212,5 +210,26 @@ export function SuperSidebar({ onNavigate, collapsed }: SuperSidebarProps) {
       />
       {project && <MembersDialog open={showMembers} onOpenChange={setShowMembers} project={project} />}
     </div>
+  )
+}
+
+function FooterIconButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors [&_svg]:h-4 [&_svg]:w-4"
+    >
+      {icon}
+    </button>
   )
 }

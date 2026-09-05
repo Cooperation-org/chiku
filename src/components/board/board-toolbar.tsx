@@ -1,5 +1,5 @@
-﻿import { useNavigate } from "@tanstack/react-router"
-import { Check, Settings2 } from "lucide-react"
+﻿import { Check, Settings2 } from "lucide-react"
+import { ProjectSwitcher } from "@/components/board/project-switcher"
 import { SearchField } from "@/components/layout/search-field"
 import { Button } from "@/components/ui/button"
 import {
@@ -8,16 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { useProjects } from "@/lib/queries/projects"
-import { isArchived } from "@/lib/api/projects"
-import { useProjectStore } from "@/lib/stores/project"
 import { useBoardStore } from "@/lib/stores/board"
 
 interface BoardToolbarProps {
@@ -27,46 +17,23 @@ interface BoardToolbarProps {
   onEditColumns: () => void
 }
 
-/** GitLab board-toolbar row: board/project switcher Â· search Â· view options Â· settings. */
+/** The single consolidated bar: project switcher · search · view options · settings. */
 export function BoardToolbar({ slug, search, onSearchChange, onEditColumns }: BoardToolbarProps) {
-  const navigate = useNavigate()
-  const { data: projects } = useProjects()
-  const setSelectedSlug = useProjectStore((s) => s.setSelectedSlug)
   const showLabels = useBoardStore((s) => s.showLabels)
   const setShowLabels = useBoardStore((s) => s.setShowLabels)
 
-  const activeProjects = (projects ?? []).filter((p) => !isArchived(p))
-  const current = activeProjects.find((p) => p.slug === slug)
-
-  function switchProject(nextSlug: string) {
-    setSelectedSlug(nextSlug)
-    navigate({ to: "/p/$slug/board", params: { slug: nextSlug } })
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
-      <Select value={slug} onValueChange={(v) => v && switchProject(v)}>
-        <SelectTrigger className="h-9 w-auto min-w-44 gap-1 font-medium">
-          <SelectValue placeholder="Switch project">{current?.name ?? "Switch project"}</SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {activeProjects.map((p) => (
-            <SelectItem key={p.id} value={p.slug}>
-              {p.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+      <ProjectSwitcher slug={slug} />
 
       <SearchField
         value={search}
         onChange={onSearchChange}
-        placeholder="Filter stories"
-        showHint={false}
-        className="max-w-md flex-1"
+        placeholder="Search or go to…"
+        className="max-w-xl flex-1"
       />
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -99,4 +66,3 @@ export function BoardToolbar({ slug, search, onSearchChange, onEditColumns }: Bo
     </div>
   )
 }
-
