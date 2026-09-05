@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthDevTokenRouteImport } from './routes/auth/dev-token'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
@@ -23,14 +23,14 @@ import { Route as AppPSlugBoardRouteImport } from './routes/_app/p/$slug/board'
 import { Route as AppPSlugEpicsRouteImport } from './routes/_app/p/$slug/epics'
 import { Route as AppPSlugVelocityRouteImport } from './routes/_app/p/$slug/velocity'
 
-const AppRoute = AppRouteImport.update({
+const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AuthDevTokenRoute = AuthDevTokenRouteImport.update({
   id: '/auth/dev-token',
@@ -55,7 +55,7 @@ const SsoRelayRoute = SsoRelayRouteImport.update({
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AuthAtprotoCallbackRoute = AuthAtprotoCallbackRouteImport.update({
   id: '/auth/atproto/callback',
@@ -70,22 +70,22 @@ const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
 const AppPSlugBacklogRoute = AppPSlugBacklogRouteImport.update({
   id: '/p/$slug/backlog',
   path: '/p/$slug/backlog',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppPSlugBoardRoute = AppPSlugBoardRouteImport.update({
   id: '/p/$slug/board',
   path: '/p/$slug/board',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppPSlugEpicsRoute = AppPSlugEpicsRouteImport.update({
   id: '/p/$slug/epics',
   path: '/p/$slug/epics',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppPSlugVelocityRoute = AppPSlugVelocityRouteImport.update({
   id: '/p/$slug/velocity',
   path: '/p/$slug/velocity',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -118,7 +118,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteWithChildren
+  '/_app': typeof AppRouteRouteWithChildren
   '/auth/dev-token': typeof AuthDevTokenRoute
   '/oauth/callback': typeof OauthCallbackRoute
   '/sso/relay': typeof SsoRelayRoute
@@ -179,7 +179,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AppRoute: typeof AppRouteWithChildren
+  AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthDevTokenRoute: typeof AuthDevTokenRoute
   OauthCallbackRoute: typeof OauthCallbackRoute
   SsoRelayRoute: typeof SsoRelayRoute
@@ -194,7 +194,7 @@ declare module '@tanstack/react-router' {
       id: '/_app'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -202,7 +202,7 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/auth/dev-token': {
       id: '/auth/dev-token'
@@ -237,7 +237,7 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks/'
       preLoaderRoute: typeof AppTasksIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/auth/atproto/callback': {
       id: '/auth/atproto/callback'
@@ -258,33 +258,33 @@ declare module '@tanstack/react-router' {
       path: '/p/$slug/backlog'
       fullPath: '/p/$slug/backlog'
       preLoaderRoute: typeof AppPSlugBacklogRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/p/$slug/board': {
       id: '/_app/p/$slug/board'
       path: '/p/$slug/board'
       fullPath: '/p/$slug/board'
       preLoaderRoute: typeof AppPSlugBoardRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/p/$slug/epics': {
       id: '/_app/p/$slug/epics'
       path: '/p/$slug/epics'
       fullPath: '/p/$slug/epics'
       preLoaderRoute: typeof AppPSlugEpicsRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/p/$slug/velocity': {
       id: '/_app/p/$slug/velocity'
       path: '/p/$slug/velocity'
       fullPath: '/p/$slug/velocity'
       preLoaderRoute: typeof AppPSlugVelocityRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
   }
 }
 
-interface AppRouteChildren {
+interface AppRouteRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
   AppPSlugBacklogRoute: typeof AppPSlugBacklogRoute
@@ -293,7 +293,7 @@ interface AppRouteChildren {
   AppPSlugVelocityRoute: typeof AppPSlugVelocityRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
+const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
   AppPSlugBacklogRoute: AppPSlugBacklogRoute,
@@ -302,10 +302,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppPSlugVelocityRoute: AppPSlugVelocityRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
-  AppRoute: AppRouteWithChildren,
+  AppRouteRoute: AppRouteRouteWithChildren,
   AuthDevTokenRoute: AuthDevTokenRoute,
   OauthCallbackRoute: OauthCallbackRoute,
   SsoRelayRoute: SsoRelayRoute,

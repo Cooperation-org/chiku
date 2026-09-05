@@ -1,34 +1,32 @@
 import { create } from "zustand"
-import type { Project } from "@/lib/api/types"
 
-function getSavedProjectId(): number | null {
+const KEY = "selected_project_slug"
+
+function readSavedSlug(): string | null {
   if (typeof window === "undefined") return null
-  const saved = localStorage.getItem("selected_project_id")
-  return saved ? parseInt(saved, 10) : null
+  return localStorage.getItem(KEY)
 }
 
 interface ProjectState {
-  currentProject: Project | null
-  currentProjectSlug: string | null
-  /** Select a project (persists the id to localStorage, like the old store). */
-  setProject: (project: Project | null) => void
-  setSlug: (slug: string | null) => void
-  getSavedId: () => number | null
+  /**
+   * The last project the visitor deliberately navigated to. Written by
+   * navigation handlers (sidebar, switcher, home loader) — never synced from
+   * render — so slug-less routes (/tasks) can link back to a project.
+   */
+  selectedSlug: string | null
+  setSelectedSlug: (slug: string) => void
+  getSavedSlug: () => string | null
 }
 
 export const useProjectStore = create<ProjectState>((set) => ({
-  currentProject: null,
-  currentProjectSlug: null,
-  setProject: (project) => {
-    if (typeof window !== "undefined") {
-      if (project) {
-        localStorage.setItem("selected_project_id", String(project.id))
-      } else {
-        localStorage.removeItem("selected_project_id")
-      }
+  selectedSlug: readSavedSlug(),
+  setSelectedSlug: (slug) => {
+    if (slug) {
+      localStorage.setItem(KEY, slug)
+    } else {
+      localStorage.removeItem(KEY)
     }
-    set({ currentProject: project })
+    set({ selectedSlug: slug })
   },
-  setSlug: (slug) => set({ currentProjectSlug: slug }),
-  getSavedId: getSavedProjectId,
+  getSavedSlug: readSavedSlug,
 }))

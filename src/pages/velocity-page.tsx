@@ -1,8 +1,8 @@
 ﻿import { useVelocityData } from "@/lib/queries/milestones"
-import { useResolvedProject } from "@/lib/queries/projects"
+import { useProjectBySlug } from "@/lib/queries/projects"
 
 export default function VelocityPage({ slug }: { slug: string }) {
-  const { project: currentProject } = useResolvedProject(slug)
+  const { project: currentProject } = useProjectBySlug(slug)
   const { data, isLoading } = useVelocityData(currentProject?.id ?? null)
 
   if (!currentProject) {

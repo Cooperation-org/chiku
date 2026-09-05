@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+﻿import { useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { qk } from "@/lib/query"
 import {
@@ -13,7 +13,6 @@ import {
   type CreateProjectData,
 } from "@/lib/api/projects"
 import type { Project } from "@/lib/api/types"
-import { useProjectStore } from "@/lib/stores/project"
 
 export function useProjects() {
   return useQuery({ queryKey: qk.projects, queryFn: getProjects })
@@ -42,7 +41,7 @@ export function useUpdateProject() {
       qc.setQueryData<Project[]>(qk.projects, (old) =>
         old?.map((p) => (p.id === updated.id ? updated : p))
       )
-      // project detail caches are keyed by id — refresh statuses/stories etc. lazily
+      // project detail caches are keyed by id â€” refresh statuses/stories etc. lazily
       qc.invalidateQueries({ queryKey: qk.project(updated.id) })
     },
   })
@@ -91,22 +90,20 @@ export function useDeleteProject() {
   })
 }
 
-/** Every project-scoped page resolves its URL slug against the fresh project
- *  list and keeps the selected-project store in step for the shell. */
-export function useResolvedProject(slug: string | undefined) {
-  const { data: projects, isLoading } = useProjects()
-  const { currentProject, setProject } = useProjectStore()
 
+/** Shareable query options — the home loader warm-starts the list with this. */
+export const projectsQueryOptions = {
+  queryKey: qk.projects,
+  queryFn: getProjects,
+}
+
+/** Resolve a URL slug against the project list. Derived state only — the
+ *  URL is the source of truth; nothing is synced anywhere. */
+export function useProjectBySlug(slug: string | undefined) {
+  const { data: projects, isLoading } = useProjects()
   const project = useMemo(
-    () => projects?.find((p) => p.slug === slug) ?? null,
+    () => (slug ? projects?.find((p) => p.slug === slug) ?? null : null),
     [projects, slug]
   )
-
-  useEffect(() => {
-    if (project && project.id !== currentProject?.id) {
-      setProject(project)
-    }
-  }, [project, currentProject?.id, setProject])
-
   return { project, isLoading }
 }

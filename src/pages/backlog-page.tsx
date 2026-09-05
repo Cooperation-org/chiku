@@ -4,7 +4,7 @@ import { Avatar } from "@/components/app/avatar"
 import { CreateStoryDialog } from "@/components/app/create-story-dialog"
 import { IssueModal } from "@/components/app/issue-modal"
 import { Button } from "@/components/ui/button"
-import { useResolvedProject } from "@/lib/queries/projects"
+import { useProjectBySlug } from "@/lib/queries/projects"
 import { useMemberships } from "@/lib/queries/memberships"
 import { useStories, useStatuses } from "@/lib/queries/stories"
 import { qk, queryClient } from "@/lib/query"
@@ -28,7 +28,7 @@ interface BacklogPageProps {
 }
 
 export default function BacklogPage({ slug, storyRef, onStoryRefChange }: BacklogPageProps) {
-  const { project: currentProject } = useResolvedProject(slug)
+  const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
 
   const { data: statuses = [] } = useStatuses(projectId)

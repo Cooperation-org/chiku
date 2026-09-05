@@ -1,12 +1,13 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router"
-import { Shell } from "@/components/app/shell"
+import { AppShell } from "@/components/layout/app-shell"
 
 // Pathless layout for the authenticated app: everything under it shares the
-// sidebar shell and requires auth (enforced by the root guard).
+// GitLab-style chrome (top bar, toolbar bar, super sidebar) and requires auth
+// (enforced by the root guard).
 export const Route = createFileRoute("/_app")({
   component: () => (
-    <Shell>
+    <AppShell>
       <Outlet />
-    </Shell>
+    </AppShell>
   ),
 })

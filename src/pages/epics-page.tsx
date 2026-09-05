@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useCreateEpic, useDeleteEpic, useEpics, useUpdateEpic } from "@/lib/queries/epics"
-import { useResolvedProject } from "@/lib/queries/projects"
+import { useProjectBySlug } from "@/lib/queries/projects"
 import type { Epic } from "@/lib/api/types"
 
 const epicColors = [
@@ -330,7 +330,7 @@ function EpicDialog({
 }
 
 export default function EpicsPage({ slug }: { slug: string }) {
-  const { project: currentProject } = useResolvedProject(slug)
+  const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
   const { data: epics, isLoading } = useEpics(projectId)
   const [showCreate, setShowCreate] = useState(false)
