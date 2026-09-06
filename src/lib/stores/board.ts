@@ -21,13 +21,17 @@ interface BoardState {
   /** Column (status) ids currently collapsed to the icon rail. */
   collapsedColumns: number[]
   showLabels: boolean
+  /** Column-editor dialog visibility — opened from the toolbar, so it lives here. */
+  columnEditorOpen: boolean
   toggleColumn: (statusId: number) => void
   setShowLabels: (show: boolean) => void
+  setColumnEditorOpen: (open: boolean) => void
 }
 
 export const useBoardStore = create<BoardState>((set, get) => ({
   collapsedColumns: readCollapsedColumns(),
   showLabels: readShowLabels(),
+  columnEditorOpen: false,
   toggleColumn: (statusId) => {
     const next = get().collapsedColumns.includes(statusId)
       ? get().collapsedColumns.filter((id) => id !== statusId)
@@ -39,4 +43,5 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     localStorage.setItem(LABELS_KEY, String(show))
     set({ showLabels: show })
   },
+  setColumnEditorOpen: (open) => set({ columnEditorOpen: open }),
 }))

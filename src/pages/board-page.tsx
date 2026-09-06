@@ -2,7 +2,6 @@
 import { toast } from "sonner"
 import { useNavigate } from "@tanstack/react-router"
 import { Board } from "@/components/board/board"
-import { BoardToolbar } from "@/components/board/board-toolbar"
 import { CreateStoryDialog } from "@/components/app/create-story-dialog"
 import { ColumnEditorDialog } from "@/components/app/column-editor-dialog"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,8 @@ import { isArchived, unarchiveProject } from "@/lib/api/projects"
 import { useReorderKanbanOrder, useSetStoryStatus, useStories, useStatuses } from "@/lib/queries/stories"
 import { EMPTY_FILTER, filterStories } from "@/lib/filters/stories"
 import { qk, queryClient } from "@/lib/query"
+import { useBoardStore } from "@/lib/stores/board"
+import { useToolbarStore } from "@/lib/stores/toolbar"
 import type { UserStory } from "@/lib/api/types"
 
 interface BoardPageProps {
@@ -27,10 +28,11 @@ export default function BoardPage({ slug }: BoardPageProps) {
   const setStatus = useSetStoryStatus(projectId ?? 0)
   const reorderKanban = useReorderKanbanOrder(projectId ?? 0)
 
-  const [search, setSearch] = useState("")
   const [showCreate, setShowCreate] = useState(false)
   const [createStatusId, setCreateStatusId] = useState<number | null>(null)
-  const [showColumnEditor, setShowColumnEditor] = useState(false)
+  const search = useToolbarStore((s) => s.search)
+  const columnEditorOpen = useBoardStore((s) => s.columnEditorOpen)
+  const setColumnEditorOpen = useBoardStore((s) => s.setColumnEditorOpen)
 
   const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q: search })
 
@@ -125,13 +127,6 @@ export default function BoardPage({ slug }: BoardPageProps) {
         </div>
       )}
 
-      <BoardToolbar
-        slug={slug}
-        search={search}
-        onSearchChange={setSearch}
-        onEditColumns={() => setShowColumnEditor(true)}
-      />
-
       <div className="min-h-0 flex-1 overflow-hidden">
         {statusesLoading || storiesLoading ? (
           <div className="flex h-full items-center justify-center">
@@ -153,8 +148,8 @@ export default function BoardPage({ slug }: BoardPageProps) {
               setCreateStatusId(statusId)
               setShowCreate(true)
             }}
-            onEditColumns={() => setShowColumnEditor(true)}
-            onNewList={() => setShowColumnEditor(true)}
+            onEditColumns={() => setColumnEditorOpen(true)}
+            onNewList={() => setColumnEditorOpen(true)}
           />
         )}
       </div>
@@ -167,8 +162,8 @@ export default function BoardPage({ slug }: BoardPageProps) {
       />
 
       <ColumnEditorDialog
-        open={showColumnEditor}
-        onOpenChange={setShowColumnEditor}
+        open={columnEditorOpen}
+        onOpenChange={setColumnEditorOpen}
         projectId={currentProject.id}
         onUpdated={() => {
           queryClient.invalidateQueries({ queryKey: qk.statuses(currentProject.id) })

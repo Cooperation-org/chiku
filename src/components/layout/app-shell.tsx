@@ -1,7 +1,7 @@
 import { useParams } from "@tanstack/react-router"
 import { CohortNav } from "@/components/app/cohort-nav"
+import { AppToolbar } from "@/components/layout/app-toolbar"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   SidebarInset,
   SidebarProvider,
@@ -34,10 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarProvider open={expanded} onOpenChange={setExpanded} className="min-h-0 flex-1">
           <AppSidebar />
           <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
-            {/* Mobile-only utility bar: the hamburger opens the sidebar sheet */}
-            <div className="bg-background/95 flex h-9 shrink-0 items-center border-b px-2 md:hidden">
-              <SidebarTrigger aria-label="Open navigation menu" />
-            </div>
+            <AppToolbar slug={org} />
             <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
           </SidebarInset>
         </SidebarProvider>
