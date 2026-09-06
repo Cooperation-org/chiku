@@ -1,5 +1,5 @@
 ﻿import BoardPage from "@/pages/board-page";
-import { BoardViewOptions } from "@/components/board/board-view-options";
+import { BoardToolbarControls } from "@/components/board/board-toolbar-controls";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 /** Legacy `?story=<ref>` deep links redirect to the canonical /board/<ref>. */
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
       });
     }
   },
-  staticData: { toolbarControls: [BoardViewOptions] },
+  staticData: { toolbarControls: [BoardToolbarControls] },
   component: RouteComponent,
 });
 
