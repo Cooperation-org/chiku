@@ -1,4 +1,5 @@
 ﻿import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -10,13 +11,14 @@ import {
   Download,
   OctagonAlert,
   Pencil,
+  Share2,
   Trash2,
   User as UserIcon,
 } from "lucide-react"
 import type { Attachment, HistoryEntry, Project, UserStory, UserStoryStatus } from "@/lib/api/types"
-import { getUserStory, moveUserStory, updateUserStory, getUserStoryStatuses } from "@/lib/api/userstories"
+import { getUserStory, updateUserStory } from "@/lib/api/userstories"
 import { getStoryComments } from "@/lib/api/comments"
-import { getProject, getProjects, isArchived } from "@/lib/api/projects"
+import { getProject } from "@/lib/api/projects"
 import { pointsPatch, storyPointId } from "@/lib/api/points"
 import {
   deleteStoryAttachment,
@@ -30,8 +32,10 @@ import {
 import { renderMarkdown } from "@/lib/markdown"
 import { api } from "@/lib/api/client"
 import { useAuth } from "@/lib/stores/auth"
+import { useToolbarSlots } from "@/lib/stores/toolbar-slots"
 import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -44,14 +48,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { StoryStatusSelect } from "@/components/inputs/story-status-select"
 import { AssigneeSelect } from "@/components/inputs/assignee-select"
 import { PointsSelect } from "@/components/inputs/points-select"
@@ -109,6 +105,8 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   const fileInput = useRef<HTMLInputElement>(null)
 
   const { user: me } = useAuth()
+  const breadcrumbEl = useToolbarSlots((s) => s.breadcrumbEl)
+  const actionsEl = useToolbarSlots((s) => s.actionsEl)
 
   useEffect(() => {
     let cancelled = false
@@ -363,16 +361,24 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     return member?.full_name || member?.username || ""
   }
 
-  async function handleMove(targetProject: Project) {
+  async function handleShare() {
+    const url = window.location.href
     try {
-      const targetStatuses = await getUserStoryStatuses(targetProject.id)
-      const firstStatus = targetStatuses.sort((a, b) => a.order - b.order)[0]
-      if (!firstStatus) throw new Error("Target project has no statuses")
-      await moveUserStory(fullStory.id, targetProject.id, firstStatus.id, fullStory.version)
-      onDelete(fullStory.id)
-      onClose()
-    } catch (err) {
-      toast.error(`Failed to move: ${(err as Error).message}`)
+      await navigator.clipboard.writeText(url)
+      toast.success("Link copied to clipboard")
+    } catch {
+      // Clipboard API needs a secure context — fall back to execCommand.
+      const ta = document.createElement("textarea")
+      ta.value = url
+      document.body.appendChild(ta)
+      ta.select()
+      try {
+        document.execCommand("copy")
+        toast.success("Link copied to clipboard")
+      } catch {
+        toast.error("Could not copy link")
+      }
+      ta.remove()
     }
   }
 
@@ -418,111 +424,135 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
 
   return (
     <div className="bg-background flex h-full flex-col">
-      {/* Header bar */}
-      <div className="flex shrink-0 items-center justify-between border-b px-6 py-3">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onClose} title="Back (Esc)">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <span className="text-muted-foreground font-mono text-sm">#{fullStory.ref}</span>
-
-          {/* Prev/next from the server's neighbors chain — no list walk */}
-          {onNavigateRef && fullStory.neighbors && (
-            <span className="flex items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                disabled={!fullStory.neighbors.previous}
-                title={fullStory.neighbors.previous ? `#${fullStory.neighbors.previous.ref} ${fullStory.neighbors.previous.subject}` : "No previous story"}
-                onClick={() => fullStory.neighbors?.previous && onNavigateRef(fullStory.neighbors.previous.ref)}
+      {/* Header groups live in the app toolbar via portals — back/ref/nav/status
+          after the sidebar toggle, actions at the far right. */}
+      {breadcrumbEl &&
+        createPortal(
+          <div className="flex min-w-0 items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="ghost" size="icon" onClick={onClose} aria-label="Back (Esc)" />
+                }
               >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                disabled={!fullStory.neighbors.next}
-                title={fullStory.neighbors.next ? `#${fullStory.neighbors.next.ref} ${fullStory.neighbors.next.subject}` : "No next story"}
-                onClick={() => fullStory.neighbors?.next && onNavigateRef(fullStory.neighbors.next.ref)}
+                <ArrowLeft className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Back (Esc)</TooltipContent>
+            </Tooltip>
+            <span className="text-muted-foreground shrink-0 font-mono text-sm">#{fullStory.ref}</span>
+
+            {/* Prev/next from the server's neighbors chain — no list walk */}
+            {onNavigateRef && fullStory.neighbors && (
+              <span className="flex shrink-0 items-center gap-0.5">
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={!fullStory.neighbors.previous}
+                        onClick={() => fullStory.neighbors?.previous && onNavigateRef(fullStory.neighbors.previous.ref)}
+                        aria-label="Previous story"
+                      />
+                    }
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {fullStory.neighbors.previous ? `#${fullStory.neighbors.previous.ref} ${fullStory.neighbors.previous.subject}` : "No previous story"}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={!fullStory.neighbors.next}
+                        onClick={() => fullStory.neighbors?.next && onNavigateRef(fullStory.neighbors.next.ref)}
+                        aria-label="Next story"
+                      />
+                    }
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {fullStory.neighbors.next ? `#${fullStory.neighbors.next.ref} ${fullStory.neighbors.next.subject}` : "No next story"}
+                  </TooltipContent>
+                </Tooltip>
+              </span>
+            )}
+          </div>,
+          breadcrumbEl,
+        )}
+
+      {actionsEl &&
+        createPortal(
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant={editingAll ? "secondary" : "ghost"}
+                    size="icon"
+                    onClick={toggleEditAll}
+                    aria-label={editingAll ? "Stop editing" : "Edit all fields"}
+                  />
+                }
               >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </span>
-          )}
-
-          {/* Project name â€” opens the move menu */}
-          <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded px-1.5 py-0.5 text-xs transition-colors"
-                title="Move to another project"
-              />
-            }
-          >
-            {fullStory.project_extra_info?.name || "Project"}
-          </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-60 min-w-52 overflow-y-auto">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Move to…</DropdownMenuLabel>
-                <MoveMenuItems currentProjectId={fullStory.project} onMove={handleMove} />
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Status â€” click to change */}
-          {isEditing("status") ? (
-            <StoryStatusSelect
-              projectId={fullStory.project}
-              value={fullStory.status}
-              onValueChange={(statusId) => {
-                saveStatus(statusId)
-                if (!editingAll) setEditingField(null)
-              }}
-              defaultOpen
-              triggerClassName="h-7 w-auto text-xs"
-            />
-          ) : (
-            <button
-              onClick={() => startEdit("status")}
-              className="cursor-pointer rounded px-2 py-0.5 text-xs font-medium transition-shadow hover:ring-2 hover:ring-ring/50"
-              style={{
-                backgroundColor: `${statusInfo?.color || "#666"}30`,
-                color: statusInfo?.color || "#666",
-              }}
-              title="Click to change status"
-            >
-              {statusInfo?.name || "Unknown"}
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Button variant={editingAll ? "secondary" : "ghost"} size="icon" onClick={toggleEditAll} title={editingAll ? "Stop editing" : "Edit all fields"}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDuplicate}
-            disabled={!!fullStory.assigned_to}
-            title={fullStory.assigned_to ? "Only unassigned stories can be duplicated" : "Duplicate"}
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="hover:text-destructive"
-            title="Delete"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+                <Pencil className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{editingAll ? "Stop editing" : "Edit all fields"}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDuplicate}
+                    disabled={!!fullStory.assigned_to}
+                    aria-label="Duplicate"
+                  />
+                }
+              >
+                <Copy className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {fullStory.assigned_to ? "Only unassigned stories can be duplicated" : "Duplicate"}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="ghost" size="icon" onClick={handleShare} aria-label="Share" />
+                }
+              >
+                <Share2 className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Copy link</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="hover:text-destructive"
+                    aria-label="Delete"
+                  />
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Delete</TooltipContent>
+            </Tooltip>
+          </div>,
+          actionsEl,
+        )}
 
       {/* Blocked banner — from the server's is_blocked + blocked_note */}
       {fullStory.is_blocked && (
@@ -574,6 +604,36 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
 
           {/* Meta row */}
           <div className="flex flex-wrap items-center gap-4 text-sm">
+            {/* Status */}
+            {isEditing("status") ? (
+              <StoryStatusSelect
+                projectId={fullStory.project}
+                value={fullStory.status}
+                onValueChange={(statusId) => {
+                  saveStatus(statusId)
+                  if (!editingAll) setEditingField(null)
+                }}
+                defaultOpen
+                triggerClassName="h-8 w-44"
+              />
+            ) : (
+              <button
+                onClick={() => startEdit("status")}
+                className="hover:bg-accent -mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors"
+                title="Click to change status"
+              >
+                <span
+                  className="rounded px-2 py-0.5 text-xs font-medium"
+                  style={{
+                    backgroundColor: `${statusInfo?.color || "#666"}30`,
+                    color: statusInfo?.color || "#666",
+                  }}
+                >
+                  {statusInfo?.name || "Unknown"}
+                </span>
+              </button>
+            )}
+
             {/* Assignee */}
             {isEditing("assignee") ? (
               <AssigneeSelect
@@ -951,27 +1011,4 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
       </AlertDialog>
     </div>
   )
-}
-
-function MoveMenuItems({
-  currentProjectId,
-  onMove,
-}: {
-  currentProjectId: number
-  onMove: (project: Project) => void
-}) {
-  const [projects, setProjects] = useState<Project[]>([])
-  useEffect(() => {
-    getProjects()
-      .then((all) => setProjects(all.filter((p) => !isArchived(p) && p.id !== currentProjectId)))
-      .catch((err) => console.error("Failed to load projects:", err))
-  }, [currentProjectId])
-  if (projects.length === 0) {
-    return <div className="text-muted-foreground px-2 py-2 text-xs">No other projects</div>
-  }
-  return projects.map((p) => (
-    <DropdownMenuItem key={p.id} onClick={() => onMove(p)}>
-      {p.name}
-    </DropdownMenuItem>
-  ))
 }
