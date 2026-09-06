@@ -5,7 +5,6 @@ import {
   ChevronsUpDown,
   CirclePlus,
   Settings2,
-  Trash2,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -42,13 +41,7 @@ import {
 import { useProjects } from "@/lib/queries/projects"
 import { isArchived } from "@/lib/api/projects"
 import { createStatus, deleteStatus, getStatuses } from "@/lib/api/statuses"
-import {
-  archiveProject,
-  createProject,
-  deleteProject,
-  unarchiveProject,
-  updateProject,
-} from "@/lib/api/projects"
+import { createProject } from "@/lib/api/projects"
 import { qk, queryClient } from "@/lib/query"
 import { useProjectStore } from "@/lib/stores/project"
 import { useAuth } from "@/lib/stores/auth"
@@ -76,12 +69,6 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
   const [cloneFrom, setCloneFrom] = useState("none")
   const [creating, setCreating] = useState(false)
 
-  const [showSettings, setShowSettings] = useState(false)
-  const [settingsName, setSettingsName] = useState("")
-  const [settingsDesc, setSettingsDesc] = useState("")
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [busy, setBusy] = useState(false)
-
   const activeProjects = (projects ?? []).filter((p) => !isArchived(p))
   const current = activeProjects.find((p) => p.slug === slug)
 
@@ -90,16 +77,10 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
     navigate({ to: "/projects/$slug/board", params: { slug: nextSlug } })
   }
 
-  function goHome() {
-    navigate({ to: "/" })
-  }
-
   function openSettings() {
     if (!current) return
-    setSettingsName(current.name)
-    setSettingsDesc(current.description || "")
-    setConfirmDelete(false)
-    setShowSettings(true)
+    setSelectedSlug(current.slug)
+    navigate({ to: "/projects/$slug/settings", params: { slug: current.slug } })
   }
 
   async function handleCreateProject() {
@@ -179,67 +160,6 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
       toast.error(`Failed to create project: ${(err as Error).message}`)
     } finally {
       setCreating(false)
-    }
-  }
-
-  async function handleSaveSettings() {
-    if (!current || !settingsName.trim() || busy) return
-    setBusy(true)
-    try {
-      const updated = await updateProject(current.id, {
-        name: settingsName.trim(),
-        description: settingsDesc.trim(),
-      })
-      queryClient.setQueryData<Project[]>(qk.projects, (old) =>
-        old?.map((p) => (p.id === updated.id ? updated : p))
-      )
-      setShowSettings(false)
-    } catch (err) {
-      toast.error(`Failed to update project: ${(err as Error).message}`)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleArchiveToggle() {
-    if (!current || busy) return
-    setBusy(true)
-    const archived = isArchived(current)
-    const updatedTags = archived
-      ? (current.tags || []).filter((t) => t.toLowerCase() !== "archived")
-      : [...(current.tags || []), "archived"]
-    queryClient.setQueryData<Project[]>(qk.projects, (old) =>
-      old?.map((p) => (p.id === current.id ? { ...p, tags: updatedTags } : p))
-    )
-    try {
-      const updated = archived ? await unarchiveProject(current) : await archiveProject(current)
-      queryClient.setQueryData<Project[]>(qk.projects, (old) =>
-        old?.map((p) => (p.id === updated.id ? updated : p))
-      )
-      setShowSettings(false)
-      if (!archived) goHome()
-    } catch (err) {
-      toast.error(`Failed to update project: ${(err as Error).message}`)
-      queryClient.invalidateQueries({ queryKey: qk.projects })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleDelete() {
-    if (!current || busy) return
-    setBusy(true)
-    const projectId = current.id
-    try {
-      await deleteProject(projectId)
-      queryClient.setQueryData<Project[]>(qk.projects, (old) => old?.filter((p) => p.id !== projectId))
-      setConfirmDelete(false)
-      setShowSettings(false)
-      goHome()
-    } catch (err) {
-      toast.error(`Failed to delete project: ${(err as Error).message}`)
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -358,79 +278,6 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
             </Button>
             <Button onClick={handleCreateProject} disabled={!newName.trim() || creating}>
               {creating ? "Creating..." : "Create"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Project settings â€” edit, archive, delete for the current project */}
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Project settings</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="project-settings-name">Name</Label>
-              <Input
-                id="project-settings-name"
-                value={settingsName}
-                onChange={(e) => setSettingsName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="project-settings-desc">Description</Label>
-              <Textarea
-                id="project-settings-desc"
-                value={settingsDesc}
-                onChange={(e) => setSettingsDesc(e.target.value)}
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-            <div className="flex items-center justify-between border-t pt-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive"
-                onClick={() => setConfirmDelete(true)}
-              >
-                <Trash2 className="h-4 w-4" /> Delete project
-              </Button>
-              {current && isArchived(current) && (
-                <Button variant="outline" size="sm" onClick={handleArchiveToggle} disabled={busy}>
-                  Unarchive
-                </Button>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowSettings(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveSettings} disabled={busy || !settingsName.trim()}>
-              {busy ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirmation */}
-      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete project</DialogTitle>
-          </DialogHeader>
-          <p className="text-muted-foreground text-sm">
-            Delete <strong>{current?.name}</strong> permanently? All issues in this project will be
-            removed. This action cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={busy}>
-              {busy ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

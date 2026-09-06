@@ -70,4 +70,9 @@ export const qk = {
   myTasks: () => ["my-tasks"] as const,
   me: ["me"] as const,
   users: (projectId: number) => ["project", projectId, "users"] as const,
+  projectModules: (projectId: number) => ["project", projectId, "modules"] as const,
+  webhooks: (projectId: number) => ["project", projectId, "webhooks"] as const,
+  webhookLogs: (webhookId: number) => ["webhook", webhookId, "logs"] as const,
+  notifyPolicies: () => ["notify-policies"] as const,
+  projectTemplates: () => ["project-templates"] as const,
 }

@@ -26,6 +26,8 @@ import { useAuth } from "@/lib/stores/auth"
 import { useSidebarStore } from "@/lib/stores/sidebar"
 import { useProjectStore } from "@/lib/stores/project"
 import { useProjectBySlug } from "@/lib/queries/projects"
+import { canDeleteProject, isProjectAdmin } from "@/lib/permissions"
+import { SETTINGS_SECTIONS } from "@/components/settings/settings-nav"
 import type { Project } from "@/lib/api/types"
 
 function viewEnabled(
@@ -178,6 +180,33 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </CollapsibleGroup>
+
+        {activeSlug && (!project || isProjectAdmin(project)) && (
+          <CollapsibleGroup
+            id="settings"
+            label="Settings"
+            forceOpen={rail || location.pathname.includes(`/projects/${activeSlug}/settings`)}
+          >
+            {SETTINGS_SECTIONS.filter((s) => !s.requiresDelete || canDeleteProject(project)).map(
+              (s) => {
+                const to = `/projects/${activeSlug}/settings/${s.key}`
+                const Icon = s.icon
+                return (
+                  <SidebarMenuItem key={s.key}>
+                    <SidebarMenuButton
+                      isActive={location.pathname === to}
+                      tooltip={s.label}
+                      onClick={() => navigate({ to: s.route, params: { slug: activeSlug } })}
+                    >
+                      <Icon />
+                      <span>{s.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              },
+            )}
+          </CollapsibleGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>

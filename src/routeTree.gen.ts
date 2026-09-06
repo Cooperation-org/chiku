@@ -21,11 +21,13 @@ import { Route as _authedPSlugIndexRouteImport } from './routes/(_authed)/p/$slu
 import { Route as _authedPSlugBacklogRouteImport } from './routes/(_authed)/p/$slug/backlog'
 import { Route as _authedPSlugEpicsRouteImport } from './routes/(_authed)/p/$slug/epics'
 import { Route as _authedPSlugMembersRouteImport } from './routes/(_authed)/p/$slug/members'
+import { Route as _authedPSlugSettingsRouteImport } from './routes/(_authed)/p/$slug/settings'
 import { Route as _authedPSlugVelocityRouteImport } from './routes/(_authed)/p/$slug/velocity'
 import { Route as _authedProjectsSlugIndexRouteImport } from './routes/(_authed)/projects/$slug/index'
 import { Route as _authedProjectsSlugBacklogRouteImport } from './routes/(_authed)/projects/$slug/backlog'
 import { Route as _authedProjectsSlugEpicsRouteImport } from './routes/(_authed)/projects/$slug/epics'
 import { Route as _authedProjectsSlugMembersRouteImport } from './routes/(_authed)/projects/$slug/members'
+import { Route as _authedProjectsSlugSettingsRouteRouteImport } from './routes/(_authed)/projects/$slug/settings/route'
 import { Route as _authedProjectsSlugVelocityRouteImport } from './routes/(_authed)/projects/$slug/velocity'
 import { Route as _authedSStoryIdIndexRouteImport } from './routes/(_authed)/s/$storyId/index'
 import { Route as PublicAuthAtprotoCallbackRouteImport } from './routes/_public/auth/atproto/callback'
@@ -34,6 +36,14 @@ import { Route as _authedPSlugBoardIndexRouteImport } from './routes/(_authed)/p
 import { Route as _authedPSlugBoardStoryRefRouteImport } from './routes/(_authed)/p/$slug/board/$storyRef'
 import { Route as _authedProjectsSlugBoardIndexRouteImport } from './routes/(_authed)/projects/$slug/board/index'
 import { Route as _authedProjectsSlugBoardStoryRefRouteImport } from './routes/(_authed)/projects/$slug/board/$storyRef'
+import { Route as _authedProjectsSlugSettingsIndexRouteImport } from './routes/(_authed)/projects/$slug/settings/index'
+import { Route as _authedProjectsSlugSettingsDangerRouteImport } from './routes/(_authed)/projects/$slug/settings/danger'
+import { Route as _authedProjectsSlugSettingsDataRouteImport } from './routes/(_authed)/projects/$slug/settings/data'
+import { Route as _authedProjectsSlugSettingsGeneralRouteImport } from './routes/(_authed)/projects/$slug/settings/general'
+import { Route as _authedProjectsSlugSettingsIntegrationsRouteImport } from './routes/(_authed)/projects/$slug/settings/integrations'
+import { Route as _authedProjectsSlugSettingsNotificationsRouteImport } from './routes/(_authed)/projects/$slug/settings/notifications'
+import { Route as _authedProjectsSlugSettingsOwnershipRouteImport } from './routes/(_authed)/projects/$slug/settings/ownership'
+import { Route as _authedProjectsSlugSettingsWebhooksRouteImport } from './routes/(_authed)/projects/$slug/settings/webhooks'
 
 const _authedRouteRoute = _authedRouteRouteImport.update({
   id: '/(_authed)',
@@ -94,6 +104,11 @@ const _authedPSlugMembersRoute = _authedPSlugMembersRouteImport.update({
   path: '/p/$slug/members',
   getParentRoute: () => _authedRouteRoute,
 } as any)
+const _authedPSlugSettingsRoute = _authedPSlugSettingsRouteImport.update({
+  id: '/p/$slug/settings',
+  path: '/p/$slug/settings',
+  getParentRoute: () => _authedRouteRoute,
+} as any)
 const _authedPSlugVelocityRoute = _authedPSlugVelocityRouteImport.update({
   id: '/p/$slug/velocity',
   path: '/p/$slug/velocity',
@@ -121,6 +136,12 @@ const _authedProjectsSlugMembersRoute =
   _authedProjectsSlugMembersRouteImport.update({
     id: '/projects/$slug/members',
     path: '/projects/$slug/members',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsRouteRoute =
+  _authedProjectsSlugSettingsRouteRouteImport.update({
+    id: '/projects/$slug/settings',
+    path: '/projects/$slug/settings',
     getParentRoute: () => _authedRouteRoute,
   } as any)
 const _authedProjectsSlugVelocityRoute =
@@ -169,6 +190,54 @@ const _authedProjectsSlugBoardStoryRefRoute =
     path: '/projects/$slug/board/$storyRef',
     getParentRoute: () => _authedRouteRoute,
   } as any)
+const _authedProjectsSlugSettingsIndexRoute =
+  _authedProjectsSlugSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsDangerRoute =
+  _authedProjectsSlugSettingsDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsDataRoute =
+  _authedProjectsSlugSettingsDataRouteImport.update({
+    id: '/data',
+    path: '/data',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsGeneralRoute =
+  _authedProjectsSlugSettingsGeneralRouteImport.update({
+    id: '/general',
+    path: '/general',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsIntegrationsRoute =
+  _authedProjectsSlugSettingsIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsNotificationsRoute =
+  _authedProjectsSlugSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsOwnershipRoute =
+  _authedProjectsSlugSettingsOwnershipRouteImport.update({
+    id: '/ownership',
+    path: '/ownership',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
+const _authedProjectsSlugSettingsWebhooksRoute =
+  _authedProjectsSlugSettingsWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
+    getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof _authedIndexRoute
@@ -178,9 +247,11 @@ export interface FileRoutesByFullPath {
   '/account/': typeof _authedAccountIndexRoute
   '/tasks/': typeof _authedTasksIndexRoute
   '/login/': typeof PublicLoginIndexRoute
+  '/projects/$slug/settings': typeof _authedProjectsSlugSettingsRouteRouteWithChildren
   '/p/$slug/backlog': typeof _authedPSlugBacklogRoute
   '/p/$slug/epics': typeof _authedPSlugEpicsRoute
   '/p/$slug/members': typeof _authedPSlugMembersRoute
+  '/p/$slug/settings': typeof _authedPSlugSettingsRoute
   '/p/$slug/velocity': typeof _authedPSlugVelocityRoute
   '/projects/$slug/backlog': typeof _authedProjectsSlugBacklogRoute
   '/projects/$slug/epics': typeof _authedProjectsSlugEpicsRoute
@@ -193,8 +264,16 @@ export interface FileRoutesByFullPath {
   '/s/$storyId/': typeof _authedSStoryIdIndexRoute
   '/p/$slug/board/$storyRef': typeof _authedPSlugBoardStoryRefRoute
   '/projects/$slug/board/$storyRef': typeof _authedProjectsSlugBoardStoryRefRoute
+  '/projects/$slug/settings/danger': typeof _authedProjectsSlugSettingsDangerRoute
+  '/projects/$slug/settings/data': typeof _authedProjectsSlugSettingsDataRoute
+  '/projects/$slug/settings/general': typeof _authedProjectsSlugSettingsGeneralRoute
+  '/projects/$slug/settings/integrations': typeof _authedProjectsSlugSettingsIntegrationsRoute
+  '/projects/$slug/settings/notifications': typeof _authedProjectsSlugSettingsNotificationsRoute
+  '/projects/$slug/settings/ownership': typeof _authedProjectsSlugSettingsOwnershipRoute
+  '/projects/$slug/settings/webhooks': typeof _authedProjectsSlugSettingsWebhooksRoute
   '/p/$slug/board/': typeof _authedPSlugBoardIndexRoute
   '/projects/$slug/board/': typeof _authedProjectsSlugBoardIndexRoute
+  '/projects/$slug/settings/': typeof _authedProjectsSlugSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof _authedIndexRoute
@@ -207,6 +286,7 @@ export interface FileRoutesByTo {
   '/p/$slug/backlog': typeof _authedPSlugBacklogRoute
   '/p/$slug/epics': typeof _authedPSlugEpicsRoute
   '/p/$slug/members': typeof _authedPSlugMembersRoute
+  '/p/$slug/settings': typeof _authedPSlugSettingsRoute
   '/p/$slug/velocity': typeof _authedPSlugVelocityRoute
   '/projects/$slug/backlog': typeof _authedProjectsSlugBacklogRoute
   '/projects/$slug/epics': typeof _authedProjectsSlugEpicsRoute
@@ -219,8 +299,16 @@ export interface FileRoutesByTo {
   '/s/$storyId': typeof _authedSStoryIdIndexRoute
   '/p/$slug/board/$storyRef': typeof _authedPSlugBoardStoryRefRoute
   '/projects/$slug/board/$storyRef': typeof _authedProjectsSlugBoardStoryRefRoute
+  '/projects/$slug/settings/danger': typeof _authedProjectsSlugSettingsDangerRoute
+  '/projects/$slug/settings/data': typeof _authedProjectsSlugSettingsDataRoute
+  '/projects/$slug/settings/general': typeof _authedProjectsSlugSettingsGeneralRoute
+  '/projects/$slug/settings/integrations': typeof _authedProjectsSlugSettingsIntegrationsRoute
+  '/projects/$slug/settings/notifications': typeof _authedProjectsSlugSettingsNotificationsRoute
+  '/projects/$slug/settings/ownership': typeof _authedProjectsSlugSettingsOwnershipRoute
+  '/projects/$slug/settings/webhooks': typeof _authedProjectsSlugSettingsWebhooksRoute
   '/p/$slug/board': typeof _authedPSlugBoardIndexRoute
   '/projects/$slug/board': typeof _authedProjectsSlugBoardIndexRoute
+  '/projects/$slug/settings': typeof _authedProjectsSlugSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -232,9 +320,11 @@ export interface FileRoutesById {
   '/(_authed)/account/': typeof _authedAccountIndexRoute
   '/(_authed)/tasks/': typeof _authedTasksIndexRoute
   '/_public/login/': typeof PublicLoginIndexRoute
+  '/(_authed)/projects/$slug/settings': typeof _authedProjectsSlugSettingsRouteRouteWithChildren
   '/(_authed)/p/$slug/backlog': typeof _authedPSlugBacklogRoute
   '/(_authed)/p/$slug/epics': typeof _authedPSlugEpicsRoute
   '/(_authed)/p/$slug/members': typeof _authedPSlugMembersRoute
+  '/(_authed)/p/$slug/settings': typeof _authedPSlugSettingsRoute
   '/(_authed)/p/$slug/velocity': typeof _authedPSlugVelocityRoute
   '/(_authed)/projects/$slug/backlog': typeof _authedProjectsSlugBacklogRoute
   '/(_authed)/projects/$slug/epics': typeof _authedProjectsSlugEpicsRoute
@@ -247,8 +337,16 @@ export interface FileRoutesById {
   '/(_authed)/s/$storyId/': typeof _authedSStoryIdIndexRoute
   '/(_authed)/p/$slug/board/$storyRef': typeof _authedPSlugBoardStoryRefRoute
   '/(_authed)/projects/$slug/board/$storyRef': typeof _authedProjectsSlugBoardStoryRefRoute
+  '/(_authed)/projects/$slug/settings/danger': typeof _authedProjectsSlugSettingsDangerRoute
+  '/(_authed)/projects/$slug/settings/data': typeof _authedProjectsSlugSettingsDataRoute
+  '/(_authed)/projects/$slug/settings/general': typeof _authedProjectsSlugSettingsGeneralRoute
+  '/(_authed)/projects/$slug/settings/integrations': typeof _authedProjectsSlugSettingsIntegrationsRoute
+  '/(_authed)/projects/$slug/settings/notifications': typeof _authedProjectsSlugSettingsNotificationsRoute
+  '/(_authed)/projects/$slug/settings/ownership': typeof _authedProjectsSlugSettingsOwnershipRoute
+  '/(_authed)/projects/$slug/settings/webhooks': typeof _authedProjectsSlugSettingsWebhooksRoute
   '/(_authed)/p/$slug/board/': typeof _authedPSlugBoardIndexRoute
   '/(_authed)/projects/$slug/board/': typeof _authedProjectsSlugBoardIndexRoute
+  '/(_authed)/projects/$slug/settings/': typeof _authedProjectsSlugSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -260,9 +358,11 @@ export interface FileRouteTypes {
     | '/account/'
     | '/tasks/'
     | '/login/'
+    | '/projects/$slug/settings'
     | '/p/$slug/backlog'
     | '/p/$slug/epics'
     | '/p/$slug/members'
+    | '/p/$slug/settings'
     | '/p/$slug/velocity'
     | '/projects/$slug/backlog'
     | '/projects/$slug/epics'
@@ -275,8 +375,16 @@ export interface FileRouteTypes {
     | '/s/$storyId/'
     | '/p/$slug/board/$storyRef'
     | '/projects/$slug/board/$storyRef'
+    | '/projects/$slug/settings/danger'
+    | '/projects/$slug/settings/data'
+    | '/projects/$slug/settings/general'
+    | '/projects/$slug/settings/integrations'
+    | '/projects/$slug/settings/notifications'
+    | '/projects/$slug/settings/ownership'
+    | '/projects/$slug/settings/webhooks'
     | '/p/$slug/board/'
     | '/projects/$slug/board/'
+    | '/projects/$slug/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -289,6 +397,7 @@ export interface FileRouteTypes {
     | '/p/$slug/backlog'
     | '/p/$slug/epics'
     | '/p/$slug/members'
+    | '/p/$slug/settings'
     | '/p/$slug/velocity'
     | '/projects/$slug/backlog'
     | '/projects/$slug/epics'
@@ -301,8 +410,16 @@ export interface FileRouteTypes {
     | '/s/$storyId'
     | '/p/$slug/board/$storyRef'
     | '/projects/$slug/board/$storyRef'
+    | '/projects/$slug/settings/danger'
+    | '/projects/$slug/settings/data'
+    | '/projects/$slug/settings/general'
+    | '/projects/$slug/settings/integrations'
+    | '/projects/$slug/settings/notifications'
+    | '/projects/$slug/settings/ownership'
+    | '/projects/$slug/settings/webhooks'
     | '/p/$slug/board'
     | '/projects/$slug/board'
+    | '/projects/$slug/settings'
   id:
     | '__root__'
     | '/(_authed)'
@@ -313,9 +430,11 @@ export interface FileRouteTypes {
     | '/(_authed)/account/'
     | '/(_authed)/tasks/'
     | '/_public/login/'
+    | '/(_authed)/projects/$slug/settings'
     | '/(_authed)/p/$slug/backlog'
     | '/(_authed)/p/$slug/epics'
     | '/(_authed)/p/$slug/members'
+    | '/(_authed)/p/$slug/settings'
     | '/(_authed)/p/$slug/velocity'
     | '/(_authed)/projects/$slug/backlog'
     | '/(_authed)/projects/$slug/epics'
@@ -328,8 +447,16 @@ export interface FileRouteTypes {
     | '/(_authed)/s/$storyId/'
     | '/(_authed)/p/$slug/board/$storyRef'
     | '/(_authed)/projects/$slug/board/$storyRef'
+    | '/(_authed)/projects/$slug/settings/danger'
+    | '/(_authed)/projects/$slug/settings/data'
+    | '/(_authed)/projects/$slug/settings/general'
+    | '/(_authed)/projects/$slug/settings/integrations'
+    | '/(_authed)/projects/$slug/settings/notifications'
+    | '/(_authed)/projects/$slug/settings/ownership'
+    | '/(_authed)/projects/$slug/settings/webhooks'
     | '/(_authed)/p/$slug/board/'
     | '/(_authed)/projects/$slug/board/'
+    | '/(_authed)/projects/$slug/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -428,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _authedPSlugMembersRouteImport
       parentRoute: typeof _authedRouteRoute
     }
+    '/(_authed)/p/$slug/settings': {
+      id: '/(_authed)/p/$slug/settings'
+      path: '/p/$slug/settings'
+      fullPath: '/p/$slug/settings'
+      preLoaderRoute: typeof _authedPSlugSettingsRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
     '/(_authed)/p/$slug/velocity': {
       id: '/(_authed)/p/$slug/velocity'
       path: '/p/$slug/velocity'
@@ -461,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$slug/members'
       fullPath: '/projects/$slug/members'
       preLoaderRoute: typeof _authedProjectsSlugMembersRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings': {
+      id: '/(_authed)/projects/$slug/settings'
+      path: '/projects/$slug/settings'
+      fullPath: '/projects/$slug/settings'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsRouteRouteImport
       parentRoute: typeof _authedRouteRoute
     }
     '/(_authed)/projects/$slug/velocity': {
@@ -519,16 +660,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _authedProjectsSlugBoardStoryRefRouteImport
       parentRoute: typeof _authedRouteRoute
     }
+    '/(_authed)/projects/$slug/settings/': {
+      id: '/(_authed)/projects/$slug/settings/'
+      path: '/'
+      fullPath: '/projects/$slug/settings/'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsIndexRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings/danger': {
+      id: '/(_authed)/projects/$slug/settings/danger'
+      path: '/danger'
+      fullPath: '/projects/$slug/settings/danger'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsDangerRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings/data': {
+      id: '/(_authed)/projects/$slug/settings/data'
+      path: '/data'
+      fullPath: '/projects/$slug/settings/data'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsDataRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings/general': {
+      id: '/(_authed)/projects/$slug/settings/general'
+      path: '/general'
+      fullPath: '/projects/$slug/settings/general'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsGeneralRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings/integrations': {
+      id: '/(_authed)/projects/$slug/settings/integrations'
+      path: '/integrations'
+      fullPath: '/projects/$slug/settings/integrations'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsIntegrationsRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings/notifications': {
+      id: '/(_authed)/projects/$slug/settings/notifications'
+      path: '/notifications'
+      fullPath: '/projects/$slug/settings/notifications'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsNotificationsRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings/ownership': {
+      id: '/(_authed)/projects/$slug/settings/ownership'
+      path: '/ownership'
+      fullPath: '/projects/$slug/settings/ownership'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsOwnershipRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
+    '/(_authed)/projects/$slug/settings/webhooks': {
+      id: '/(_authed)/projects/$slug/settings/webhooks'
+      path: '/webhooks'
+      fullPath: '/projects/$slug/settings/webhooks'
+      preLoaderRoute: typeof _authedProjectsSlugSettingsWebhooksRouteImport
+      parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
+    }
   }
 }
+
+interface _authedProjectsSlugSettingsRouteRouteChildren {
+  _authedProjectsSlugSettingsDangerRoute: typeof _authedProjectsSlugSettingsDangerRoute
+  _authedProjectsSlugSettingsDataRoute: typeof _authedProjectsSlugSettingsDataRoute
+  _authedProjectsSlugSettingsGeneralRoute: typeof _authedProjectsSlugSettingsGeneralRoute
+  _authedProjectsSlugSettingsIntegrationsRoute: typeof _authedProjectsSlugSettingsIntegrationsRoute
+  _authedProjectsSlugSettingsNotificationsRoute: typeof _authedProjectsSlugSettingsNotificationsRoute
+  _authedProjectsSlugSettingsOwnershipRoute: typeof _authedProjectsSlugSettingsOwnershipRoute
+  _authedProjectsSlugSettingsWebhooksRoute: typeof _authedProjectsSlugSettingsWebhooksRoute
+  _authedProjectsSlugSettingsIndexRoute: typeof _authedProjectsSlugSettingsIndexRoute
+}
+
+const _authedProjectsSlugSettingsRouteRouteChildren: _authedProjectsSlugSettingsRouteRouteChildren =
+  {
+    _authedProjectsSlugSettingsDangerRoute:
+      _authedProjectsSlugSettingsDangerRoute,
+    _authedProjectsSlugSettingsDataRoute: _authedProjectsSlugSettingsDataRoute,
+    _authedProjectsSlugSettingsGeneralRoute:
+      _authedProjectsSlugSettingsGeneralRoute,
+    _authedProjectsSlugSettingsIntegrationsRoute:
+      _authedProjectsSlugSettingsIntegrationsRoute,
+    _authedProjectsSlugSettingsNotificationsRoute:
+      _authedProjectsSlugSettingsNotificationsRoute,
+    _authedProjectsSlugSettingsOwnershipRoute:
+      _authedProjectsSlugSettingsOwnershipRoute,
+    _authedProjectsSlugSettingsWebhooksRoute:
+      _authedProjectsSlugSettingsWebhooksRoute,
+    _authedProjectsSlugSettingsIndexRoute:
+      _authedProjectsSlugSettingsIndexRoute,
+  }
+
+const _authedProjectsSlugSettingsRouteRouteWithChildren =
+  _authedProjectsSlugSettingsRouteRoute._addFileChildren(
+    _authedProjectsSlugSettingsRouteRouteChildren,
+  )
 
 interface _authedRouteRouteChildren {
   _authedIndexRoute: typeof _authedIndexRoute
   _authedAccountIndexRoute: typeof _authedAccountIndexRoute
   _authedTasksIndexRoute: typeof _authedTasksIndexRoute
+  _authedProjectsSlugSettingsRouteRoute: typeof _authedProjectsSlugSettingsRouteRouteWithChildren
   _authedPSlugBacklogRoute: typeof _authedPSlugBacklogRoute
   _authedPSlugEpicsRoute: typeof _authedPSlugEpicsRoute
   _authedPSlugMembersRoute: typeof _authedPSlugMembersRoute
+  _authedPSlugSettingsRoute: typeof _authedPSlugSettingsRoute
   _authedPSlugVelocityRoute: typeof _authedPSlugVelocityRoute
   _authedProjectsSlugBacklogRoute: typeof _authedProjectsSlugBacklogRoute
   _authedProjectsSlugEpicsRoute: typeof _authedProjectsSlugEpicsRoute
@@ -547,9 +781,12 @@ const _authedRouteRouteChildren: _authedRouteRouteChildren = {
   _authedIndexRoute: _authedIndexRoute,
   _authedAccountIndexRoute: _authedAccountIndexRoute,
   _authedTasksIndexRoute: _authedTasksIndexRoute,
+  _authedProjectsSlugSettingsRouteRoute:
+    _authedProjectsSlugSettingsRouteRouteWithChildren,
   _authedPSlugBacklogRoute: _authedPSlugBacklogRoute,
   _authedPSlugEpicsRoute: _authedPSlugEpicsRoute,
   _authedPSlugMembersRoute: _authedPSlugMembersRoute,
+  _authedPSlugSettingsRoute: _authedPSlugSettingsRoute,
   _authedPSlugVelocityRoute: _authedPSlugVelocityRoute,
   _authedProjectsSlugBacklogRoute: _authedProjectsSlugBacklogRoute,
   _authedProjectsSlugEpicsRoute: _authedProjectsSlugEpicsRoute,
