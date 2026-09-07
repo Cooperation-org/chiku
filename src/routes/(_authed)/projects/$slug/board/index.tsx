@@ -1,6 +1,7 @@
 ﻿import BoardPage from "@/pages/board-page";
 import { BoardToolbarControls } from "@/components/board/board-toolbar-controls";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { CrumbBoard } from "@/components/layout/breadcrumbs";
 
 /** Legacy `?story=<ref>` deep links redirect to the canonical /board/<ref>. `q` filters the board. */
 type BoardSearch = { story?: number; q?: string };
@@ -27,7 +28,10 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
       });
     }
   },
-  staticData: { toolbarControls: [BoardToolbarControls] },
+  staticData: {
+    toolbarBreadcrumbs: [CrumbBoard],
+    toolbarControls: [BoardToolbarControls],
+  },
   component: RouteComponent,
 });
 

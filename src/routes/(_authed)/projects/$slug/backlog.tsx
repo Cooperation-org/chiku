@@ -1,10 +1,14 @@
 ﻿import BacklogPage from "@/pages/backlog-page";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { CrumbBacklog } from "@/components/layout/breadcrumbs";
 
 /** Legacy `?story=<ref>` deep links redirect to the canonical story view. */
 type BacklogSearch = { story?: number };
 
 export const Route = createFileRoute("/(_authed)/projects/$slug/backlog")({
+  staticData: {
+    toolbarBreadcrumbs: [CrumbBacklog],
+  },
   validateSearch: (search: Record<string, unknown>): BacklogSearch => {
     const raw = search.story;
     if (raw === undefined || raw === null || raw === "") return {};

@@ -1,7 +1,7 @@
 import type { ComponentType } from "react"
 import { useMatches } from "@tanstack/react-router"
 import { AnimatePresence, motion } from "motion/react"
-import { Moon, Sun } from "lucide-react"
+import { ChevronRight, Moon, Sun } from "lucide-react"
 import { CommandPaletteTrigger } from "@/components/layout/command-palette-trigger"
 import { SyncStatus } from "@/components/layout/sync-status"
 import { Button } from "@/components/ui/button"
@@ -25,12 +25,13 @@ const toolbarSpring = { type: "spring", stiffness: 500, damping: 38 } as const
 export function AppToolbar() {
   const { theme, toggle } = useTheme()
 
-  // Leaf match wins; matches only reflect committed navigations, so hovering
-  // a prefetched link can never swap the toolbar.
+  // Breadcrumbs accumulate down the match chain (project → section → page);
+  // controls stay leaf-owned — only the deepest route's actions render.
   const matches = useMatches()
-  const leafStatic = [...matches].reverse().find((m) => m.staticData)?.staticData
-  const breadcrumbs = leafStatic?.toolbarBreadcrumbs ?? []
-  const controls = leafStatic?.toolbarControls ?? []
+  const breadcrumbs = matches.flatMap((m) => m.staticData?.toolbarBreadcrumbs ?? [])
+  const controls =
+    [...matches].reverse().find((m) => m.staticData?.toolbarControls)?.staticData
+      ?.toolbarControls ?? []
 
   return (
     <div className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
@@ -38,16 +39,22 @@ export function AppToolbar() {
 
       <div className="flex min-w-0 shrink-0 items-center gap-1">
         <AnimatePresence mode="popLayout" initial={false}>
-          {breadcrumbs.map((Breadcrumb) => (
+          {breadcrumbs.map((Breadcrumb, i) => (
             <motion.div
-              key={Breadcrumb.displayName ?? Breadcrumb.name}
+              key={`${Breadcrumb.displayName ?? Breadcrumb.name}-${i}`}
               layout
               transition={toolbarSpring}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
-              className="flex min-w-0 items-center"
+              className="flex min-w-0 items-center gap-1 text-muted-foreground text-sm"
             >
+              {i > 0 && (
+                <ChevronRight
+                  className="text-muted-foreground/50 size-3.5 shrink-0"
+                  aria-hidden
+                />
+              )}
               <Breadcrumb />
             </motion.div>
           ))}
