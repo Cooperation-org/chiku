@@ -1,11 +1,7 @@
-﻿import { useState } from "react"
-import { toast } from "sonner"
-import { UserPlus, X } from "lucide-react"
+﻿import { toast } from "sonner"
+import { X } from "lucide-react"
 import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { MemberRoleSelect } from "@/components/inputs/member-role-select"
 import { BrailleLoader } from "@/components/ui/braille-loader"
 import {
   Table,
@@ -16,19 +12,16 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  useAddMembership,
   useMemberships,
   useRemoveMembership,
-  searchUsers,
 } from "@/lib/queries/memberships"
 import { useProjectBySlug } from "@/lib/queries/projects"
+import { ReportMasthead } from "@/components/layout/report"
 import type { Project } from "@/lib/api/types"
 
 interface MembersPageProps {
   slug: string
 }
-
-type SearchHit = { id: number; username: string; full_name: string }
 
 export default function MembersPage({ slug }: MembersPageProps) {
   const { project } = useProjectBySlug(slug)
@@ -46,136 +39,17 @@ export default function MembersPage({ slug }: MembersPageProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center justify-between border-b px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">Members</h1>
-          <p className="text-sm text-muted-foreground">
-            {project.name} Â· who is on the team
-          </p>
+      <div className="mx-auto w-full max-w-3xl px-6">
+        <div className="border-b py-3">
+          <ReportMasthead kicker="Team" tag={project.name} />
         </div>
-      </header>
+      </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        <div className="mx-auto max-w-3xl space-y-6">
-          {canManage && <AddMemberPanel project={project} />}
+        <div className="mx-auto max-w-3xl">
           <MembersTable project={project} canManage={canManage} />
         </div>
       </div>
     </div>
-  )
-}
-
-function AddMemberPanel({ project }: { project: Project }) {
-  const addMembership = useAddMembership(project.id)
-
-  const [query, setQuery] = useState("")
-  const [results, setResults] = useState<SearchHit[]>([])
-  const [selected, setSelected] = useState<SearchHit | null>(null)
-  const [roleId, setRoleId] = useState<string>("")
-
-  // Event-driven lookup: no effects, the search runs when you ask it to.
-  async function runSearch() {
-    const q = query.trim()
-    if (q.length < 2) {
-      setResults([])
-      return
-    }
-    try {
-      setResults(await searchUsers(q))
-    } catch {
-      setResults([])
-    }
-  }
-
-  async function handleAdd() {
-    if (!selected || !roleId) return
-    try {
-      await addMembership.mutateAsync({
-        username: selected.username,
-        roleId: Number(roleId),
-      })
-      toast(`Added ${selected.full_name || selected.username}`)
-      setQuery("")
-      setResults([])
-      setSelected(null)
-      setRoleId("")
-    } catch (err) {
-      toast.error(`Failed to add member: ${(err as Error).message}`)
-    }
-  }
-
-  return (
-    <section className="rounded-lg border bg-card p-4">
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-        <UserPlus className="h-4 w-4" /> Add members
-      </h2>
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="min-w-48 flex-1 space-y-1.5">
-          <Label htmlFor="member-search" className="text-xs">
-            Find user (username)
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              id="member-search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault()
-                  runSearch()
-                }
-              }}
-              placeholder="e.g. alexkh"
-            />
-            <Button variant="outline" onClick={runSearch}>
-              Search
-            </Button>
-          </div>
-        </div>
-        <div className="w-40 space-y-1.5">
-          <Label className="text-xs">Role</Label>
-          <MemberRoleSelect
-            projectId={project.id}
-            value={roleId}
-            onValueChange={setRoleId}
-            disabled={!selected}
-          />
-        </div>
-        <Button
-          onClick={handleAdd}
-          disabled={!selected || !roleId || addMembership.isPending}
-        >
-          {addMembership.isPending ? "Adding..." : "Add"}
-        </Button>
-      </div>
-
-      {results.length > 0 && (
-        <div className="mt-2 rounded-md border bg-background">
-          {results.map((hit) => (
-            <button
-              key={hit.id}
-              onClick={() => {
-                setSelected(hit)
-                setResults([])
-                setQuery(hit.full_name || hit.username)
-              }}
-              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors first:rounded-t-md last:rounded-b-md hover:bg-accent ${
-                selected?.id === hit.id ? "bg-accent" : ""
-              }`}
-            >
-              <Avatar
-                name={hit.full_name || hit.username}
-                size="sm"
-                className="text-white"
-              />
-              <span className="truncate">{hit.full_name || hit.username}</span>
-              <span className="text-xs text-muted-foreground">
-                @{hit.username}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-    </section>
   )
 }
 

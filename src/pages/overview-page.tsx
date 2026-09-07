@@ -1,10 +1,14 @@
 import { useNavigate } from "@tanstack/react-router"
 import { KanbanSquare, Layers, LineChart, Rows3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageTransition } from "@/components/layout/page-transition"
+import {
+  REPORT_KICKER,
+  ReportFigures,
+  ReportMasthead,
+} from "@/components/layout/report"
 import { useProjectBySlug, useProjectStats } from "@/lib/queries/projects"
 import {
   PROJECT_VIEWS,
@@ -45,13 +49,33 @@ export default function OverviewPage({ slug }: { slug: string }) {
     )
   }
 
-  const cards = stats
+  const figureData = stats
     ? [
-        { label: "Defined points", value: stats.defined_points },
-        { label: "Closed points", value: stats.closed_points },
-        { label: "Assigned points", value: stats.assigned_points },
-        { label: "Speed", value: stats.speed },
-        { label: "Sprints", value: stats.total_milestones },
+        {
+          label: "Defined",
+          value: String(stats.defined_points),
+          sub: "total scope in points",
+        },
+        {
+          label: "Closed",
+          value: String(stats.closed_points),
+          barColor: "bg-emerald-500",
+          progress:
+            stats.defined_points > 0
+              ? Math.round((stats.closed_points / stats.defined_points) * 100)
+              : 0,
+          sub: "of defined points",
+        },
+        {
+          label: "Assigned",
+          value: String(stats.assigned_points),
+          sub: "claimed by stories",
+        },
+        {
+          label: "Speed",
+          value: String(stats.speed),
+          sub: "points per day",
+        },
       ]
     : []
   const total = stats?.total_points ?? stats?.defined_points ?? 0
@@ -60,14 +84,13 @@ export default function OverviewPage({ slug }: { slug: string }) {
     <PageTransition transitionKey={slug}>
       <div className="h-full overflow-auto">
         <div className="mx-auto max-w-5xl space-y-6 p-6">
-          <header>
-            <h1 className="text-2xl font-semibold">{currentProject.name}</h1>
-            {currentProject.description && (
-              <p className="mt-1 text-muted-foreground">
-                {currentProject.description}
-              </p>
-            )}
-          </header>
+          <ReportMasthead kicker="Overview" tag={currentProject.name} />
+
+          {currentProject.description && (
+            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+              {currentProject.description}
+            </p>
+          )}
 
           {isLoading || !stats ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -81,26 +104,13 @@ export default function OverviewPage({ slug }: { slug: string }) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                {cards.map((c) => (
-                  <Card key={c.label}>
-                    <CardHeader className="pb-1">
-                      <CardTitle className="text-sm font-normal text-muted-foreground">
-                        {c.label}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{c.value}</div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <ReportFigures figures={figureData} />
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sprints</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div className="rounded-lg border bg-card transition-colors hover:border-ring/40">
+                <div className="border-b p-5">
+                  <h2 className={REPORT_KICKER}>Sprints</h2>
+                </div>
+                <div className="space-y-4 p-5">
                   {stats.milestones.length === 0 ? (
                     <div className="text-sm text-muted-foreground">
                       No sprints yet.
@@ -128,8 +138,8 @@ export default function OverviewPage({ slug }: { slug: string }) {
                       )
                     })
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               <div className="flex flex-wrap gap-2">
                 {PROJECT_VIEWS.filter((v) =>

@@ -6,6 +6,11 @@ import {
   PageTransition,
 } from "@/components/layout/page-transition"
 import { PageLoading } from "@/components/layout/page-state"
+import {
+  REPORT_KICKER,
+  ReportFigures,
+  ReportMasthead,
+} from "@/components/layout/report"
 import { viewEnabled } from "@/lib/project-views"
 
 export default function VelocityPage({ slug }: { slug: string }) {
@@ -27,17 +32,9 @@ export default function VelocityPage({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">{currentProject.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            Velocity &amp; Burndown
-          </p>
-        </div>
-      </header>
-
-      <div className="flex-1 overflow-auto p-6">
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl px-6 py-6">
+        <ReportMasthead kicker="Velocity" tag={currentProject.name} />
         <PagePresence>
           {isLoading ? (
             <PageLoading key="loading" label="Loading velocity data" />
@@ -77,6 +74,7 @@ function VelocityContent({
     velocities.length > 0
       ? Math.round(velocities.reduce((a, b) => a + b, 0) / velocities.length)
       : 0
+  // Bars compare throughput across sprints (normalized to the best sprint).
   const maxVelocity = Math.max(...velocities, 1)
   const sprintsRemaining =
     avgVelocity > 0 ? Math.ceil(backlogPoints / avgVelocity) : 0
@@ -86,161 +84,164 @@ function VelocityContent({
     : 0
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {/* Velocity overview */}
-      <div className="rounded-lg border bg-card p-6">
-        <h2 className="mb-4 font-medium">Velocity Overview</h2>
-        <div className="mb-6 grid grid-cols-3 gap-4">
-          <div className="rounded-lg bg-accent p-4">
-            <div className="text-2xl font-bold text-primary">{avgVelocity}</div>
-            <div className="text-sm text-muted-foreground">Avg Velocity</div>
-          </div>
-          <div className="rounded-lg bg-accent p-4">
-            <div className="text-2xl font-bold text-amber-500">
-              {backlogPoints}
-            </div>
-            <div className="text-sm text-muted-foreground">Backlog Points</div>
-          </div>
-          <div className="rounded-lg bg-accent p-4">
-            <div className="text-2xl font-bold text-emerald-500">
-              {sprintsRemaining}
-            </div>
-            <div className="text-sm text-muted-foreground">Sprints Left</div>
-          </div>
-        </div>
+    <div className="space-y-8">
+      <ReportFigures
+        className="mt-6"
+        figures={[
+          {
+            label: "Avg velocity",
+            value: String(avgVelocity),
+            sub: "points per completed sprint",
+          },
+          {
+            label: "Backlog",
+            value: String(backlogPoints),
+            barColor: "bg-amber-500",
+            progress:
+              data.reduce((sum, m) => sum + m.total_points, 0) > 0
+                ? Math.round((backlogPoints / data.reduce((sum, m) => sum + m.total_points, 0)) * 100)
+                : 0,
+            sub: "open points not in a sprint",
+          },
+          {
+            label: "Sprints left",
+            value: String(sprintsRemaining || "—"),
+            sub: sprintsRemaining > 0 ? "to finish the backlog" : "no backlog left",
+          },
+          {
+            label: "Current sprint",
+            value: `${currentProgress}%`,
+            barColor: "bg-emerald-500",
+            progress: currentProgress,
+            sub: current ? `${current.closed_points}/${current.total_points} points` : "no active sprint",
+          },
+        ]}
+      />
 
-        <div className="space-y-2">
-          {data.map((milestone) => (
-            <div key={milestone.id} className="flex items-center gap-3">
-              <div
-                className="w-24 truncate text-sm text-muted-foreground"
-                title={milestone.name}
-              >
-                {milestone.name}
-              </div>
-              <div className="h-6 flex-1 overflow-hidden rounded bg-accent">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        {/* Per-sprint delivery */}
+        <div className="rounded-lg border bg-card p-5 transition-colors hover:border-ring/40 lg:col-span-7">
+          <h2 className={REPORT_KICKER}>Per-sprint delivery</h2>
+          <div className="mt-4 space-y-2.5">
+            {data.map((milestone) => (
+              <div key={milestone.id} className="flex items-center gap-3">
                 <div
-                  className={`h-full rounded transition-all duration-300 ${
-                    milestone.closed ? "bg-primary" : "bg-amber-500"
-                  }`}
-                  style={{
-                    width: `${(milestone.closed_points / maxVelocity) * 100}%`,
-                  }}
-                />
+                  className="w-28 truncate text-sm text-muted-foreground"
+                  title={milestone.name}
+                >
+                  {milestone.name}
+                </div>
+                <div className="bg-muted h-5 flex-1 overflow-hidden rounded">
+                  <div
+                    className={`h-full rounded transition-all duration-300 ${
+                      milestone.closed ? "bg-primary" : "bg-amber-500"
+                    }`}
+                    style={{
+                      width: `${(milestone.closed_points / maxVelocity) * 100}%`,
+                    }}
+                  />
+                </div>
+                <div className="w-14 text-right text-xs text-muted-foreground tabular-nums">
+                  {milestone.closed_points}/{milestone.total_points}
+                </div>
               </div>
-              <div className="w-12 text-right text-sm text-muted-foreground">
-                {milestone.closed_points}/{milestone.total_points}
+            ))}
+          </div>
+        </div>
+
+        {/* Current sprint */}
+        <div className="rounded-lg border bg-card p-5 transition-colors hover:border-ring/40 lg:col-span-5">
+          <div className="flex items-center justify-between">
+            <h2 className={REPORT_KICKER}>Current sprint</h2>
+            {current && (
+              <span className="text-muted-foreground text-xs">{current.name}</span>
+            )}
+          </div>
+
+          {current ? (
+            <div className="mt-4 space-y-3">
+              <div>
+                <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs tabular-nums">
+                  <span>
+                    {current.closed_points} / {current.total_points} points
+                  </span>
+                  <span>{currentProgress}%</span>
+                </div>
+                <div className="bg-muted h-2 overflow-hidden rounded-full">
+                  <div
+                    className="bg-primary h-full rounded-full transition-all duration-300"
+                    style={{ width: `${currentProgress}%` }}
+                  />
+                </div>
+              </div>
+              <div className="text-muted-foreground space-y-0.5 text-xs tabular-nums">
+                <div>
+                  <span className="text-foreground">{current.estimated_start}</span>
+                  {" → "}
+                  <span className="text-foreground">{current.estimated_finish}</span>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Current sprint */}
-      <div className="rounded-lg border bg-card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-medium">Current Sprint</h2>
-          {current && (
-            <span className="text-sm text-muted-foreground">
-              {current.name}
-            </span>
+          ) : (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No active sprint
+            </div>
           )}
         </div>
 
-        {current ? (
-          <>
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+        {/* Projection */}
+        <div className="rounded-lg border bg-card p-5 transition-colors hover:border-ring/40 lg:col-span-12">
+          <h2 className={REPORT_KICKER}>Completion projection</h2>
+          {avgVelocity > 0 ? (
+            <>
+              <p className="text-muted-foreground mt-4 max-w-xl text-sm">
+                At the average velocity of{" "}
+                <span className="text-foreground font-medium">{avgVelocity} points/sprint</span>
+                , the remaining{" "}
+                <span className="text-amber-500 font-medium">{backlogPoints} backlog points</span>{" "}
+                land in roughly{" "}
+                <span className="text-emerald-500 font-medium">
+                  {sprintsRemaining} more {sprintsRemaining === 1 ? "sprint" : "sprints"}
+                </span>
+                .
+              </p>
+              <div className="mt-4 flex items-center gap-1">
+                {Array(Math.min(sprintsRemaining + completed.length, 20))
+                  .fill(0)
+                  .map((_, i) => (
+                    <div
+                      key={i}
+                      title={
+                        i < completed.length
+                          ? `Sprint ${i + 1} (completed)`
+                          : i === completed.length
+                            ? "Current sprint"
+                            : `Sprint ${i + 1} (projected)`
+                      }
+                      className={`h-8 flex-1 rounded transition-colors ${
+                        i < completed.length
+                          ? "bg-primary"
+                          : i === completed.length
+                            ? "bg-amber-500"
+                            : "bg-accent"
+                      }`}
+                    />
+                  ))}
+              </div>
+              <div className="text-muted-foreground mt-2 flex justify-between text-xs">
+                <span>Sprint 1</span>
                 <span>
-                  {current.closed_points} / {current.total_points} points
-                </span>
-                <span>{currentProgress}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-accent">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-300"
-                  style={{ width: `${currentProgress}%` }}
-                />
-              </div>
-            </div>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <div>
-                Start:{" "}
-                <span className="text-foreground">
-                  {current.estimated_start}
+                  Sprint {Math.min(sprintsRemaining + completed.length, 20)}
+                  {sprintsRemaining + completed.length > 20 ? "+" : ""}
                 </span>
               </div>
-              <div>
-                End:{" "}
-                <span className="text-foreground">
-                  {current.estimated_finish}
-                </span>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            No active sprint
-          </div>
-        )}
-      </div>
-
-      {/* Projection */}
-      <div className="rounded-lg border bg-card p-6 lg:col-span-2">
-        <h2 className="mb-4 font-medium">Completion Projection</h2>
-        {avgVelocity > 0 ? (
-          <>
-            <p className="mb-4 text-muted-foreground">
-              At your current average velocity of{" "}
-              <span className="font-medium text-primary">
-                {avgVelocity} points/sprint
-              </span>
-              , you will complete the remaining{" "}
-              <span className="font-medium text-amber-500">
-                {backlogPoints} backlog points
-              </span>{" "}
-              in approximately{" "}
-              <span className="font-medium text-emerald-500">
-                {sprintsRemaining} sprints
-              </span>
-              .
+            </>
+          ) : (
+            <p className="text-muted-foreground mt-4 text-sm">
+              Complete at least one sprint to see projections.
             </p>
-            <div className="flex items-center gap-1">
-              {Array(Math.min(sprintsRemaining + completed.length, 20))
-                .fill(0)
-                .map((_, i) => (
-                  <div
-                    key={i}
-                    title={
-                      i < completed.length
-                        ? `Sprint ${i + 1} (completed)`
-                        : i === completed.length
-                          ? "Current sprint"
-                          : `Sprint ${i + 1} (projected)`
-                    }
-                    className={`h-8 flex-1 rounded transition-colors ${
-                      i < completed.length
-                        ? "bg-primary"
-                        : i === completed.length
-                          ? "bg-amber-500"
-                          : "bg-accent"
-                    }`}
-                  />
-                ))}
-            </div>
-            <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-              <span>Sprint 1</span>
-              <span>
-                Sprint {Math.min(sprintsRemaining + completed.length, 20)}
-                {sprintsRemaining + completed.length > 20 ? "+" : ""}
-              </span>
-            </div>
-          </>
-        ) : (
-          <p className="text-muted-foreground">
-            Complete at least one sprint to see projections.
-          </p>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

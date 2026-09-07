@@ -152,7 +152,6 @@ export default function TasksPage() {
     <div className="flex h-full flex-col">
       <header className="space-y-3 border-b px-6 py-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold">Tasks</h1>
           <div className="relative max-w-xl flex-1">
             <Input
               ref={searchInput}
