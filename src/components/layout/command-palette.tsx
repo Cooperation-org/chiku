@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useNavigate, useParams } from "@tanstack/react-router"
+import { defaultFilter } from "cmdk"
 import {
   CirclePlus,
   CircleUserRound,
@@ -9,6 +10,7 @@ import {
   LineChart,
   ListFilter,
   ListTodo,
+  Loader,
   Moon,
   Rows3,
   Sun,
@@ -43,6 +45,9 @@ const VIEW_ICONS = {
   epics: Layers,
   velocity: LineChart,
 } as const
+
+/** Value of in-flight/hint rows the custom filter always keeps visible. */
+const SEARCH_MARKER = "__searching__"
 
 /**
  * The app-wide command palette: one cmdk dialog with three pre-scoped entry
@@ -140,11 +145,17 @@ export function CommandPalette() {
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
-        {mode !== "projects" && trimmed.length >= 2 && (
+        {showSearch && (
           <CommandGroup heading="Search results">
-            {searchPending && !results && (
-              <CommandItem disabled value="searching">
-                Searching…
+            {searching && (
+              <CommandItem disabled value={SEARCH_MARKER}>
+                <Loader className="animate-spin" />
+                Searching stories and epics…
+              </CommandItem>
+            )}
+            {!searching && slug == null && (
+              <CommandItem disabled value={SEARCH_MARKER}>
+                Select a project to search its stories
               </CommandItem>
             )}
             {stories.slice(0, 8).map((s) => (

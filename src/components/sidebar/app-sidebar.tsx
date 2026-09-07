@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router"
 import { useLocation } from "@tanstack/react-router"
-import { ChevronDown, KanbanSquare, Layers, LineChart, ListTodo, Rows3, Users } from "lucide-react"
+import { ChevronDown, KanbanSquare, Layers, LineChart, ListTodo, Rows3, Sparkles, Users } from "lucide-react"
 import {
   Collapsible,
   CollapsibleContent,
@@ -202,6 +202,16 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={location.pathname.startsWith("/whats-new")}
+              tooltip="What's new"
+              onClick={() => go("/whats-new")}
+            >
+              <Sparkles />
+              <span>What's new</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Your account" onClick={() => go("/account")}>
               <Avatar

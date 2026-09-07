@@ -11,10 +11,13 @@ harder so pages paint before the network answers.
 ### Added
 
 - **Command palette** — press `⌘K` (`Ctrl+K` on Windows/Linux) anywhere to search stories and epics, jump to any view, switch projects, toggle the theme, or open settings. Prefer pure navigation? Type `V` then `C` to open the palette already scoped to links, views, and settings.
-- **Project switching from the keyboard** — tap `⌘/Ctrl+Shift+P` for the project list, press a number to jump instantly, or hold the combo and press `P` to cycle through projects and release to confirm — Alt-Tab style.
+- **Project switching from the keyboard** — tap `⌘/Ctrl+Shift+P` to open the project list, or hold the combo and press `P` to cycle through projects and release to confirm — Alt-Tab style.
 - **Keyboard shortcut cheat sheet** — press `?` (or pick "Keyboard shortcuts" inside the palette) to see every shortcut with the right key symbols for your platform.
 - **Project settings hub** — every project now has proper settings: rename and describe it in **General**, set its logo in **Brand**, toggle modules (Board, Backlog, Epics, Issues, Wiki, Contact) and public/private visibility in **Modules & visibility**, choose an email level in **Notifications**, store VCS secrets in **Integrations**, and POST every project event to your own service with **Webhooks** — including test deliveries and logs.
 - **Data & ownership tools** — back up, duplicate, or save a project as a template from **Data**; leave the project or transfer ownership to another admin (confirmed by email) from **Ownership**; and archive or delete from a guarded **Danger zone** that only members with delete rights can reach.
+- **Comment permalinks** — every comment has a copy-link button. Links carry the comment's id (`?comment=…`) and open the story scrolled to that comment with a highlight, so you can point teammates at the exact reply.
+- **Comment editing and deletion** — edit your comments inline with the same editor you write them in, and delete them safely: deletion is a soft delete, so it can be undone right away from the toast (or restored later from the comment's tombstone). Edited comments show an "(edited)" marker.
+- **Markdown comments** — comments render as real markdown: tables, task lists, code blocks. Taiga story references like `taiga:us:123` become links to the story, and `@mentions` are highlighted. The comment box gets a formatting toolbar and a live Preview tab.
 
 ### Changed
 
