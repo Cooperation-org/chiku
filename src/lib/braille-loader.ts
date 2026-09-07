@@ -325,7 +325,7 @@ export const VARIANT_CONFIGS: Record<string, VariantConfig> = {
     totalFrames: 23,
     interval: 60,
     gridSize: [4, 4],
-    compute: (frame, totalFrames, width, height, _ctx) => {
+    compute: (frame, _totalFrames, width, height, _ctx) => {
       const period = 900;
       const t = frame * 40;
       const scale = 1 + 0.06 * Math.sin((2 * Math.PI * t) / period);
@@ -468,7 +468,7 @@ export const VARIANT_CONFIGS: Record<string, VariantConfig> = {
     totalFrames: 90,
     interval: 40,
     gridSize: [5, 5],
-    compute: (frame, totalFrames, width, height, ctx) => {
+    compute: (frame, _totalFrames, width, height, ctx) => {
       const field = createFieldBuffer(width);
       const pixelCols = width * 2;
       const t = frame * 40;
@@ -539,7 +539,7 @@ export const VARIANT_CONFIGS: Record<string, VariantConfig> = {
     interval: 40,
     gridSize: [5, 5],
 
-    compute: (frame, totalFrames, width, height, _ctx) => {
+    compute: (frame, _totalFrames, width, height, _ctx) => {
       const field = createFieldBuffer(width);
 
       const pixelCols = width * 2;
@@ -791,7 +791,7 @@ export const VARIANT_CONFIGS: Record<string, VariantConfig> = {
     totalFrames: 60,
     interval: 40,
     gridSize: [4, 4],
-    compute: (frame, totalFrames, width, height, _ctx) => {
+    compute: (frame, _totalFrames, width, height, _ctx) => {
       const period = 900;
       const t = frame * 40;
       const progress = (t / period) % 1;
@@ -819,7 +819,7 @@ export const VARIANT_CONFIGS: Record<string, VariantConfig> = {
     interval: 60,
     gridSize: [4, 4],
 
-    compute: (frame, totalFrames, width, height, _ctx) => {
+    compute: (frame, _totalFrames, width, height, _ctx) => {
       const field = createFieldBuffer(width);
 
       const framesPerStep = 2;
