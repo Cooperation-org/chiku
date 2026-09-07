@@ -3,6 +3,17 @@
 // Use env variable in production, proxy in dev
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
+/** Hung connections fail fast instead of spinning loaders forever. */
+const FETCH_TIMEOUT_MS = 10_000;
+
+function timeoutSignal(existing?: AbortSignal | null): AbortSignal {
+	return existing ?? AbortSignal.timeout(FETCH_TIMEOUT_MS);
+}
+
+function isAbortError(err: unknown): boolean {
+	return err instanceof DOMException ? err.name === 'AbortError' : false;
+}
+
 /**
  * A non-2xx response, carrying the parsed body so callers can react to a
  * specific error (e.g. Taiga's optimistic-concurrency `version` rejection)
@@ -72,11 +83,12 @@ class TaigaClient {
 
 		this.refreshPromise = (async () => {
 			try {
-				const response = await fetch(`${API_BASE}/auth/refresh`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ refresh: this.refreshToken })
-				});
+			const response = await fetch(`${API_BASE}/auth/refresh`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ refresh: this.refreshToken }),
+				signal: timeoutSignal()
+			});
 
 				if (!response.ok) {
 					this.clearToken();
@@ -117,7 +129,7 @@ class TaigaClient {
 			}
 		}
 
-		// FormData sets its own multipart Content-Type (with boundary) — never override it.
+		// FormData sets its own multipart Content-Type (with boundary) â€” never override it.
 		const isFormData =
 			typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
 
@@ -130,10 +142,17 @@ class TaigaClient {
 			(headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
 		}
 
-		const response = await fetch(url, {
-			...fetchOptions,
-			headers
-		});
+		let response: Response;
+		try {
+			response = await fetch(url, {
+				...fetchOptions,
+				headers,
+				signal: timeoutSignal(fetchOptions.signal)
+			});
+		} catch (err) {
+			if (isAbortError(err)) throw new Error(`Request timed out: ${endpoint}`, { cause: err });
+			throw err;
+		}
 
 		// Handle 401 - try to refresh token and retry once
 		if (response.status === 401 && !_isRetry && this.refreshToken) {
@@ -159,7 +178,7 @@ class TaigaClient {
 			} else {
 				// Field-level validation errors. Taiga sends the message either as a list
 				// ({"description": ["This field is required."]}) or as a bare string
-				// ({"version": "The version parameter is not valid"}) — read both, or the
+				// ({"version": "The version parameter is not valid"}) â€” read both, or the
 				// user is shown raw JSON.
 				const fieldErrors = Object.entries(error)
 					.filter(([, v]) => Array.isArray(v) || typeof v === 'string')
@@ -203,7 +222,7 @@ class TaigaClient {
 	async getBlob(url: string): Promise<Blob> {
 		const headers: Record<string, string> = {};
 		if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-		const response = await fetch(url, { headers });
+		const response = await fetch(url, { headers, signal: timeoutSignal() });
 		if (!response.ok) throw new Error(`[${response.status}] Could not fetch file`);
 		return response.blob();
 	}

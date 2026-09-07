@@ -1,7 +1,7 @@
 // Story search + filtering, shared by any view that lists user stories.
 // Pure functions over an already-loaded story array: no API calls, no stores.
 
-import type { UserStory } from '$lib/api/types';
+import type { UserStory } from '@/lib/api/types';
 
 /** Sentinel assignee value meaning "no one is assigned". */
 export const UNASSIGNED = -1;
@@ -14,7 +14,7 @@ export interface StoryFilter {
 	/** Story creator (Taiga `owner`), or null for any. */
 	creator: number | null;
 	project: number | null;
-	/** Status name, not id — status ids differ per project. */
+	/** Status name, not id â€” status ids differ per project. */
 	status: string;
 	/** Story must carry every tag listed. */
 	tags: string[];

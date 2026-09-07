@@ -1,34 +1,32 @@
-import { writable } from 'svelte/store';
-import type { Project } from '$lib/api/types';
+import { create } from "zustand"
 
-// Get saved project ID from localStorage
-function getSavedProjectId(): number | null {
-	if (typeof window === 'undefined') return null;
-	const saved = localStorage.getItem('selected_project_id');
-	return saved ? parseInt(saved, 10) : null;
+const KEY = "selected_project_slug"
+
+function readSavedSlug(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem(KEY)
 }
 
-// Create a custom store that persists to localStorage
-function createProjectStore() {
-	const { subscribe, set, update } = writable<Project | null>(null);
-
-	return {
-		subscribe,
-		set: (project: Project | null) => {
-			if (typeof window !== 'undefined') {
-				if (project) {
-					localStorage.setItem('selected_project_id', String(project.id));
-				} else {
-					localStorage.removeItem('selected_project_id');
-				}
-			}
-			set(project);
-		},
-		update,
-		getSavedId: getSavedProjectId
-	};
+interface ProjectState {
+  /**
+   * The last project the visitor deliberately navigated to. Written by
+   * navigation handlers (sidebar, switcher, home loader) — never synced from
+   * render — so slug-less routes (/tasks) can link back to a project.
+   */
+  selectedSlug: string | null
+  setSelectedSlug: (slug: string) => void
+  getSavedSlug: () => string | null
 }
 
-// Current selected project
-export const currentProject = createProjectStore();
-export const currentProjectSlug = writable<string | null>(null);
+export const useProjectStore = create<ProjectState>((set) => ({
+  selectedSlug: readSavedSlug(),
+  setSelectedSlug: (slug) => {
+    if (slug) {
+      localStorage.setItem(KEY, slug)
+    } else {
+      localStorage.removeItem(KEY)
+    }
+    set({ selectedSlug: slug })
+  },
+  getSavedSlug: readSavedSlug,
+}))

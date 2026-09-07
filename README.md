@@ -1,4 +1,4 @@
-# Chiku - Modern Taiga Frontend
+﻿# Chiku - Modern Taiga Frontend
 
 A fast, Linear-inspired frontend for Taiga built with SvelteKit. Drop-in replacement for the default Taiga frontend.
 
@@ -15,17 +15,18 @@ bundle. The dashboard's task card is GovKit's `<govkit-tasks>` (GovKit reads the
 Taiga through its own adapter); a row in that card opens the story here:
 
 ```
-<tasks-app>/p/<project-slug>/board?story=<ref>
+<tasks-app>/projects/<project-slug>/board/<ref>
 ```
 
-That URL shape is the contract — the dashboard passes its own base for `<tasks-app>` as
-`data-tasks-app`, and `?story=` deep links survive the SSO round trip. Changing the shape
-breaks every dashboard that links here.
+That URL shape is the contract ΓÇö the dashboard passes its own base for `<tasks-app>` as
+`data-tasks-app`, and story deep links survive the SSO round trip. The legacy
+`/p/<slug>/…` shape (including `?story=<ref>`) still works: it redirects to the
+canonical `/projects/…` shape.
 
 Chiku can also mount the cohort's cross-app bar so a person who arrived from a dashboard
 can get back out: set `VITE_COHORT_NAV_SRC` (build-time). Unset, Chiku is standalone.
 
-**`govkit/docs/COMPOSITION.md`** is the master document for the whole composition — the
+**`govkit/docs/COMPOSITION.md`** is the master document for the whole composition ΓÇö the
 diagram, the component catalog, the contracts, and how to run the set locally.
 
 ## Features
@@ -38,12 +39,12 @@ diagram, the component catalog, the contracts, and how to run the set locally.
 - Attachments on stories: drag-and-drop or click to upload, download, remove.
   Markdown attachments render inline, other text files show as plain text,
   images show inline. Files are stored by Taiga (`/userstories/attachments`),
-  so anything that posts there — including amebo — shows up in the UI.
+  so anything that posts there ΓÇö including amebo ΓÇö shows up in the UI.
 - Backlog list view
 - Epics with progress tracking
 - Velocity charts and sprint projections
 - My Tasks view across projects
-- Project-scoped URLs: `/p/<project-slug>/board`, `/backlog`, `/epics`, `/velocity`
+- Project-scoped URLs: `/projects/<project-slug>/board`, `/backlog`, `/epics`, `/velocity`
 - Sign in with LinkedTrust (team OIDC provider, brokers Google + Bluesky), plus optional direct Google OAuth, Bluesky, and Taiga password login
 - Dark mode UI
 - Works with any existing Taiga backend
@@ -56,10 +57,10 @@ taiga-back (no frontend OAuth config): the button sends the browser to
 (live.linkedtrust.us), completes the code exchange with its confidential
 client, and redirects back to `{origin}/oauth/callback` with tokens in the
 URL fragment. The SPA stores them in localStorage and returns the user to the
-page they originally requested (deep links like `/p/<slug>/board?story=<ref>`
+page they originally requested (deep links like `/projects/<slug>/board/<ref>`
 survive the round trip).
 
-There is no self-serve registration in the UI — accounts are provisioned via
+There is no self-serve registration in the UI ΓÇö accounts are provisioned via
 SSO (or by a Taiga admin for password accounts).
 
 ## Deployment
@@ -100,7 +101,7 @@ location /api/ {
 }
 ```
 
-The app must be served at the origin root (routes like `/p/<slug>/board` are
+The app must be served at the origin root (routes like `/projects/<slug>/board` are
 absolute); it is not designed to run under a path prefix.
 
 ## Development
@@ -129,7 +130,7 @@ npm run preview
 
 The backend plugin that handles LinkedTrust OIDC is
 [`django-linkedtrust-auth`](https://github.com/Cooperation-org/django-linkedtrust-auth)
-— a standalone Django package installed into taiga-back via pip. It handles the
+ΓÇö a standalone Django package installed into taiga-back via pip. It handles the
 full server-side OIDC flow (redirect to IdP, code exchange, user creation,
 invite verification) so the frontend only needs to link to the backend's
 `/redirect` endpoint and read tokens from the `/oauth/callback` fragment.
@@ -141,10 +142,10 @@ non-Taiga Django apps.
 
 | File | What it does |
 |------|-------------|
-| `src/routes/login/+page.svelte` | Login page — renders sign-in buttons |
+| `src/routes/login/+page.svelte` | Login page ΓÇö renders sign-in buttons |
 | `src/lib/components/auth/DesktopLogin.svelte` | Desktop login UI (LinkedTrust + Google buttons) |
 | `src/lib/components/auth/MobileLogin.svelte` | Mobile login UI (same buttons) |
-| `src/routes/oauth/callback/+page.svelte` | Handles the IdP redirect — reads tokens from URL fragment |
+| `src/routes/oauth/callback/+page.svelte` | Handles the IdP redirect ΓÇö reads tokens from URL fragment |
 | `src/lib/stores/auth.ts` | Auth state store (token storage, login/logout) |
 
 ## Environment Variables
@@ -154,7 +155,7 @@ non-Taiga Django apps.
 | `VITE_API_URL` | Taiga API URL | `/api/v1` (uses nginx proxy) |
 | `PUBLIC_GOOGLE_CLIENT_ID` | Optional: enables the direct "Continue with Google" button | unset (button hidden) |
 
-Sign in with LinkedTrust needs no frontend variables — the OIDC client
+Sign in with LinkedTrust needs no frontend variables ΓÇö the OIDC client
 lives in taiga-back. See `.env.example`.
 
 ## Tech Stack

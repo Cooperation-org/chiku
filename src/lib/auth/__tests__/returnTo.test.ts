@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
-import { sanitizeReturnTo, saveReturnTo, consumeReturnTo } from '$lib/auth/returnTo';
+import { sanitizeReturnTo, saveReturnTo, consumeReturnTo } from '@/lib/auth/returnTo';
 
 describe('sanitizeReturnTo', () => {
 	it('accepts same-app absolute paths with query', () => {

@@ -1,4 +1,28 @@
-// Taiga API types
+﻿// Taiga API types
+
+/** One row of GET /projects/{id}/stats — remaining points per sprint. */
+export interface ProjectSprintStat {
+	name: string;
+	optimal: number | null;
+	evolution: number | null;
+	"team-increment": number | number[] | null;
+	"client-increment": number | number[] | null;
+}
+
+/** GET /projects/{id}/stats — agile totals plus the per-sprint series. */
+export interface ProjectStats {
+	name: string;
+	total_milestones: number;
+	total_points: number | null;
+	defined_points: number;
+	closed_points: number;
+	assigned_points: number;
+	defined_points_per_role: Record<string, number>;
+	closed_points_per_role: Record<string, number>;
+	assigned_points_per_role: Record<string, number>;
+	milestones: ProjectSprintStat[];
+	speed: number;
+}
 
 export interface User {
 	id: number;
@@ -28,6 +52,7 @@ export interface Project {
 	is_epics_activated: boolean;
 	is_issues_activated: boolean;
 	is_wiki_activated: boolean;
+	is_contact_activated?: boolean;
 	us_statuses: UserStoryStatus[];
 	task_statuses: TaskStatus[];
 	points: Point[];
@@ -39,6 +64,27 @@ export interface Project {
 	i_am_owner?: boolean;
 	i_am_member?: boolean;
 	my_permissions?: string[];
+	/** Visibility permission sets (who may view when public / anonymous). */
+	anon_permissions?: string[];
+	public_permissions?: string[];
+	/** Owner's notification level for this project (null when not a member). */
+	notify_level?: number | null;
+	blocked_code?: string | number | null;
+	logo_small_url?: string | null;
+	logo_big_url?: string | null;
+	creation_template?: number | null;
+	/** Backend defaults for newly created objects. */
+	default_epic_status?: number | null;
+	default_us_status?: number | null;
+	default_task_status?: number | null;
+	default_points?: number | null;
+	default_priority?: number | null;
+	default_severity?: number | null;
+	default_issue_status?: number | null;
+	default_issue_type?: number | null;
+	total_closed_milestones?: number;
+	is_watcher?: boolean;
+	total_watchers?: number;
 }
 
 export interface UserStoryStatus {
@@ -116,19 +162,27 @@ export interface UserStory {
 	due_date_status: string | null;
 	tags: [string, string | null][];
 	epics: EpicRef[] | null;
+	is_blocked: boolean;
+	blocked_note: string | null;
+	
+	/** Prev/next story in the project nav chain. */
+	neighbors: {
+		next: { id: number; ref: number; subject: string } | null;
+		previous: { id: number; ref: number; subject: string } | null;
+	} | null;
 }
 
 /** Taiga attachment (userstories/tasks/issues share this shape). */
 export interface Attachment {
 	id: number;
 	project: number;
-	/** User id of whoever uploaded it — resolve against project members for a name. */
+	/** User id of whoever uploaded it Ã¢â‚¬â€ resolve against project members for a name. */
 	owner: number;
 	name: string;
 	/** Storage-relative path. Use `url` to fetch; it carries the access token. */
 	attached_file: string;
 	size: number;
-	/** Signed, absolute media URL — usable directly as href/src without an auth header. */
+	/** Signed, absolute media URL Ã¢â‚¬â€ usable directly as href/src without an auth header. */
 	url: string;
 	preview_url: string | null;
 	thumbnail_card_url: string | null;
@@ -272,4 +326,62 @@ export interface AtprotoSession {
 	accessToken: string;
 	refreshToken?: string;
 	handle: string;
+}
+
+// Project settings / admin surface (Taiga REST API)
+
+export interface ProjectModules {
+	github?: { secret?: string | null; webhooks_url?: string | null };
+	gitlab?: { secret?: string | null; webhooks_url?: string | null; valid_origin_ips?: string[] };
+	bitbucket?: { secret?: string | null; webhooks_url?: string | null; valid_origin_ips?: string[] };
+	gogs?: { secret?: string | null; webhooks_url?: string | null };
+}
+
+export interface Webhook {
+	id: number;
+	project: number;
+	name: string;
+	url: string;
+	key: string;
+	logs_counter: number;
+}
+
+export interface WebhookLog {
+	id: number;
+	webhook: number;
+	url: string;
+	created: string;
+	status: number;
+	duration: number;
+	request_headers: Record<string, string>;
+	request_data: unknown;
+	response_headers: Record<string, string>;
+	response_data: string;
+}
+
+export interface NotifyPolicy {
+	id: number;
+	project: number;
+	project_name: string;
+	notify_level: number;
+	live_notify_level?: number | null;
+	web_notify_level?: boolean | null;
+}
+
+export interface ProjectTemplate {
+	id: number;
+	name: string;
+	slug: string;
+	description: string;
+	default_owner_role?: string;
+	created_date?: string;
+	modified_date?: string;
+}
+
+export interface ExportAccepted {
+	export_id: string;
+}
+
+export interface ExportSynch {
+	url: string;
 }

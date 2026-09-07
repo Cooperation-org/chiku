@@ -7,7 +7,7 @@
  * than "A(".
  *
  * The letters follow the name, so anyone who wants different ones sets a
- * different display name (Profile → Display name).
+ * different display name (Profile â†’ Display name).
  */
 export function initialsFor(name: string | null | undefined): string {
 	const words = (name ?? '')

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { countingRoles, pointChoices, pointsPatch, storyPointId, unestimatedPoint } from '../points';
 import type { Point, Project, Role, UserStory } from '../types';
 
-const BLANK = 1; // "?" — no estimate
+const BLANK = 1; // "?" â€” no estimate
 const ONE = 2;
 const THREE = 3;
 

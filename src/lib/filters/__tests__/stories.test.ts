@@ -11,7 +11,7 @@ import {
 	matchesQuery,
 	paramsHaveFilter
 } from '../stories';
-import type { UserStory } from '$lib/api/types';
+import type { UserStory } from '@/lib/api/types';
 
 function story(over: Partial<UserStory> = {}): UserStory {
 	return {

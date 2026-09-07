@@ -4,13 +4,13 @@
  * Taiga does not store one number on a story. It stores an estimate per role
  * (`story.points` maps a role id to an option out of the project's fixed point
  * catalog), and `total_points` is the sum across the roles that count. Teams
- * that estimate once — including any team reading points as hours — want a
+ * that estimate once â€” including any team reading points as hours â€” want a
  * single number, so these helpers collapse the per-role model into one:
  * the estimate is carried by the first counting role, and every other counting
  * role is set to the catalog's unestimated option, which adds nothing. The
  * total then equals exactly the number the person picked.
  *
- * Pure functions on purpose — the modal does the talking to the API.
+ * Pure functions on purpose â€” the modal does the talking to the API.
  */
 
 import type { Point, Project, UserStory } from './types';

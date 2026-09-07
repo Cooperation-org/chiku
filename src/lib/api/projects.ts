@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Project } from './types';
+import type { Project, ProjectStats } from './types';
 
 export interface CreateProjectData {
 	name: string;
@@ -18,6 +18,10 @@ export async function reorderProjects(order: { project_id: number; order: number
 
 export async function getProject(projectId: number): Promise<Project> {
 	return api.get<Project>(`/projects/${projectId}`);
+}
+
+export async function getProjectStats(projectId: number): Promise<ProjectStats> {
+	return api.get<ProjectStats>(`/projects/${projectId}/stats`);
 }
 
 export async function getProjectBySlug(slug: string): Promise<Project> {
