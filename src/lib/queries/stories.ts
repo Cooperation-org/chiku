@@ -22,6 +22,7 @@ export function useStatuses(projectId: number | null) {
     queryKey: qk.statuses(projectId ?? 0),
     queryFn: () => getUserStoryStatuses(projectId!),
     enabled: projectId != null,
+    meta: { label: "statuses list", projectId: projectId ?? 0 },
   })
 }
 
@@ -30,6 +31,7 @@ export function useStories(projectId: number | null) {
     queryKey: qk.stories(projectId ?? 0),
     queryFn: () => getUserStories(projectId!),
     enabled: projectId != null,
+    meta: { label: "stories list", projectId: projectId ?? 0 },
   })
 }
 
@@ -38,6 +40,7 @@ export function useStory(id: number | null) {
     queryKey: ["story", id ?? 0] as const,
     queryFn: () => getUserStory(id!),
     enabled: id != null,
+    meta: { label: `story #${id ?? 0}` },
   })
 }
 
@@ -47,6 +50,7 @@ export function useStoryByRef(projectId: number | null, ref: number | null) {
     queryKey: qk.storyRef(projectId ?? 0, ref ?? 0),
     queryFn: () => getUserStoryByRef(projectId!, ref!),
     enabled: projectId != null && ref != null,
+    meta: { label: `story #${ref ?? 0}`, projectId: projectId ?? 0 },
   })
 }
 
@@ -57,6 +61,7 @@ export function useSearch(projectId: number | null, text: string) {
     queryKey: qk.search(projectId ?? 0, trimmed),
     queryFn: () => searchProject(projectId!, trimmed),
     enabled: projectId != null && trimmed.length >= 2,
+    meta: { label: "search", projectId: projectId ?? 0 },
   })
 }
 
@@ -74,6 +79,7 @@ export function useMyTasks(includeClosed: boolean) {
         projects: projects.filter((p) => !isArchived(p)),
       }
     },
+    meta: { label: includeClosed ? "My tasks · all" : "My tasks" },
   })
 }
 

@@ -23,15 +23,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useCreateEpic, useDeleteEpic, useEpics, useUpdateEpic } from "@/lib/queries/epics"
+import {
+  useCreateEpic,
+  useDeleteEpic,
+  useEpics,
+  useUpdateEpic,
+} from "@/lib/queries/epics"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { ModuleDisabled } from "@/components/project/module-disabled"
+import {
+  PagePresence,
+  PageTransition,
+} from "@/components/layout/page-transition"
+import { PageLoading } from "@/components/layout/page-state"
 import { viewEnabled } from "@/lib/project-views"
 import type { Epic } from "@/lib/api/types"
 
 const epicColors = [
-  "#3b82f6", "#8b5cf6", "#ec4899", "#ef4444", "#f97316",
-  "#eab308", "#22c55e", "#14b8a6", "#06b6d4",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#14b8a6",
+  "#06b6d4",
 ]
 
 function getProgress(epic: Epic): number {
@@ -41,7 +58,9 @@ function getProgress(epic: Epic): number {
 }
 
 function formatRelativeDate(dateStr: string): string {
-  const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
+  const diffDays = Math.floor(
+    (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24)
+  )
   if (diffDays === 0) return "today"
   if (diffDays === 1) return "1d"
   if (diffDays < 7) return `${diffDays}d`
@@ -102,7 +121,8 @@ function CreateEpicDialog({
               placeholder="Epic name"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleCreate()
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                  handleCreate()
               }}
             />
           </div>
@@ -115,7 +135,9 @@ function CreateEpicDialog({
                   type="button"
                   onClick={() => setColor(c)}
                   className={`h-8 w-8 rounded-full transition-transform ${
-                    color === c ? "ring-foreground ring-offset-background scale-110 ring-2 ring-offset-2" : "hover:scale-110"
+                    color === c
+                      ? "scale-110 ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                      : "hover:scale-110"
                   }`}
                   style={{ backgroundColor: c }}
                 />
@@ -135,14 +157,18 @@ function CreateEpicDialog({
           </div>
         </div>
         <DialogFooter className="flex items-center justify-between sm:justify-between">
-          <p className="text-muted-foreground text-xs">
-            Press <kbd className="rounded bg-accent px-1">Cmd+Enter</kbd> to create
+          <p className="text-xs text-muted-foreground">
+            Press <kbd className="rounded bg-accent px-1">Cmd+Enter</kbd> to
+            create
           </p>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={!subject.trim() || createEpic.isPending}>
+            <Button
+              onClick={handleCreate}
+              disabled={!subject.trim() || createEpic.isPending}
+            >
               {createEpic.isPending ? "Creating..." : "Create Epic"}
             </Button>
           </div>
@@ -182,7 +208,11 @@ function EpicDialog({
     try {
       await updateEpic.mutateAsync({
         id: epic.id,
-        data: { subject: subject.trim(), description: description.trim(), color },
+        data: {
+          subject: subject.trim(),
+          description: description.trim(),
+          color,
+        },
       })
       setEditing(false)
     } catch (err) {
@@ -210,10 +240,17 @@ function EpicDialog({
               <DialogHeader>
                 <div className="flex items-center justify-between">
                   <DialogTitle>
-                    <span className="text-muted-foreground font-mono text-sm">#{epic.ref}</span> {epic.subject}
+                    <span className="font-mono text-sm text-muted-foreground">
+                      #{epic.ref}
+                    </span>{" "}
+                    {epic.subject}
                   </DialogTitle>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={editing ? () => setEditing(false) : startEdit}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={editing ? () => setEditing(false) : startEdit}
+                    >
                       {editing ? "Cancel" : "Edit"}
                     </Button>
                     <Button
@@ -239,15 +276,20 @@ function EpicDialog({
                   >
                     {epic.status_extra_info?.name}
                   </span>
-                  <span className="text-muted-foreground text-xs">
-                    {epic.user_stories_counts?.progress ?? 0}/{epic.user_stories_counts?.total ?? 0} stories Â·{" "}
+                  <span className="text-xs text-muted-foreground">
+                    {epic.user_stories_counts?.progress ?? 0}/
+                    {epic.user_stories_counts?.total ?? 0} stories Â·{" "}
                     {getProgress(epic)}%
                   </span>
                 </div>
 
                 {editing ? (
                   <div className="space-y-3">
-                    <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Epic name" />
+                    <Input
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="Epic name"
+                    />
                     <div className="flex flex-wrap gap-2">
                       {epicColors.map((c) => (
                         <button
@@ -255,7 +297,9 @@ function EpicDialog({
                           type="button"
                           onClick={() => setColor(c)}
                           className={`h-7 w-7 rounded-full transition-transform ${
-                            color === c ? "ring-foreground scale-110 ring-2" : "hover:scale-110"
+                            color === c
+                              ? "scale-110 ring-2 ring-foreground"
+                              : "hover:scale-110"
                           }`}
                           style={{ backgroundColor: c }}
                         />
@@ -268,26 +312,32 @@ function EpicDialog({
                       placeholder="Description"
                     />
                     <div className="flex justify-end">
-                      <Button onClick={save} disabled={!subject.trim() || updateEpic.isPending}>
+                      <Button
+                        onClick={save}
+                        disabled={!subject.trim() || updateEpic.isPending}
+                      >
                         {updateEpic.isPending ? "Saving..." : "Save"}
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground min-h-12 whitespace-pre-wrap text-sm">
+                  <p className="min-h-12 text-sm whitespace-pre-wrap text-muted-foreground">
                     {epic.description || "No description"}
                   </p>
                 )}
 
                 <div>
-                  <div className="text-muted-foreground mb-1 flex items-center justify-between text-xs">
+                  <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
                     <span>Progress</span>
                     <span>{getProgress(epic)}%</span>
                   </div>
-                  <div className="bg-accent h-1.5 overflow-hidden rounded-full">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-accent">
                     <div
                       className="h-full rounded-full transition-all duration-300"
-                      style={{ width: `${getProgress(epic)}%`, backgroundColor: epic.color }}
+                      style={{
+                        width: `${getProgress(epic)}%`,
+                        backgroundColor: epic.color,
+                      }}
                     />
                   </div>
                 </div>
@@ -295,13 +345,17 @@ function EpicDialog({
                 {epic.assigned_to_extra_info && (
                   <div className="flex items-center gap-2">
                     <Avatar
-                      name={epic.assigned_to_extra_info.full_name_display || epic.assigned_to_extra_info.full_name}
+                      name={
+                        epic.assigned_to_extra_info.full_name_display ||
+                        epic.assigned_to_extra_info.full_name
+                      }
                       photo={epic.assigned_to_extra_info.photo}
                       size="sm"
                       className="text-white"
                     />
-                    <span className="text-muted-foreground text-sm">
-                      {epic.assigned_to_extra_info.full_name_display || epic.assigned_to_extra_info.full_name}
+                    <span className="text-sm text-muted-foreground">
+                      {epic.assigned_to_extra_info.full_name_display ||
+                        epic.assigned_to_extra_info.full_name}
                     </span>
                   </div>
                 )}
@@ -321,7 +375,10 @@ function EpicDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={remove} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={remove}
+              className="bg-destructive hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -341,7 +398,9 @@ export default function EpicsPage({ slug }: { slug: string }) {
   if (!currentProject) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">Select a project to view epics</div>
+        <div className="text-muted-foreground">
+          Select a project to view epics
+        </div>
       </div>
     )
   }
@@ -355,7 +414,9 @@ export default function EpicsPage({ slug }: { slug: string }) {
       <header className="flex items-center justify-between border-b px-6 py-4">
         <div>
           <h1 className="text-lg font-semibold">{currentProject.name}</h1>
-          <p className="text-muted-foreground text-sm">Epics Â· {epics?.length ?? 0} total</p>
+          <p className="text-sm text-muted-foreground">
+            Epics Â· {epics?.length ?? 0} total
+          </p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
           <CirclePlus className="h-4 w-4" />
@@ -364,82 +425,115 @@ export default function EpicsPage({ slug }: { slug: string }) {
       </header>
 
       <div className="flex-1 overflow-auto p-6">
-        {isLoading ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-muted-foreground">Loading epics...</div>
-          </div>
-        ) : !epics || epics.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-muted-foreground">No epics yet</div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {epics.map((epic) => (
-              <button
-                key={epic.id}
-                onClick={() => setSelected(epic)}
-                className="bg-card hover:border-ring group cursor-pointer overflow-hidden rounded-lg border text-left transition-colors"
-              >
-                <div className="h-1" style={{ backgroundColor: epic.color }} />
-                <div className="p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-sm">#{epic.ref}</span>
-                      <span className="text-muted-foreground/70 text-xs">{formatRelativeDate(epic.modified_date)}</span>
+        <PagePresence>
+          {isLoading ? (
+            <PageLoading key="loading" label="Loading epics" />
+          ) : !epics || epics.length === 0 ? (
+            <PageTransition key="empty">
+              <div className="flex h-full items-center justify-center">
+                <div className="text-muted-foreground">No epics yet</div>
+              </div>
+            </PageTransition>
+          ) : (
+            <PageTransition key="epics">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {epics.map((epic) => (
+                  <button
+                    key={epic.id}
+                    onClick={() => setSelected(epic)}
+                    className="group cursor-pointer overflow-hidden rounded-lg border bg-card text-left transition-colors hover:border-ring"
+                  >
+                    <div
+                      className="h-1"
+                      style={{ backgroundColor: epic.color }}
+                    />
+                    <div className="p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            #{epic.ref}
+                          </span>
+                          <span className="text-xs text-muted-foreground/70">
+                            {formatRelativeDate(epic.modified_date)}
+                          </span>
+                        </div>
+                        {epic.status_extra_info && (
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
+                            style={{
+                              backgroundColor: `${epic.status_extra_info.color}20`,
+                              color: epic.status_extra_info.color,
+                            }}
+                          >
+                            {epic.status_extra_info.name}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="mb-1 font-medium transition-colors group-hover:text-primary">
+                        {epic.subject}
+                      </h3>
+                      {epic.description ? (
+                        <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
+                          {epic.description}
+                        </p>
+                      ) : (
+                        <p className="mb-4 text-sm text-muted-foreground/70 italic">
+                          No description
+                        </p>
+                      )}
+                      <div className="mb-3">
+                        <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Progress</span>
+                          <span>{getProgress(epic)}%</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-accent">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${getProgress(epic)}%`,
+                              backgroundColor: epic.color,
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          <span className="text-foreground">
+                            {epic.user_stories_counts?.progress || 0}
+                          </span>
+                          /{epic.user_stories_counts?.total || 0} stories
+                        </span>
+                        {epic.assigned_to_extra_info && (
+                          <Avatar
+                            name={
+                              epic.assigned_to_extra_info.full_name_display ||
+                              epic.assigned_to_extra_info.full_name
+                            }
+                            photo={epic.assigned_to_extra_info.photo}
+                            size="sm"
+                            className="text-white"
+                          />
+                        )}
+                      </div>
                     </div>
-                    {epic.status_extra_info && (
-                      <span
-                        className="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
-                        style={{
-                          backgroundColor: `${epic.status_extra_info.color}20`,
-                          color: epic.status_extra_info.color,
-                        }}
-                      >
-                        {epic.status_extra_info.name}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="group-hover:text-primary mb-1 font-medium transition-colors">{epic.subject}</h3>
-                  {epic.description ? (
-                    <p className="text-muted-foreground line-clamp-2 mb-4 text-sm">{epic.description}</p>
-                  ) : (
-                    <p className="text-muted-foreground/70 mb-4 text-sm italic">No description</p>
-                  )}
-                  <div className="mb-3">
-                    <div className="text-muted-foreground mb-1 flex items-center justify-between text-xs">
-                      <span>Progress</span>
-                      <span>{getProgress(epic)}%</span>
-                    </div>
-                    <div className="bg-accent h-1.5 overflow-hidden rounded-full">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${getProgress(epic)}%`, backgroundColor: epic.color }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      <span className="text-foreground">{epic.user_stories_counts?.progress || 0}</span>/
-                      {epic.user_stories_counts?.total || 0} stories
-                    </span>
-                    {epic.assigned_to_extra_info && (
-                      <Avatar
-                        name={epic.assigned_to_extra_info.full_name_display || epic.assigned_to_extra_info.full_name}
-                        photo={epic.assigned_to_extra_info.photo}
-                        size="sm"
-                        className="text-white"
-                      />
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+                  </button>
+                ))}
+              </div>
+            </PageTransition>
+          )}
+        </PagePresence>
       </div>
 
-      <CreateEpicDialog open={showCreate} onOpenChange={setShowCreate} projectId={currentProject.id} />
-      <EpicDialog epic={selected} onOpenChange={(open) => !open && setSelected(null)} projectId={currentProject.id} />
+      <CreateEpicDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        projectId={currentProject.id}
+      />
+      <EpicDialog
+        epic={selected}
+        onOpenChange={(open) => !open && setSelected(null)}
+        projectId={currentProject.id}
+      />
     </div>
   )
 }

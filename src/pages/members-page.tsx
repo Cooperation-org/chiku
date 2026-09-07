@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MemberRoleSelect } from "@/components/inputs/member-role-select"
+import { BrailleLoader } from "@/components/ui/braille-loader"
 import {
   Table,
   TableBody,
@@ -14,7 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useAddMembership, useMemberships, useRemoveMembership, searchUsers } from "@/lib/queries/memberships"
+import {
+  useAddMembership,
+  useMemberships,
+  useRemoveMembership,
+  searchUsers,
+} from "@/lib/queries/memberships"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import type { Project } from "@/lib/api/types"
 
@@ -31,7 +37,9 @@ export default function MembersPage({ slug }: MembersPageProps) {
   if (!project) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">Select a project to view its members</div>
+        <div className="text-muted-foreground">
+          Select a project to view its members
+        </div>
       </div>
     )
   }
@@ -41,7 +49,9 @@ export default function MembersPage({ slug }: MembersPageProps) {
       <header className="flex shrink-0 items-center justify-between border-b px-6 py-4">
         <div>
           <h1 className="text-lg font-semibold">Members</h1>
-          <p className="text-muted-foreground text-sm">{project.name} Â· who is on the team</p>
+          <p className="text-sm text-muted-foreground">
+            {project.name} Â· who is on the team
+          </p>
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -79,7 +89,10 @@ function AddMemberPanel({ project }: { project: Project }) {
   async function handleAdd() {
     if (!selected || !roleId) return
     try {
-      await addMembership.mutateAsync({ username: selected.username, roleId: Number(roleId) })
+      await addMembership.mutateAsync({
+        username: selected.username,
+        roleId: Number(roleId),
+      })
       toast(`Added ${selected.full_name || selected.username}`)
       setQuery("")
       setResults([])
@@ -91,7 +104,7 @@ function AddMemberPanel({ project }: { project: Project }) {
   }
 
   return (
-    <section className="bg-card rounded-lg border p-4">
+    <section className="rounded-lg border bg-card p-4">
       <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
         <UserPlus className="h-4 w-4" /> Add members
       </h2>
@@ -127,13 +140,16 @@ function AddMemberPanel({ project }: { project: Project }) {
             disabled={!selected}
           />
         </div>
-        <Button onClick={handleAdd} disabled={!selected || !roleId || addMembership.isPending}>
+        <Button
+          onClick={handleAdd}
+          disabled={!selected || !roleId || addMembership.isPending}
+        >
           {addMembership.isPending ? "Adding..." : "Add"}
         </Button>
       </div>
 
       {results.length > 0 && (
-        <div className="bg-background mt-2 rounded-md border">
+        <div className="mt-2 rounded-md border bg-background">
           {results.map((hit) => (
             <button
               key={hit.id}
@@ -146,9 +162,15 @@ function AddMemberPanel({ project }: { project: Project }) {
                 selected?.id === hit.id ? "bg-accent" : ""
               }`}
             >
-              <Avatar name={hit.full_name || hit.username} size="sm" className="text-white" />
+              <Avatar
+                name={hit.full_name || hit.username}
+                size="sm"
+                className="text-white"
+              />
               <span className="truncate">{hit.full_name || hit.username}</span>
-              <span className="text-muted-foreground text-xs">@{hit.username}</span>
+              <span className="text-xs text-muted-foreground">
+                @{hit.username}
+              </span>
             </button>
           ))}
         </div>
@@ -157,7 +179,13 @@ function AddMemberPanel({ project }: { project: Project }) {
   )
 }
 
-function MembersTable({ project, canManage }: { project: Project; canManage: boolean }) {
+function MembersTable({
+  project,
+  canManage,
+}: {
+  project: Project
+  canManage: boolean
+}) {
   const { data: memberships = [], isLoading } = useMemberships(project.id)
   const removeMembership = useRemoveMembership(project.id)
 
@@ -171,26 +199,41 @@ function MembersTable({ project, canManage }: { project: Project; canManage: boo
   }
 
   return (
-    <section className="bg-card overflow-hidden rounded-lg border">
+    <section className="overflow-hidden rounded-lg border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead className="w-40">Role</TableHead>
             <TableHead className="w-24 text-right">Access</TableHead>
-            {canManage && <TableHead className="w-20 text-right">Actions</TableHead>}
+            {canManage && (
+              <TableHead className="w-20 text-right">Actions</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={canManage ? 4 : 3} className="text-muted-foreground py-8 text-center">
-                Loading members...
+              <TableCell
+                colSpan={canManage ? 4 : 3}
+                className="py-8 text-center"
+              >
+                {/* Inline loader — a full-height PageLoading would break the table shape. */}
+                <BrailleLoader
+                  variant="chase"
+                  speed="fast"
+                  label="Loading members"
+                  fontSize={16}
+                  className="justify-center text-muted-foreground"
+                />
               </TableCell>
             </TableRow>
           ) : memberships.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={canManage ? 4 : 3} className="text-muted-foreground py-8 text-center">
+              <TableCell
+                colSpan={canManage ? 4 : 3}
+                className="py-8 text-center text-muted-foreground"
+              >
                 No members yet
               </TableCell>
             </TableRow>
@@ -199,21 +242,38 @@ function MembersTable({ project, canManage }: { project: Project; canManage: boo
               <TableRow key={m.id}>
                 <TableCell>
                   <div className="flex min-w-0 items-center gap-2">
-                    <Avatar name={m.full_name} photo={m.photo} size="sm" className="shrink-0" />
+                    <Avatar
+                      name={m.full_name}
+                      photo={m.photo}
+                      size="sm"
+                      className="shrink-0"
+                    />
                     <div className="min-w-0">
-                      <span className="block truncate text-sm">{m.full_name || `user ${m.user}`}</span>
-                      {m.email && <span className="text-muted-foreground block truncate text-xs">{m.email}</span>}
+                      <span className="block truncate text-sm">
+                        {m.full_name || `user ${m.user}`}
+                      </span>
+                      {m.email && (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {m.email}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap items-center gap-1">
-                    <span className="bg-accent rounded px-2 py-0.5 text-xs">{m.role_name}</span>
+                    <span className="rounded bg-accent px-2 py-0.5 text-xs">
+                      {m.role_name}
+                    </span>
                     {m.is_owner && (
-                      <span className="text-primary rounded-full border px-2 py-0.5 text-xs font-medium">owner</span>
+                      <span className="rounded-full border px-2 py-0.5 text-xs font-medium text-primary">
+                        owner
+                      </span>
                     )}
                     {m.is_admin && !m.is_owner && (
-                      <span className="text-primary rounded-full border px-2 py-0.5 text-xs font-medium">admin</span>
+                      <span className="rounded-full border px-2 py-0.5 text-xs font-medium text-primary">
+                        admin
+                      </span>
                     )}
                   </div>
                 </TableCell>
@@ -230,7 +290,7 @@ function MembersTable({ project, canManage }: { project: Project; canManage: boo
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-muted-foreground hover:text-destructive h-7 px-2"
+                        className="h-7 px-2 text-muted-foreground hover:text-destructive"
                         onClick={() => handleRemove(m)}
                         disabled={removeMembership.isPending}
                       >

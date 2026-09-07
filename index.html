@@ -8,6 +8,19 @@
          workers.vc and *.workers.vc only. -->
     <link rel="icon" href="/favicon.ico" />
     <script>
+      // Restore the persisted theme before first paint — the html tag ships
+      // with class="dark" (the default), so a stored "light" must remove it
+      // now or the page flashes black until React mounts. Same localStorage
+      // key the zustand store (lib/stores/theme.ts) reads and writes.
+      try {
+        if (localStorage.getItem("theme") === "light") {
+          document.documentElement.classList.remove("dark");
+        }
+      } catch (_) {
+        /* storage unavailable (private mode) — keep the default dark */
+      }
+    </script>
+    <script>
       (function () {
         // %VITE_BRAND% is replaced by Vite at serve/build time; when unset it
         // stays a literal "%VITE_BRAND%" (or empty), which never equals a brand

@@ -86,6 +86,28 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    /* Sandpaper grain — procedural SVG fractalNoise, decoded once and tiled.
+       feFuncA flattens the noise's random alpha to 1 (otherwise it halves the
+       strength); the rect opacity is the strength dial. */
+    --grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    /* GitLab-style page glow from the brand accent (sidebar-primary): a soft
+       wash from the top and twin corner glows hugging the bottom edges. */
+    --page-gradient:
+      radial-gradient(
+        100rem 44rem at 50% -10rem,
+        color-mix(in oklch, var(--sidebar-primary) 8%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        34rem 15rem at -3% 103%,
+        color-mix(in oklch, var(--sidebar-primary) 5%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        34rem 15rem at 103% 103%,
+        color-mix(in oklch, var(--sidebar-primary) 5%, transparent) 0%,
+        transparent 60%
+      );
 }
 
 .dark {
@@ -120,6 +142,25 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    /* Dark tolerates a stronger grain before it reads. */
+    --grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+    /* Stronger tints in the dark — reads like GitLab's ambient glow. */
+    --page-gradient:
+      radial-gradient(
+        100rem 44rem at 50% -10rem,
+        color-mix(in oklch, var(--sidebar-primary) 16%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        34rem 15rem at -3% 103%,
+        color-mix(in oklch, var(--sidebar-primary) 9%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        34rem 15rem at 103% 103%,
+        color-mix(in oklch, var(--sidebar-primary) 9%, transparent) 0%,
+        transparent 60%
+      );
 }
 
 /* workers.vc brand — green accent derived from the leaf logo (#029927 → #29C033). */
@@ -147,7 +188,11 @@
     }
   body {
     @apply bg-background text-foreground;
-    }
+    /* Grain tiles above the glows, below every element painted by the DOM. */
+    background-image: var(--grain-image), var(--page-gradient);
+    background-size: 180px 180px, auto, auto, auto;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  }
   html {
     @apply font-sans;
     }
@@ -173,4 +218,13 @@
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
+}
+
+/* The app pane paints solid bg-background over the body, so it needs the same
+   grain + glow stack; CSS owns it (comma-heavy values don't belong in class
+   strings). Layers render under all content, floating UI included. */
+[data-slot="sidebar-inset"] {
+  background-image: var(--grain-image), var(--page-gradient);
+  background-size: 180px 180px, auto, auto, auto;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
 }

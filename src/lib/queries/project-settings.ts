@@ -42,6 +42,7 @@ export function useProjectModules(projectId: number | null) {
     queryKey: qk.projectModules(projectId ?? 0),
     queryFn: () => getProjectModules(projectId!),
     enabled: projectId != null,
+    meta: { label: "modules", projectId: projectId ?? 0 },
   })
 }
 
@@ -144,6 +145,7 @@ export function useWebhooks(projectId: number | null) {
     queryKey: qk.webhooks(projectId ?? 0),
     queryFn: () => listWebhooks(projectId!),
     enabled: projectId != null,
+    meta: { label: "webhooks list", projectId: projectId ?? 0 },
   })
 }
 
@@ -199,6 +201,7 @@ export function useWebhookLogs(webhookId: number | null) {
     queryKey: qk.webhookLogs(webhookId ?? 0),
     queryFn: () => listWebhookLogs(webhookId!),
     enabled: webhookId != null,
+    meta: { label: `webhook #${webhookId ?? 0} · logs` },
   })
 }
 
@@ -213,7 +216,11 @@ export function useResendLog(webhookId: number) {
 }
 
 export function useNotifyPolicies() {
-  return useQuery({ queryKey: qk.notifyPolicies(), queryFn: listNotifyPolicies })
+  return useQuery({
+    queryKey: qk.notifyPolicies(),
+    queryFn: listNotifyPolicies,
+    meta: { label: "Notify policies" },
+  })
 }
 
 /** The policy row for one project, if the backend returned it. */
@@ -242,6 +249,7 @@ export function useProjectTemplates(enabled = true) {
     queryKey: qk.projectTemplates(),
     queryFn: listProjectTemplates,
     enabled,
+    meta: { label: "Project templates" },
   })
 }
 

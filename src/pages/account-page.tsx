@@ -6,6 +6,10 @@ import { Avatar } from "@/components/app/avatar"
 import { ProfileDialog } from "@/components/app/profile-dialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  PagePresence,
+  PageTransition,
+} from "@/components/layout/page-transition"
 import { useMe, type Me } from "@/lib/queries/users"
 import { useAuth } from "@/lib/stores/auth"
 
@@ -39,60 +43,82 @@ export default function AccountPage() {
       <header className="flex shrink-0 items-center justify-between border-b px-6 py-4">
         <div>
           <h1 className="text-lg font-semibold">Account</h1>
-          <p className="text-muted-foreground text-sm">Who you are on this Taiga</p>
+          <p className="text-sm text-muted-foreground">
+            Who you are on this Taiga
+          </p>
         </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-6">
-          {isPending ? (
-            <div className="bg-card flex items-center gap-4 rounded-lg border p-6">
-              <Skeleton className="h-16 w-16 shrink-0 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </div>
-          ) : isError || !me ? (
-            <div className="bg-card rounded-lg border p-6 text-center">
-              <p className="text-muted-foreground mb-3 text-sm">Could not load your profile.</p>
-              <Button variant="outline" onClick={() => void refetch()}>
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <section className="bg-card rounded-lg border">
-              <div className="flex items-center gap-4 p-6">
-                <Avatar
-                  name={me.full_name || me.username}
-                  photo={me.photo}
-                  color={me.color}
-                  variant="marble"
-                  size="xl"
-                  className="text-white"
-                />
-                <div className="min-w-0">
-                  <h2 className="truncate text-lg font-semibold">
-                    {me.full_name_display || me.full_name || me.username}
-                  </h2>
-                  <p className="text-muted-foreground truncate text-sm">@{me.username}</p>
-                  {me.email && <p className="text-muted-foreground truncate text-sm">{me.email}</p>}
+          <PagePresence>
+            {isPending ? (
+              <div
+                key="pending"
+                className="flex items-center gap-4 rounded-lg border bg-card p-6"
+              >
+                <Skeleton className="h-16 w-16 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-32" />
                 </div>
               </div>
-              <div className="flex items-center justify-between border-t p-4">
-                <Button variant="outline" onClick={() => setShowProfile(true)}>
-                  <Pencil className="h-4 w-4" />
-                  Edit name &amp; icon
-                </Button>
-              </div>
-            </section>
-          )}
+            ) : isError || !me ? (
+              <PageTransition key="error">
+                <div className="rounded-lg border bg-card p-6 text-center">
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    Could not load your profile.
+                  </p>
+                  <Button variant="outline" onClick={() => void refetch()}>
+                    Retry
+                  </Button>
+                </div>
+              </PageTransition>
+            ) : (
+              <PageTransition key="profile">
+                <section className="rounded-lg border bg-card">
+                  <div className="flex items-center gap-4 p-6">
+                    <Avatar
+                      name={me.full_name || me.username}
+                      photo={me.photo}
+                      color={me.color}
+                      variant="marble"
+                      size="xl"
+                      className="text-white"
+                    />
+                    <div className="min-w-0">
+                      <h2 className="truncate text-lg font-semibold">
+                        {me.full_name_display || me.full_name || me.username}
+                      </h2>
+                      <p className="truncate text-sm text-muted-foreground">
+                        @{me.username}
+                      </p>
+                      {me.email && (
+                        <p className="truncate text-sm text-muted-foreground">
+                          {me.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t p-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowProfile(true)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit name &amp; icon
+                    </Button>
+                  </div>
+                </section>
+              </PageTransition>
+            )}
+          </PagePresence>
 
-          <section className="bg-card rounded-lg border">
+          <section className="rounded-lg border bg-card">
             <div className="flex items-center justify-between p-4">
               <div>
                 <h3 className="text-sm font-medium">Session</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Sign out of this browser. Your other sessions stay signed in.
                 </p>
               </div>
@@ -105,7 +131,11 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <ProfileDialog open={showProfile} onOpenChange={setShowProfile} onUpdated={handleUpdated} />
+      <ProfileDialog
+        open={showProfile}
+        onOpenChange={setShowProfile}
+        onUpdated={handleUpdated}
+      />
     </div>
   )
 }

@@ -29,7 +29,8 @@ import {
   isPreviewableText,
   uploadStoryAttachment,
 } from "@/lib/api/attachments"
-import { renderMarkdown } from "@/lib/markdown"
+import { Markdown } from "@/components/app/markdown"
+import { MarkdownEditor } from "@/components/app/markdown-editor"
 import { api } from "@/lib/api/client"
 import { useAuth } from "@/lib/stores/auth"
 import { useToolbarSlots } from "@/lib/stores/toolbar-slots"
@@ -37,7 +38,6 @@ import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useUpdateStory } from "@/lib/queries/stories"
 import { StoryStatusSelect } from "@/components/inputs/story-status-select"
 import { AssigneeSelect } from "@/components/inputs/assignee-select"
 import { PointsSelect } from "@/components/inputs/points-select"
@@ -105,6 +106,9 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   const fileInput = useRef<HTMLInputElement>(null)
 
   const { user: me } = useAuth()
+  // Story writes (field saves, comments) go through the query mutation layer
+  // so they register with the sync indicator and query inspector.
+  const updateStory = useUpdateStory(fullStory.project)
   const breadcrumbEl = useToolbarSlots((s) => s.breadcrumbEl)
   const actionsEl = useToolbarSlots((s) => s.actionsEl)
 
@@ -166,16 +170,23 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     onUpdate({ ...fullStory, ...data } as UserStory)
     if (!editingAll) setEditingField(null)
 
-    try {
-      const updated = await updateUserStory(fullStory.id, { ...data, version: prev.version })
-      setFullStory(updated)
-      onUpdate(updated)
-    } catch (err) {
-      console.error(`Failed to save ${field}:`, err)
-      setFullStory(prev)
-      onUpdate(prev)
-      toast.error(`Failed to save: ${(err as Error).message}`)
-    }
+    // Routed through the query mutation layer so the sync indicator and
+    // inspector register the write (offline queueing + retries apply too).
+    updateStory.mutate(
+      { id: fullStory.id, data: { ...data, version: prev.version } },
+      {
+        onSuccess: (updated) => {
+          setFullStory(updated)
+          onUpdate(updated)
+        },
+        onError: (err) => {
+          console.error(`Failed to save ${field}:`, err)
+          setFullStory(prev)
+          onUpdate(prev)
+          toast.error(`Failed to save: ${(err as Error).message}`)
+        },
+      },
+    )
   }
 
   function startEdit(field: string) {
@@ -264,45 +275,49 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     if (!text || isPostingComment) return
     setIsPostingComment(true)
     setCommentError("")
-    try {
-      const updated = await updateUserStory(fullStory.id, {
-        comment: text,
-        version: fullStory.version,
-      } as Partial<UserStory>)
-      setFullStory(updated)
-      onUpdate(updated)
-      setNewComment("")
 
-      // Taiga's history feed lags a beat behind the write, so the comment is
-      // shown from what was posted, and the server's copy replaces it once the
-      // feed catches up.
-      const pending: HistoryEntry = {
-        id: `pending-${updated.version}`,
-        user: {
-          pk: me?.id ?? 0,
-          username: me?.username ?? "",
-          name: me?.full_name || me?.username || "you",
-          photo: null,
-          is_active: true,
+    // Routed through the query mutation layer so the sync indicator and
+    // inspector register the write (offline queueing + retries apply too).
+    updateStory.mutate(
+      { id: fullStory.id, data: { comment: text, version: fullStory.version } },
+      {
+        onSuccess: async (updated) => {
+          setFullStory(updated)
+          onUpdate(updated)
+          setNewComment("")
+
+          // Taiga's history feed lags a beat behind the write, so the comment
+          // is shown from what was posted, and the server's copy replaces it
+          // once the feed catches up.
+          const pending: HistoryEntry = {
+            id: `pending-${updated.version}`,
+            user: {
+              pk: me?.id ?? 0,
+              username: me?.username ?? "",
+              name: me?.full_name || me?.username || "you",
+              photo: null,
+              is_active: true,
+            },
+            created_at: new Date().toISOString(),
+            comment: text,
+            comment_html: "",
+            delete_comment_date: null,
+            delete_comment_user: null,
+            type: 1,
+            values_diff: {},
+          } as unknown as HistoryEntry
+          setComments((old) => [...old, pending])
+
+          const fresh = await getStoryComments(story.id)
+          if (fresh.some((c) => c.comment.trim() === text)) setComments(fresh)
         },
-        created_at: new Date().toISOString(),
-        comment: text,
-        comment_html: "",
-        delete_comment_date: null,
-        delete_comment_user: null,
-        type: 1,
-        values_diff: {},
-      } as unknown as HistoryEntry
-      setComments((old) => [...old, pending])
-
-      const fresh = await getStoryComments(story.id)
-      if (fresh.some((c) => c.comment.trim() === text)) setComments(fresh)
-    } catch (err) {
-      console.error("Failed to post comment:", err)
-      setCommentError((err as Error).message)
-    } finally {
-      setIsPostingComment(false)
-    }
+        onError: (err) => {
+          console.error("Failed to post comment:", err)
+          setCommentError((err as Error).message)
+        },
+        onSettled: () => setIsPostingComment(false),
+      },
+    )
   }
 
   // --- Attachments ---
@@ -784,9 +799,9 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
             <h3 className="text-muted-foreground mb-2 text-sm font-medium">Description</h3>
             {isEditing("description") ? (
               <>
-                <Textarea
+                <MarkdownEditor
                   value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
+                  onChange={setEditDescription}
                   onBlur={saveDescription}
                   onKeyDown={(e) => {
                     if (e.key === "Escape") setEditingField(null)
@@ -794,16 +809,21 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                   rows={12}
                   placeholder="Add a description..."
                   autoFocus
+                  ariaLabel="Story description"
                 />
-                <p className="text-muted-foreground mt-1 text-xs">Click outside or press Esc to save</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Click outside or press Esc to save · Markdown supported
+                </p>
               </>
             ) : (
               <div
-                className="-mx-2 min-h-12 cursor-text whitespace-pre-wrap rounded px-2 py-2 leading-relaxed transition-colors hover:bg-accent/60"
+                className="-mx-2 min-h-12 cursor-text rounded px-2 py-2 transition-colors hover:bg-accent/60"
                 onClick={() => startEdit("description")}
                 title="Click to edit"
               >
-                {fullStory.description || (
+                {fullStory.description ? (
+                  <Markdown source={fullStory.description} />
+                ) : (
                   <span className="text-muted-foreground/70 italic">Click to add a description...</span>
                 )}
               </div>
@@ -898,9 +918,9 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                               {isPreviewableText(a) ? "Loading preview..." : "No inline preview for this file type."}
                             </p>
                           ) : isMarkdown(a) ? (
-                            <div
-                              className="prose prose-sm dark:prose-invert bg-accent/40 overflow-x-auto rounded border p-4 text-sm"
-                              dangerouslySetInnerHTML={{ __html: renderMarkdown(previewText[a.id]) }}
+                            <Markdown
+                              source={previewText[a.id]}
+                              className="bg-accent/40 overflow-x-auto rounded border p-4"
                             />
                           ) : (
                             <pre className="bg-accent/40 overflow-x-auto whitespace-pre-wrap rounded border p-3 text-xs">
@@ -925,20 +945,22 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
           {/* Comments */}
           <div className="border-t pt-4">
             <h3 className="text-muted-foreground mb-3 text-sm font-medium">Comments</h3>
-            <div className="mb-4 flex gap-2">
-              <Textarea
+            <div className="mb-4 flex items-end gap-2">
+              <MarkdownEditor
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={setNewComment}
                 rows={4}
                 placeholder="Add a comment..."
+                ariaLabel="New comment"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) postComment()
                 }}
+                className="flex-1"
               />
               <Button
                 onClick={postComment}
                 disabled={!newComment.trim() || isPostingComment}
-                className="self-end"
+                className="shrink-0"
               >
                 {isPostingComment ? "..." : "Post"}
               </Button>
@@ -960,9 +982,10 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                         <span className="text-sm font-medium">{comment.user.name}</span>
                         <span className="text-muted-foreground text-xs">{formatRelative(comment.created_at)}</span>
                       </div>
-                      <div className="text-muted-foreground text-sm break-words whitespace-pre-wrap">
-                        {comment.comment}
-                      </div>
+                      <Markdown
+                        source={comment.comment}
+                        className="text-muted-foreground break-words [&>*:first-child]:mt-0"
+                      />
                     </div>
                   </div>
                 ))}

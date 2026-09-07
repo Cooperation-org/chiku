@@ -10,7 +10,9 @@ import {
   isProjectAdmin,
 } from "@/lib/permissions"
 import { useProjectBySlug } from "@/lib/queries/projects"
-import { Link, Outlet } from "@tanstack/react-router"
+import { Link, Outlet, useLocation } from "@tanstack/react-router"
+import { PageLoading } from "@/components/layout/page-state"
+import { PageTransition } from "@/components/layout/page-transition"
 
 function sectionVisible(key: string, canDelete: boolean) {
   const meta = SETTINGS_SECTIONS.find((s) => s.key === key)
@@ -42,15 +44,22 @@ export function SettingsGuard({
 
 export function SettingsLayout({ slug }: { slug: string }) {
   const { project, isLoading } = useProjectBySlug(slug)
+  // Keying the child outlet by pathname remounts it on every settings→settings
+  // navigation, replaying the enter transition (no exit orchestration needed).
+  const pathname = useLocation().pathname
 
   if (isLoading || !project) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">
-          {isLoading
-            ? "Loading settings..."
-            : "Select a project to view its settings"}
-        </div>
+      <div className="h-full">
+        {isLoading ? (
+          <PageLoading label="Loading settings" />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-sm text-muted-foreground">
+              Select a project to view its settings
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -91,7 +100,9 @@ export function SettingsLayout({ slug }: { slug: string }) {
       <div className="flex h-full flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-3xl">
-            <Outlet />
+            <PageTransition transitionKey={pathname}>
+              <Outlet />
+            </PageTransition>
           </div>
         </div>
       </div>

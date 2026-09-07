@@ -16,7 +16,7 @@ import {
 import type { Project } from "@/lib/api/types"
 
 export function useProjects() {
-  return useQuery({ queryKey: qk.projects, queryFn: getProjects })
+  return useQuery({ queryKey: qk.projects, queryFn: getProjects, meta: { label: "Projects" } })
 }
 
 export function useActiveProjects() {
@@ -114,5 +114,6 @@ export function useProjectStats(projectId: number | null) {
     queryKey: qk.stats(projectId ?? 0),
     queryFn: () => getProjectStats(projectId!),
     enabled: projectId != null,
+    meta: { label: "stats", projectId: projectId ?? 0 },
   })
 }

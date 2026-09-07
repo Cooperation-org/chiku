@@ -4,8 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
+import { PageTransition } from "@/components/layout/page-transition"
 import { useProjectBySlug, useProjectStats } from "@/lib/queries/projects"
-import { PROJECT_VIEWS, viewEnabled, type ProjectView } from "@/lib/project-views"
+import {
+  PROJECT_VIEWS,
+  viewEnabled,
+  type ProjectView,
+} from "@/lib/project-views"
 
 const VIEW_ICONS: Record<ProjectView, typeof KanbanSquare> = {
   board: KanbanSquare,
@@ -33,7 +38,9 @@ export default function OverviewPage({ slug }: { slug: string }) {
   if (!currentProject) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">Select a project to view its overview</div>
+        <div className="text-muted-foreground">
+          Select a project to view its overview
+        </div>
       </div>
     )
   }
@@ -50,82 +57,101 @@ export default function OverviewPage({ slug }: { slug: string }) {
   const total = stats?.total_points ?? stats?.defined_points ?? 0
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="mx-auto max-w-5xl space-y-6 p-6">
-        <header>
-          <h1 className="text-2xl font-semibold">{currentProject.name}</h1>
-          {currentProject.description && (
-            <p className="text-muted-foreground mt-1">{currentProject.description}</p>
-          )}
-        </header>
+    <PageTransition transitionKey={slug}>
+      <div className="h-full overflow-auto">
+        <div className="mx-auto max-w-5xl space-y-6 p-6">
+          <header>
+            <h1 className="text-2xl font-semibold">{currentProject.name}</h1>
+            {currentProject.description && (
+              <p className="mt-1 text-muted-foreground">
+                {currentProject.description}
+              </p>
+            )}
+          </header>
 
-        {isLoading || !stats ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="text-muted-foreground">Could not load project stats.</div>
-        ) : (
-          <>
+          {isLoading || !stats ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-              {cards.map((c) => (
-                <Card key={c.label}>
-                  <CardHeader className="pb-1">
-                    <CardTitle className="text-muted-foreground text-sm font-normal">
-                      {c.label}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{c.value}</div>
-                  </CardContent>
-                </Card>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-24" />
               ))}
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Sprints</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {stats.milestones.length === 0 ? (
-                  <div className="text-muted-foreground text-sm">No sprints yet.</div>
-                ) : (
-                  stats.milestones.map((m) => {
-                    const upcoming = m.evolution == null
-                    const done = upcoming ? 0 : total - (m.evolution ?? 0)
-                    const pct = clampPct(done, total)
-                    return (
-                      <div key={m.name} className={upcoming ? "opacity-60" : undefined}>
-                        <div className="mb-1 flex items-baseline justify-between text-sm">
-                          <span className="font-medium">{m.name}</span>
-                          <span className="text-muted-foreground">
-                            {upcoming ? "Upcoming" : `${done} of ${total} points`}
-                          </span>
-                        </div>
-                        {!upcoming && <Progress value={pct} />}
-                      </div>
-                    )
-                  })
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="flex flex-wrap gap-2">
-              {PROJECT_VIEWS.filter((v) => viewEnabled(currentProject, v.key)).map((v) => {
-                const Icon = VIEW_ICONS[v.key]
-                return (
-                  <Button key={v.key} variant="outline" onClick={() => goView(v.key)}>
-                    <Icon className="h-4 w-4" />
-                    Open {v.label}
-                  </Button>
-                )
-              })}
+          ) : isError ? (
+            <div className="text-muted-foreground">
+              Could not load project stats.
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                {cards.map((c) => (
+                  <Card key={c.label}>
+                    <CardHeader className="pb-1">
+                      <CardTitle className="text-sm font-normal text-muted-foreground">
+                        {c.label}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{c.value}</div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sprints</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {stats.milestones.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      No sprints yet.
+                    </div>
+                  ) : (
+                    stats.milestones.map((m) => {
+                      const upcoming = m.evolution == null
+                      const done = upcoming ? 0 : total - (m.evolution ?? 0)
+                      const pct = clampPct(done, total)
+                      return (
+                        <div
+                          key={m.name}
+                          className={upcoming ? "opacity-60" : undefined}
+                        >
+                          <div className="mb-1 flex items-baseline justify-between text-sm">
+                            <span className="font-medium">{m.name}</span>
+                            <span className="text-muted-foreground">
+                              {upcoming
+                                ? "Upcoming"
+                                : `${done} of ${total} points`}
+                            </span>
+                          </div>
+                          {!upcoming && <Progress value={pct} />}
+                        </div>
+                      )
+                    })
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-wrap gap-2">
+                {PROJECT_VIEWS.filter((v) =>
+                  viewEnabled(currentProject, v.key)
+                ).map((v) => {
+                  const Icon = VIEW_ICONS[v.key]
+                  return (
+                    <Button
+                      key={v.key}
+                      variant="outline"
+                      onClick={() => goView(v.key)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      Open {v.label}
+                    </Button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

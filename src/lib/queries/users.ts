@@ -8,6 +8,7 @@ export function useMe() {
     queryKey: qk.me,
     queryFn: getMe,
     staleTime: 60_000,
+    meta: { label: "Session" },
   })
 }
 

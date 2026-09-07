@@ -22,6 +22,7 @@ export function useVelocityData(projectId: number | null) {
       return { milestones: sorted, backlogPoints }
     },
     enabled: projectId != null,
+    meta: { label: "velocity", projectId: projectId ?? 0 },
   })
 }
 

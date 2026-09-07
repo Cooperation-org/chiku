@@ -5,8 +5,16 @@ import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { OptionsSelect, type SelectOption } from "@/components/inputs/options-select"
+import {
+  OptionsSelect,
+  type SelectOption,
+} from "@/components/inputs/options-select"
 import { ProjectSelect } from "@/components/inputs/project-select"
+import {
+  PagePresence,
+  PageTransition,
+} from "@/components/layout/page-transition"
+import { PageLoading } from "@/components/layout/page-state"
 import { useMyTasks } from "@/lib/queries/stories"
 import { useAuth } from "@/lib/stores/auth"
 import {
@@ -24,7 +32,9 @@ import {
 } from "@/lib/filters/stories"
 import type { UserStory } from "@/lib/api/types"
 
-function formatDue(dateStr: string | null): { text: string; className: string } | null {
+function formatDue(
+  dateStr: string | null
+): { text: string; className: string } | null {
   if (!dateStr) return null
   const due = new Date(dateStr + "T00:00:00")
   const now = new Date()
@@ -40,13 +50,18 @@ const selectTriggerClass = "h-8 w-auto min-w-32 text-sm"
 
 export default function TasksPage() {
   const navigate = useNavigate()
-  const search = useRouterState({ select: (s) => s.location.search }) as Record<string, string>
+  const search = useRouterState({ select: (s) => s.location.search }) as Record<
+    string,
+    string
+  >
   const { user } = useAuth()
 
   // The filter starts from the URL so filtered views are shareable links; a
   // bare /tasks defaults to "assigned to me". Closed stories are excluded
   // server-side unless the closed flag is on (status__is_closed param).
-  const [filter, setFilter] = useState<StoryFilter>(() => filterFromParams(new URLSearchParams(search)))
+  const [filter, setFilter] = useState<StoryFilter>(() =>
+    filterFromParams(new URLSearchParams(search))
+  )
   const { data, isLoading, error } = useMyTasks(filter.showClosed)
   const ready = useRef(false)
   const searchInput = useRef<HTMLInputElement>(null)
@@ -67,23 +82,35 @@ export default function TasksPage() {
       const qs = filterToParams(filter).toString()
       const target = qs ? `/tasks?${qs}` : "/tasks"
       if (target !== window.location.pathname + window.location.search) {
-        navigate({ to: "/tasks", search: filterToParamsObject(filter), replace: true })
+        navigate({
+          to: "/tasks",
+          search: filterToParamsObject(filter),
+          replace: true,
+        })
       }
     }, 200)
     return () => clearTimeout(timer)
   }, [filter, navigate])
 
   const stories = data?.stories ?? []
-  const { assignees, creators } = useMemo(() => collectPeople(stories), [stories])
+  const { assignees, creators } = useMemo(
+    () => collectPeople(stories),
+    [stories]
+  )
   const statuses = useMemo(() => collectStatuses(stories), [stories])
   const availableTags = useMemo(() => collectTags(stories), [stories])
-  const visible = useMemo(() => filterStories(stories, filter), [stories, filter])
+  const visible = useMemo(
+    () => filterStories(stories, filter),
+    [stories, filter]
+  )
   const hasFilter = !isEmptyFilter(filter)
 
   function toggleTag(tag: string) {
     setFilter((f) => ({
       ...f,
-      tags: f.tags.includes(tag) ? f.tags.filter((t) => t !== tag) : [...f.tags, tag],
+      tags: f.tags.includes(tag)
+        ? f.tags.filter((t) => t !== tag)
+        : [...f.tags, tag],
     }))
   }
 
@@ -136,7 +163,7 @@ export default function TasksPage() {
               className="pr-12"
             />
             {!filter.q && (
-              <kbd className="text-muted-foreground pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border px-1.5 py-0.5 text-[10px]">
+              <kbd className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground">
                 /
               </kbd>
             )}
@@ -144,7 +171,9 @@ export default function TasksPage() {
           <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm">
             <Checkbox
               checked={filter.showClosed}
-              onCheckedChange={(v) => setFilter((f) => ({ ...f, showClosed: v === true }))}
+              onCheckedChange={(v) =>
+                setFilter((f) => ({ ...f, showClosed: v === true }))
+              }
             />
             Closed
           </label>
@@ -159,24 +188,47 @@ export default function TasksPage() {
           <OptionsSelect
             value={filter.assignee === null ? "any" : String(filter.assignee)}
             onValueChange={(v) =>
-              setFilter((f) => ({ ...f, assignee: v === "any" ? null : v === "unassigned" ? UNASSIGNED : Number(v) }))
+              setFilter((f) => ({
+                ...f,
+                assignee:
+                  v === "any"
+                    ? null
+                    : v === "unassigned"
+                      ? UNASSIGNED
+                      : Number(v),
+              }))
             }
-            options={[
-              { value: "any", label: "Anyone assigned" },
-              { value: "unassigned", label: "Unassigned" },
-              ...assignees.map((person) => ({ value: String(person.id), label: person.name })),
-            ] as SelectOption[]}
+            options={
+              [
+                { value: "any", label: "Anyone assigned" },
+                { value: "unassigned", label: "Unassigned" },
+                ...assignees.map((person) => ({
+                  value: String(person.id),
+                  label: person.name,
+                })),
+              ] as SelectOption[]
+            }
             triggerClassName={selectTriggerClass}
             ariaLabel="Assignee"
           />
 
           <OptionsSelect
             value={filter.creator === null ? "any" : String(filter.creator)}
-            onValueChange={(v) => setFilter((f) => ({ ...f, creator: v === "any" ? null : Number(v) }))}
-            options={[
-              { value: "any", label: "Any creator" },
-              ...creators.map((person) => ({ value: String(person.id), label: person.name })),
-            ] as SelectOption[]}
+            onValueChange={(v) =>
+              setFilter((f) => ({
+                ...f,
+                creator: v === "any" ? null : Number(v),
+              }))
+            }
+            options={
+              [
+                { value: "any", label: "Any creator" },
+                ...creators.map((person) => ({
+                  value: String(person.id),
+                  label: person.name,
+                })),
+              ] as SelectOption[]
+            }
             triggerClassName={selectTriggerClass}
             ariaLabel="Created by"
           />
@@ -184,7 +236,12 @@ export default function TasksPage() {
           <ProjectSelect
             valueKey="id"
             value={filter.project === null ? "none" : String(filter.project)}
-            onValueChange={(v) => setFilter((f) => ({ ...f, project: v === "none" ? null : Number(v) }))}
+            onValueChange={(v) =>
+              setFilter((f) => ({
+                ...f,
+                project: v === "none" ? null : Number(v),
+              }))
+            }
             includeNone
             noneLabel="All projects"
             triggerClassName={selectTriggerClass}
@@ -193,21 +250,27 @@ export default function TasksPage() {
 
           <OptionsSelect
             value={filter.status || "any"}
-            onValueChange={(v) => setFilter((f) => ({ ...f, status: v === "any" ? "" : v }))}
-            options={[
-              { value: "any", label: "Any status" },
-              ...statuses.map((name) => ({ value: name, label: name })),
-            ] as SelectOption[]}
+            onValueChange={(v) =>
+              setFilter((f) => ({ ...f, status: v === "any" ? "" : v }))
+            }
+            options={
+              [
+                { value: "any", label: "Any status" },
+                ...statuses.map((name) => ({ value: name, label: name })),
+              ] as SelectOption[]
+            }
             triggerClassName={selectTriggerClass}
             ariaLabel="Status"
           />
 
-          <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <span>Due</span>
             <Input
               type="date"
               value={filter.dueFrom}
-              onChange={(e) => setFilter((f) => ({ ...f, dueFrom: e.target.value }))}
+              onChange={(e) =>
+                setFilter((f) => ({ ...f, dueFrom: e.target.value }))
+              }
               className="h-8 w-36"
               aria-label="Due from"
             />
@@ -215,7 +278,9 @@ export default function TasksPage() {
             <Input
               type="date"
               value={filter.dueTo}
-              onChange={(e) => setFilter((f) => ({ ...f, dueTo: e.target.value }))}
+              onChange={(e) =>
+                setFilter((f) => ({ ...f, dueTo: e.target.value }))
+              }
               className="h-8 w-36"
               aria-label="Due to"
             />
@@ -244,90 +309,109 @@ export default function TasksPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        {isLoading ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-muted-foreground">Loading tasks...</div>
-          </div>
-        ) : visible.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <div className="text-muted-foreground">
-              {hasFilter ? "No tasks match these filters" : "No tasks found"}
-            </div>
-            {hasFilter && (
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                Clear filters
-              </Button>
-            )}
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-background/95 sticky top-0 border-b backdrop-blur">
-              <tr className="text-muted-foreground text-left text-xs font-medium tracking-wider uppercase">
-                <th className="px-6 py-3">Story</th>
-                <th className="px-4 py-3">Project</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Assigned</th>
-                <th className="px-4 py-3">Due</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {visible.map((story) => {
-                const due = formatDue(story.due_date)
-                return (
-                  <tr
-                    key={story.id}
-                    className="hover:bg-accent/40 cursor-pointer transition-colors"
-                    onClick={() => openStory(story)}
-                  >
-                    <td className="px-6 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground font-mono text-xs">#{story.ref}</span>
-                        <span className="max-w-md truncate text-sm">{story.subject}</span>
-                      </div>
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 text-xs">
-                      {story.project_extra_info?.name || ""}
-                    </td>
-                    <td className="px-4 py-3">
-                      {story.status_extra_info && (
-                        <span
-                          className="rounded px-2 py-0.5 text-xs font-medium"
-                          style={{
-                            backgroundColor: `${story.status_extra_info.color}30`,
-                            color: story.status_extra_info.color,
-                          }}
-                        >
-                          {story.status_extra_info.name}
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 text-xs">
-                      {story.assigned_to_extra_info ? (
-                        <span className="flex items-center gap-2">
-                          <Avatar
-                            name={story.assigned_to_extra_info.full_name_display}
-                            photo={story.assigned_to_extra_info.photo}
-                            size="sm"
-                          />
-                          {story.assigned_to_extra_info.full_name_display}
-                        </span>
-                      ) : (
-                        "Unassigned"
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {due && <span className={`text-xs font-medium ${due.className}`}>{due.text}</span>}
-                    </td>
+        <PagePresence>
+          {isLoading ? (
+            <PageLoading key="loading" label="Loading tasks" />
+          ) : visible.length === 0 ? (
+            <PageTransition key="empty">
+              <div className="flex h-full flex-col items-center justify-center gap-3">
+                <div className="text-muted-foreground">
+                  {hasFilter
+                    ? "No tasks match these filters"
+                    : "No tasks found"}
+                </div>
+                {hasFilter && (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                )}
+              </div>
+            </PageTransition>
+          ) : (
+            <PageTransition key="tasks">
+              <table className="w-full">
+                <thead className="sticky top-0 border-b bg-background/95 backdrop-blur">
+                  <tr className="text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                    <th className="px-6 py-3">Story</th>
+                    <th className="px-4 py-3">Project</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Assigned</th>
+                    <th className="px-4 py-3">Due</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
+                </thead>
+                <tbody className="divide-y">
+                  {visible.map((story) => {
+                    const due = formatDue(story.due_date)
+                    return (
+                      <tr
+                        key={story.id}
+                        className="cursor-pointer transition-colors hover:bg-accent/40"
+                        onClick={() => openStory(story)}
+                      >
+                        <td className="px-6 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-muted-foreground">
+                              #{story.ref}
+                            </span>
+                            <span className="max-w-md truncate text-sm">
+                              {story.subject}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {story.project_extra_info?.name || ""}
+                        </td>
+                        <td className="px-4 py-3">
+                          {story.status_extra_info && (
+                            <span
+                              className="rounded px-2 py-0.5 text-xs font-medium"
+                              style={{
+                                backgroundColor: `${story.status_extra_info.color}30`,
+                                color: story.status_extra_info.color,
+                              }}
+                            >
+                              {story.status_extra_info.name}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {story.assigned_to_extra_info ? (
+                            <span className="flex items-center gap-2">
+                              <Avatar
+                                name={
+                                  story.assigned_to_extra_info.full_name_display
+                                }
+                                photo={story.assigned_to_extra_info.photo}
+                                size="sm"
+                              />
+                              {story.assigned_to_extra_info.full_name_display}
+                            </span>
+                          ) : (
+                            "Unassigned"
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {due && (
+                            <span
+                              className={`text-xs font-medium ${due.className}`}
+                            >
+                              {due.text}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </PageTransition>
+          )}
+        </PagePresence>
       </div>
 
-      <div className="text-muted-foreground border-t px-6 py-2 text-xs">
-        {visible.length} of {stories.length} task{stories.length !== 1 ? "s" : ""}
+      <div className="border-t px-6 py-2 text-xs text-muted-foreground">
+        {visible.length} of {stories.length} task
+        {stories.length !== 1 ? "s" : ""}
         {data && !data.loadedEverything && (
           <span className="text-amber-500">
             {" "}

@@ -14,6 +14,7 @@ export function useMemberships(projectId: number | null) {
     queryKey: qk.memberships(projectId ?? 0),
     queryFn: () => getProjectMemberships(projectId!),
     enabled: projectId != null,
+    meta: { label: "members list", projectId: projectId ?? 0 },
   })
 }
 
@@ -22,6 +23,7 @@ export function useRoles(projectId: number | null) {
     queryKey: [...qk.memberships(projectId ?? 0), "roles"],
     queryFn: () => getProjectRoles(projectId!),
     enabled: projectId != null,
+    meta: { label: "roles list", projectId: projectId ?? 0 },
   })
 }
 

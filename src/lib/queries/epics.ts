@@ -9,6 +9,7 @@ export function useEpics(projectId: number | null) {
     queryKey: qk.epics(projectId ?? 0),
     queryFn: () => getEpics(projectId!),
     enabled: projectId != null,
+    meta: { label: "epics list", projectId: projectId ?? 0 },
   })
 }
 
