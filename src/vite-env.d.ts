@@ -16,7 +16,7 @@ interface ImportMetaEnv {
   /** Allowlisted origins for the /sso/relay ?next= hop, comma-separated */
   readonly VITE_SSO_RELAY_ORIGINS?: string
   /** Enables the direct "Continue with Google" button when set */
-  readonly PUBLIC_GOOGLE_CLIENT_ID?: string
+  readonly VITE_GOOGLE_CLIENT_ID?: string
 }
 
 interface ImportMeta {

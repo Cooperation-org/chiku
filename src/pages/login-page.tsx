@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Moon, Sun } from "lucide-react"
 
-const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || ""
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ""
 
 export default function LoginPage() {
   const { theme, toggle } = useTheme()
@@ -42,7 +42,7 @@ export default function LoginPage() {
 
   function handleGoogleLogin() {
     if (!googleClientId) {
-      setError("Google OAuth is not configured. Set PUBLIC_GOOGLE_CLIENT_ID in your .env file.")
+      setError("Google OAuth is not configured. Set VITE_GOOGLE_CLIENT_ID in your .env file.")
       setIsLoadingGoogle(false)
       return
     }

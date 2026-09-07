@@ -68,8 +68,8 @@ SSO (or by a Taiga admin for password accounts).
 
 ## Deployment
 
-Marten builds to a fully static SPA (`@sveltejs/adapter-static` with an
-`index.html` fallback), so any static file server with SPA fallback works.
+Chiku builds to a fully static SPA (Vite + React, with an `index.html`
+fallback), so any static file server with SPA fallback works.
 
 ### Cohort VM (marten.workers.vc)
 
@@ -83,10 +83,10 @@ publish). No manual steps.
 ```bash
 git clone git@github.com:Cooperation-org/chiku.git
 cd chiku
-npm install
+pnpm install --frozen-lockfile
 # Point the build at your Taiga API if it is not proxied at /api/v1:
 # echo 'VITE_API_URL=https://taiga.example.com/api/v1' > .env
-npm run build
+pnpm build
 ```
 
 Serve `build/` at the site root with an SPA fallback, e.g. nginx:
@@ -111,22 +111,22 @@ absolute); it is not designed to run under a path prefix.
 
 ```bash
 # Install dependencies
-npm install
+pnpm install --frozen-lockfile
 
 # Run dev server (proxies /api to localhost:8000)
-npm run dev
+pnpm dev
 
 # Type-check
-npm run check
+pnpm typecheck
 
 # Unit tests (vitest)
-npm test
+pnpm test
 
 # Build for production
-npm run build
+pnpm build
 
 # Preview production build
-npm run preview
+pnpm preview
 ```
 
 ## Authentication Details
