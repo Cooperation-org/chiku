@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router"
 import { useLocation } from "@tanstack/react-router"
-import { ChevronDown, KanbanSquare, Layers, LineChart, ListTodo, Rows3, Sparkles, Users } from "lucide-react"
+import { BarChart3, ChevronDown, KanbanSquare, Layers, LineChart, ListTodo, Rows3, Sparkles, Users } from "lucide-react"
 import {
   Collapsible,
   CollapsibleContent,
@@ -112,6 +112,12 @@ export function AppSidebar() {
       icon: <LineChart />,
       enabled: viewEnabled(project, "velocity"),
     },
+    {
+      key: "stats",
+      label: "Stats",
+      icon: <BarChart3 />,
+      enabled: project != null,
+    },
   ] as const
 
   // In the icon rail every group is forced open so all icons stay reachable.
@@ -127,7 +133,7 @@ export function AppSidebar() {
       <SidebarContent>
         <CollapsibleGroup id="views" label="Views" forceOpen={rail}>
           {activeSlug && projectsLoading && !project
-            ? [0, 1, 2, 3].map((i) => (
+            ? [0, 1, 2, 3, 4].map((i) => (
                 <SidebarMenuItem key={i}>
                   <SidebarMenuSkeleton showIcon />
                 </SidebarMenuItem>

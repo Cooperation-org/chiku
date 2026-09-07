@@ -386,3 +386,77 @@ export interface ExportAccepted {
 export interface ExportSynch {
 	url: string;
 }
+
+/** GET /projects/{id}/issues_stats — one binned count (id → {color, count, id, name}). */
+export interface IssueStatBin {
+	color: string;
+	count: number;
+	id: number;
+	name: string;
+}
+
+/** GET /projects/{id}/issues_stats — per-user counts (assignees/owners). */
+export interface IssueStatUser extends IssueStatBin {
+	username: string;
+}
+
+/** GET /projects/{id}/issues_stats — one series of the 28-day activity window. */
+export interface IssueStatTrend {
+	color: string;
+	data: number[];
+	id: number;
+	name: string;
+}
+
+/** GET /projects/{id}/issues_stats — issue analytics. */
+export interface ProjectIssueStats {
+	total_issues: number;
+	opened_issues: number;
+	closed_issues: number;
+	issues_per_assigned_to: Record<string, IssueStatUser>;
+	issues_per_owner: Record<string, IssueStatUser>;
+	issues_per_priority: Record<string, IssueStatBin>;
+	issues_per_severity: Record<string, IssueStatBin>;
+	issues_per_status: Record<string, IssueStatBin>;
+	issues_per_type: Record<string, IssueStatBin>;
+	last_four_weeks_days: {
+		by_open_closed: {
+			closed: number[];
+			open: number[];
+		};
+		by_priority: Record<string, IssueStatTrend>;
+		by_severity: Record<string, IssueStatTrend>;
+		by_status: Record<string, IssueStatTrend>;
+	};
+}
+
+/** GET /milestones/{id}/stats — one day of the sprint burndown. */
+export interface MilestoneStatDay {
+	day: string;
+	name: number;
+	open_points: number;
+	optimal_points: number;
+}
+
+/** GET /milestones/{id}/stats — sprint burndown and completion. */
+export interface MilestoneStats {
+	completed_points: number[];
+	completed_tasks: number;
+	completed_userstories: number;
+	days: MilestoneStatDay[];
+	estimated_finish: string;
+	estimated_start: string;
+	iocaine_doses: number;
+	name: string;
+	total_points: Record<string, number>;
+	total_tasks: number;
+	total_userstories: number;
+}
+
+/** GET /users/{id}/stats — user roll-up. */
+export interface UserStats {
+	roles: string[];
+	total_num_closed_userstories: number;
+	total_num_contacts: number;
+	total_num_projects: number;
+}

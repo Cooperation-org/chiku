@@ -1,15 +1,12 @@
-﻿import { useState } from "react"
-import { useNavigate } from "@tanstack/react-router"
-import { CirclePlus } from "lucide-react"
+﻿import { useNavigate } from "@tanstack/react-router"
 import { Avatar } from "@/components/app/avatar"
-import { CreateStoryDialog } from "@/components/app/create-story-dialog"
-import { Button } from "@/components/ui/button"
 import { ModuleDisabled } from "@/components/project/module-disabled"
 import {
   PagePresence,
   PageTransition,
 } from "@/components/layout/page-transition"
 import { PageLoading } from "@/components/layout/page-state"
+import { ReportMasthead } from "@/components/layout/report"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { useStories } from "@/lib/queries/stories"
 import { viewEnabled } from "@/lib/project-views"
@@ -36,7 +33,6 @@ export default function BacklogPage({ slug }: BacklogPageProps) {
   const projectId = currentProject?.id ?? null
 
   const { data: stories, isLoading } = useStories(projectId)
-  const [showCreate, setShowCreate] = useState(false)
 
   const sorted = [...(stories ?? [])].sort(
     (a, b) => (a.backlog_order ?? 0) - (b.backlog_order ?? 0)
@@ -64,18 +60,14 @@ export default function BacklogPage({ slug }: BacklogPageProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">{currentProject.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            Backlog · {openStories.length} stories · {openPoints} points
-          </p>
+      <div className="mx-auto w-full max-w-5xl px-6">
+        <div className="border-b py-3">
+          <ReportMasthead
+            kicker="Backlog"
+            tag={`${openStories.length} open · ${openPoints} pts`}
+          />
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <CirclePlus className="h-4 w-4" />
-          New Story
-        </Button>
-      </header>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
         <PagePresence>
@@ -221,13 +213,6 @@ export default function BacklogPage({ slug }: BacklogPageProps) {
           </span>
         </footer>
       )}
-
-      <CreateStoryDialog
-        open={showCreate}
-        onOpenChange={setShowCreate}
-        projectId={currentProject.id}
-        defaultStatusId={null}
-      />
     </div>
   )
 }

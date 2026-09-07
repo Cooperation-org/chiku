@@ -3,8 +3,10 @@ import { BrandSection } from "@/components/settings/brand-section"
 import { GeneralSection } from "@/components/settings/general-section"
 import { ModulesSection } from "@/components/settings/modules-section"
 import { useSettings } from "@/components/settings/use-settings"
+import { CrumbGeneral } from "@/components/layout/breadcrumbs"
 
 export const Route = createFileRoute("/(_authed)/projects/$slug/settings/general")({
+  staticData: { toolbarBreadcrumbs: [CrumbGeneral] },
   component: RouteComponent,
 })
 

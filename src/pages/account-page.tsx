@@ -11,6 +11,8 @@ import {
   PageTransition,
 } from "@/components/layout/page-transition"
 import { useMe, type Me } from "@/lib/queries/users"
+import { useUserStats } from "@/lib/queries/stats"
+import { ReportMasthead } from "@/components/layout/report"
 import { useAuth } from "@/lib/stores/auth"
 
 /**
@@ -21,6 +23,7 @@ export default function AccountPage() {
   const navigate = useNavigate()
   const logout = useAuth((s) => s.logout)
   const { data: me, isPending, isError, refetch } = useMe()
+  const { data: userStats } = useUserStats(me?.id ?? null)
   const [showProfile, setShowProfile] = useState(false)
 
   function handleLogout() {
@@ -40,14 +43,11 @@ export default function AccountPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center justify-between border-b px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">Account</h1>
-          <p className="text-sm text-muted-foreground">
-            Who you are on this Taiga
-          </p>
+      <div className="mx-auto w-full max-w-2xl px-6">
+        <div className="border-b py-3">
+          <ReportMasthead kicker="Account" tag="Who you are on this Taiga" />
         </div>
-      </header>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-6">
@@ -114,11 +114,47 @@ export default function AccountPage() {
             )}
           </PagePresence>
 
+          {me && (
+            <section className="rounded-lg border bg-card">
+              <div className="p-4">
+                <h3 className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.16em]">
+                  Your stats
+                </h3>
+                <p className="text-muted-foreground text-xs">
+                  What you've shipped on this Taiga
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  <div className="bg-accent rounded-lg p-4">
+                    <div className="text-2xl font-bold tabular-nums">
+                      {userStats ? userStats.total_num_projects : "—"}
+                    </div>
+                    <div className="text-muted-foreground text-sm">Projects</div>
+                  </div>
+                  <div className="bg-accent rounded-lg p-4">
+                    <div className="text-2xl font-bold tabular-nums">
+                      {userStats ? userStats.total_num_closed_userstories : "—"}
+                    </div>
+                    <div className="text-muted-foreground text-sm">
+                      Closed stories
+                    </div>
+                  </div>
+                </div>
+                {userStats && userStats.roles.length > 0 && (
+                  <div className="text-muted-foreground mt-4 text-sm">
+                    Roles: {userStats.roles.join(", ")}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           <section className="rounded-lg border bg-card">
             <div className="flex items-center justify-between p-4">
               <div>
-                <h3 className="text-sm font-medium">Session</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.16em]">
+                  Session
+                </h3>
+                <p className="text-muted-foreground text-sm">
                   Sign out of this browser. Your other sessions stay signed in.
                 </p>
               </div>

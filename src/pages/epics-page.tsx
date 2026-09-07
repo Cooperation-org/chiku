@@ -1,15 +1,12 @@
 ﻿import { useState } from "react"
-import { CirclePlus } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -24,7 +21,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-  useCreateEpic,
   useDeleteEpic,
   useEpics,
   useUpdateEpic,
@@ -36,20 +32,10 @@ import {
   PageTransition,
 } from "@/components/layout/page-transition"
 import { PageLoading } from "@/components/layout/page-state"
+import { ReportMasthead } from "@/components/layout/report"
+import { epicColors } from "@/components/epics/epic-colors"
 import { viewEnabled } from "@/lib/project-views"
 import type { Epic } from "@/lib/api/types"
-
-const epicColors = [
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#06b6d4",
-]
 
 function getProgress(epic: Epic): number {
   const counts = epic.user_stories_counts
@@ -69,114 +55,6 @@ function formatRelativeDate(dateStr: string): string {
   return `${Math.floor(diffDays / 365)}y`
 }
 
-function CreateEpicDialog({
-  open,
-  onOpenChange,
-  projectId,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  projectId: number
-}) {
-  const createEpic = useCreateEpic(projectId)
-  const [subject, setSubject] = useState("")
-  const [description, setDescription] = useState("")
-  const [color, setColor] = useState("#3b82f6")
-
-  function reset() {
-    setSubject("")
-    setDescription("")
-    setColor("#3b82f6")
-  }
-
-  async function handleCreate() {
-    if (!subject.trim() || createEpic.isPending) return
-    try {
-      await createEpic.mutateAsync({
-        project: projectId,
-        subject: subject.trim(),
-        description: description.trim(),
-        color,
-      })
-      reset()
-      onOpenChange(false)
-    } catch (err) {
-      toast.error(`Failed to create epic: ${(err as Error).message}`)
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>New Epic</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="epic-subject">Title</Label>
-            <Input
-              id="epic-subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Epic name"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
-                  handleCreate()
-              }}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Color</Label>
-            <div className="flex flex-wrap gap-2">
-              {epicColors.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className={`h-8 w-8 rounded-full transition-transform ${
-                    color === c
-                      ? "scale-110 ring-2 ring-foreground ring-offset-2 ring-offset-background"
-                      : "hover:scale-110"
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="epic-desc">Description</Label>
-            <Textarea
-              id="epic-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the epic (optional)"
-              rows={3}
-              className="resize-none"
-            />
-          </div>
-        </div>
-        <DialogFooter className="flex items-center justify-between sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            Press <kbd className="rounded bg-accent px-1">Cmd+Enter</kbd> to
-            create
-          </p>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!subject.trim() || createEpic.isPending}
-            >
-              {createEpic.isPending ? "Creating..." : "Create Epic"}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 function EpicDialog({
   epic,
@@ -392,7 +270,6 @@ export default function EpicsPage({ slug }: { slug: string }) {
   const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
   const { data: epics, isLoading } = useEpics(projectId)
-  const [showCreate, setShowCreate] = useState(false)
   const [selected, setSelected] = useState<Epic | null>(null)
 
   if (!currentProject) {
@@ -411,18 +288,14 @@ export default function EpicsPage({ slug }: { slug: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">{currentProject.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            Epics Â· {epics?.length ?? 0} total
-          </p>
+      <div className="mx-auto w-full max-w-5xl px-6">
+        <div className="border-b py-3">
+          <ReportMasthead
+            kicker="Epics"
+            tag={`${epics?.length ?? 0} total`}
+          />
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <CirclePlus className="h-4 w-4" />
-          New Epic
-        </Button>
-      </header>
+      </div>
 
       <div className="flex-1 overflow-auto p-6">
         <PagePresence>
@@ -524,11 +397,6 @@ export default function EpicsPage({ slug }: { slug: string }) {
         </PagePresence>
       </div>
 
-      <CreateEpicDialog
-        open={showCreate}
-        onOpenChange={setShowCreate}
-        projectId={currentProject.id}
-      />
       <EpicDialog
         epic={selected}
         onOpenChange={(open) => !open && setSelected(null)}

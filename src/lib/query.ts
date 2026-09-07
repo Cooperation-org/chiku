@@ -77,4 +77,7 @@ export const qk = {
   webhookLogs: (webhookId: number) => ["webhook", webhookId, "logs"] as const,
   notifyPolicies: () => ["notify-policies"] as const,
   projectTemplates: () => ["project-templates"] as const,
+  issueStats: (projectId: number) => ["project", projectId, "issue-stats"] as const,
+  milestoneStats: (milestoneId: number) => ["milestone", milestoneId, "stats"] as const,
+  userStats: (userId: number) => ["user", userId, "stats"] as const,
 }
