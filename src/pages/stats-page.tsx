@@ -1,21 +1,17 @@
-import { useProjectStats } from "@/lib/queries/projects"
-import { useMilestones } from "@/lib/queries/milestones"
-import { useProjectIssueStats } from "@/lib/queries/stats"
-import { useProjectBySlug } from "@/lib/queries/projects"
+import { PageLoading } from "@/components/layout/page-state"
+import {
+  PagePresence,
+  PageTransition,
+} from "@/components/layout/page-transition"
+import { ReportFigures } from "@/components/layout/report"
 import { BurndownCard } from "@/components/stats/burndown-card"
 import {
   IssueActivityCard,
   IssueDistributionCard,
 } from "@/components/stats/issue-stats-cards"
-import {
-  PagePresence,
-  PageTransition,
-} from "@/components/layout/page-transition"
-import { PageLoading } from "@/components/layout/page-state"
-import {
-  ReportFigures,
-  ReportMasthead,
-} from "@/components/layout/report"
+import { useMilestones } from "@/lib/queries/milestones"
+import { useProjectBySlug, useProjectStats } from "@/lib/queries/projects"
+import { useProjectIssueStats } from "@/lib/queries/stats"
 
 /**
  * Editorial report style: oversized tabular figures separated by hairlines
@@ -39,7 +35,9 @@ export default function StatsPage({ slug }: { slug: string }) {
   if (!project) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">Select a project to view stats</div>
+        <div className="text-muted-foreground">
+          Select a project to view stats
+        </div>
       </div>
     )
   }
@@ -60,8 +58,6 @@ export default function StatsPage({ slug }: { slug: string }) {
         {stats ? (
           <PageTransition key="content">
             <div className="mx-auto max-w-5xl px-6 py-6">
-              <ReportMasthead kicker="Analytics" tag={project.name} />
-
               <ReportFigures
                 className="mt-6"
                 figures={[

@@ -1,20 +1,16 @@
-import { useNavigate } from "@tanstack/react-router"
-import { KanbanSquare, Layers, LineChart, Rows3 } from "lucide-react"
+import { PageTransition } from "@/components/layout/page-transition"
+import { REPORT_KICKER, ReportFigures } from "@/components/layout/report"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PageTransition } from "@/components/layout/page-transition"
-import {
-  REPORT_KICKER,
-  ReportFigures,
-  ReportMasthead,
-} from "@/components/layout/report"
-import { useProjectBySlug, useProjectStats } from "@/lib/queries/projects"
 import {
   PROJECT_VIEWS,
   viewEnabled,
   type ProjectView,
 } from "@/lib/project-views"
+import { useProjectBySlug, useProjectStats } from "@/lib/queries/projects"
+import { useNavigate } from "@tanstack/react-router"
+import { KanbanSquare, Layers, LineChart, Rows3 } from "lucide-react"
 
 const VIEW_ICONS: Record<ProjectView, typeof KanbanSquare> = {
   board: KanbanSquare,
@@ -84,10 +80,8 @@ export default function OverviewPage({ slug }: { slug: string }) {
     <PageTransition transitionKey={slug}>
       <div className="h-full overflow-auto">
         <div className="mx-auto max-w-5xl space-y-6 p-6">
-          <ReportMasthead kicker="Overview" tag={currentProject.name} />
-
           {currentProject.description && (
-            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {currentProject.description}
             </p>
           )}

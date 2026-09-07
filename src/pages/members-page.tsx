@@ -1,12 +1,12 @@
-﻿import { useProjectBySlug } from "@/lib/queries/projects"
-import { ReportMasthead } from "@/components/layout/report"
-import { MembersTable } from "@/components/members/members-table"
+﻿import { MembersTable } from "@/components/members/members-table"
+import { useProjectBySlug } from "@/lib/queries/projects"
 
 interface MembersPageProps {
   slug: string
+  filter: string
 }
 
-export default function MembersPage({ slug }: MembersPageProps) {
+export default function MembersPage({ slug, filter }: MembersPageProps) {
   const { project } = useProjectBySlug(slug)
   const canManage = project?.i_am_admin === true
 
@@ -22,14 +22,13 @@ export default function MembersPage({ slug }: MembersPageProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mx-auto w-full max-w-3xl px-6">
-        <div className="border-b py-3">
-          <ReportMasthead kicker="Team" tag={project.name} />
-        </div>
-      </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-3xl">
-          <MembersTable project={project} canManage={canManage} />
+          <MembersTable
+            project={project}
+            filter={filter}
+            canManage={canManage}
+          />
         </div>
       </div>
     </div>

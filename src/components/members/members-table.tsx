@@ -1,4 +1,13 @@
-import { useMemo, useState } from "react"
+import { Avatar } from "@/components/app/avatar"
+import {
+  RegistryPagination,
+  RegistryTh,
+} from "@/components/table/registry-chrome"
+import { BrailleLoader } from "@/components/ui/braille-loader"
+import { Button } from "@/components/ui/button"
+import type { Membership, Project } from "@/lib/api/memberships"
+import { useMemberships, useRemoveMembership } from "@/lib/queries/memberships"
+import { appTableFeatures, filterFn, MEMBERS_PAGE_SIZE } from "@/lib/table"
 import {
   createColumnHelper,
   FlexRender,
@@ -6,28 +15,15 @@ import {
   type SortingState,
   useTable,
 } from "@tanstack/react-table"
+import { X } from "lucide-react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
-import { Avatar } from "@/components/app/avatar"
-import { Button } from "@/components/ui/button"
-import { BrailleLoader } from "@/components/ui/braille-loader"
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { useMemberships, useRemoveMembership } from "@/lib/queries/memberships"
-import { appTableFeatures, filterFn, MEMBERS_PAGE_SIZE } from "@/lib/table"
-import type { Membership, Project } from "@/lib/api/memberships"
 
 /**
- * Members registry — TanStack Table v9 with the house feature stack:
- * sortable mono headers, a global filter over name/role, and client-side
- * pagination inside the report card language.
+ * Members registry — a borderless editorial table over the memberships
+ * query. TanStack Table v9 drives sorting, the URL-sourced global filter and
+ * pagination; markup is a plain flush table with hairline rules, aligned via
+ * each column's meta.className applied verbatim to its th and td.
  */
 
 const features = appTableFeatures
@@ -38,9 +34,11 @@ const EMPTY_MEMBERS: Membership[] = []
 
 export function MembersTable({
   project,
+  filter,
   canManage,
 }: {
   project: Project
+  filter: string
   canManage: boolean
 }) {
   const { data: memberships = EMPTY_MEMBERS, isLoading } = useMemberships(
@@ -49,11 +47,18 @@ export function MembersTable({
   const removeMembership = useRemoveMembership(project.id)
 
   const [sorting, setSorting] = useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: MEMBERS_PAGE_SIZE,
   })
+
+  // A changed filter (from the URL) always reads from page 1 — render-phase
+  // state adjustment, no effects.
+  const [prevFilter, setPrevFilter] = useState(filter)
+  if (prevFilter !== filter) {
+    setPrevFilter(filter)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }
 
   const columns = useMemo(() => {
     return helper.columns([
@@ -126,10 +131,7 @@ export function MembersTable({
             </span>
           )
         },
-        meta: {
-          className: "w-24 text-right",
-          headerClassName: "text-right",
-        },
+        meta: { className: "w-24 text-right" },
       }),
       helper.display({
         id: "actions",
@@ -141,7 +143,7 @@ export function MembersTable({
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-destructive h-7 px-2"
+              className="h-7 px-2 text-muted-foreground hover:text-destructive"
               onClick={async () => {
                 try {
                   await removeMembership.mutateAsync(m.id)
@@ -156,10 +158,7 @@ export function MembersTable({
             </Button>
           )
         },
-        meta: {
-          className: "w-24 text-right",
-          headerClassName: "text-right",
-        },
+        meta: { className: "w-24 text-right" },
       }),
     ])
   }, [canManage, removeMembership])
@@ -168,86 +167,32 @@ export function MembersTable({
     features,
     columns,
     data: memberships,
-    state: { sorting, globalFilter, pagination },
+    state: { sorting, globalFilter: filter, pagination },
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
     globalFilterFn: filterFn,
     getRowId: (row) => String(row.id),
   })
 
   const rows = table.getRowModel().rows
-  const filteredCount = table.getFilteredRowModel().rows.length
   const colSpan = canManage ? 4 : 3
 
   return (
-    <section className="overflow-hidden rounded-lg border bg-card transition-colors hover:border-ring/40">
-      {/* Filter bar */}
-      <div className="flex items-center gap-3 border-b px-4 py-2">
-        <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.16em]">
-          Roster
-        </span>
-        <span className="text-muted-foreground font-mono text-xs tabular-nums">
-          {filteredCount}
-        </span>
-        <div className="relative ml-auto w-56">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
-          <Input
-            value={globalFilter}
-            onChange={(e) => {
-              setGlobalFilter(e.target.value)
-              setPagination((p) => ({ ...p, pageIndex: 0 }))
-            }}
-            placeholder="Filter members…"
-            className="h-7 pl-8 font-mono text-xs"
-            aria-label="Filter members"
-          />
-        </div>
-      </div>
-
-      <Table>
-        <TableHeader>
+    <div>
+      <table className="w-full">
+        <thead>
           {table.getHeaderGroups().map((group) => (
-            <TableRow key={group.id} className="hover:bg-transparent">
-              {group.headers.map((header) => {
-                const meta = header.column.columnDef.meta
-                const sortable = header.column.getCanSort()
-                return (
-                  <TableHead
-                    key={header.id}
-                    className={`${meta?.className ?? ""} ${meta?.headerClassName ?? ""}`}
-                  >
-                    {header.isPlaceholder ? null : sortable ? (
-                      <button
-                        type="button"
-                        onClick={header.column.getToggleSortingHandler()}
-                        className="text-muted-foreground flex items-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-wider hover:text-foreground"
-                      >
-                        <FlexRender header={header} />
-                        <span aria-hidden>
-                          {
-                            {
-                              asc: "↑",
-                              desc: "↓",
-                            }[header.column.getIsSorted() as string] ?? ""
-                          }
-                        </span>
-                      </button>
-                    ) : (
-                      <span className="text-muted-foreground font-mono text-[11px] font-semibold uppercase tracking-wider">
-                        <FlexRender header={header} />
-                      </span>
-                    )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
+            <tr key={group.id} className="border-b">
+              {group.headers.map((header) => (
+                <RegistryTh key={header.id} header={header} />
+              ))}
+            </tr>
           ))}
-        </TableHeader>
-        <TableBody>
+        </thead>
+        <tbody className="divide-y">
           {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={colSpan} className="py-8 text-center">
+            <tr>
+              <td colSpan={colSpan} className="px-4 py-8 text-center">
                 {/* Inline loader — a full-height PageLoading would break the table shape. */}
                 <BrailleLoader
                   variant="chase"
@@ -256,61 +201,44 @@ export function MembersTable({
                   fontSize={16}
                   className="justify-center text-muted-foreground"
                 />
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : rows.length === 0 ? (
-            <TableRow>
-              <TableCell
+            <tr>
+              <td
                 colSpan={colSpan}
-                className="py-8 text-center text-muted-foreground"
+                className="px-4 py-8 text-center text-muted-foreground"
               >
                 No members match the filter.
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : (
             rows.map((row) => (
-              <TableRow key={row.id}>
+              <tr key={row.id}>
                 {row.getAllCells().map((cell) => (
-                  <TableCell
+                  <td
                     key={cell.id}
-                    className={cell.column.columnDef.meta?.className ?? ""}
+                    className={`px-4 py-3 ${cell.column.columnDef.meta?.className ?? ""}`}
                   >
                     <FlexRender cell={cell} />
-                  </TableCell>
+                  </td>
                 ))}
-              </TableRow>
+              </tr>
             ))
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
 
-      {/* Pagination */}
-      <div className="text-muted-foreground flex items-center justify-between border-t px-4 py-2 font-mono text-xs tabular-nums">
-        <span>
-          Page {table.state.pagination.pageIndex + 1} of{" "}
-          {Math.max(1, table.getPageCount())}
-        </span>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            disabled={!table.getCanPreviousPage()}
-            onClick={() => table.previousPage()}
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            disabled={!table.getCanNextPage()}
-            onClick={() => table.nextPage()}
-            aria-label="Next page"
-          >
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+      <div className="border-t">
+        <RegistryPagination
+          page={table.state.pagination.pageIndex + 1}
+          pageCount={table.getPageCount()}
+          canPrev={table.getCanPreviousPage()}
+          canNext={table.getCanNextPage()}
+          onPrev={() => table.previousPage()}
+          onNext={() => table.nextPage()}
+        />
       </div>
-    </section>
+    </div>
   )
 }

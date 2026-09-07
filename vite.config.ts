@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
+import { devtools } from "@tanstack/devtools-vite"
 import mdx from "@mdx-js/rollup"
 import remarkGfm from "remark-gfm"
 import remarkFrontmatter from "remark-frontmatter"
@@ -20,6 +21,9 @@ export default defineConfig({
   // router plugin must run before the react plugin so the route tree is
   // generated before anything imports it
   plugins: [
+    // TanStack devtools: console piping, go-to-source, and devtools imports
+    // stripped from production builds (first, per its docs).
+    devtools(),
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     // MDX compiles to a React component at build time — no runtime HTML strings.
     {

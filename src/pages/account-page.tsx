@@ -1,19 +1,18 @@
-﻿import { useState } from "react"
-import { useNavigate } from "@tanstack/react-router"
-import { LogOut, Pencil } from "lucide-react"
-import { toast } from "sonner"
-import { Avatar } from "@/components/app/avatar"
+﻿import { Avatar } from "@/components/app/avatar"
 import { ProfileDialog } from "@/components/app/profile-dialog"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   PagePresence,
   PageTransition,
 } from "@/components/layout/page-transition"
-import { useMe, type Me } from "@/lib/queries/users"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useUserStats } from "@/lib/queries/stats"
-import { ReportMasthead } from "@/components/layout/report"
+import { useMe, type Me } from "@/lib/queries/users"
 import { useAuth } from "@/lib/stores/auth"
+import { useNavigate } from "@tanstack/react-router"
+import { LogOut, Pencil } from "lucide-react"
+import { useState } from "react"
+import { toast } from "sonner"
 
 /**
  * Your account: who you are on this Taiga, and the one place to sign out.
@@ -43,12 +42,6 @@ export default function AccountPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mx-auto w-full max-w-2xl px-6">
-        <div className="border-b py-3">
-          <ReportMasthead kicker="Account" tag="Who you are on this Taiga" />
-        </div>
-      </div>
-
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           <PagePresence>
@@ -117,30 +110,32 @@ export default function AccountPage() {
           {me && (
             <section className="rounded-lg border bg-card">
               <div className="p-4">
-                <h3 className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.16em]">
+                <h3 className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Your stats
                 </h3>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs text-muted-foreground">
                   What you've shipped on this Taiga
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  <div className="bg-accent rounded-lg p-4">
+                  <div className="rounded-lg bg-accent p-4">
                     <div className="text-2xl font-bold tabular-nums">
                       {userStats ? userStats.total_num_projects : "—"}
                     </div>
-                    <div className="text-muted-foreground text-sm">Projects</div>
+                    <div className="text-sm text-muted-foreground">
+                      Projects
+                    </div>
                   </div>
-                  <div className="bg-accent rounded-lg p-4">
+                  <div className="rounded-lg bg-accent p-4">
                     <div className="text-2xl font-bold tabular-nums">
                       {userStats ? userStats.total_num_closed_userstories : "—"}
                     </div>
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-sm text-muted-foreground">
                       Closed stories
                     </div>
                   </div>
                 </div>
                 {userStats && userStats.roles.length > 0 && (
-                  <div className="text-muted-foreground mt-4 text-sm">
+                  <div className="mt-4 text-sm text-muted-foreground">
                     Roles: {userStats.roles.join(", ")}
                   </div>
                 )}
@@ -151,10 +146,10 @@ export default function AccountPage() {
           <section className="rounded-lg border bg-card">
             <div className="flex items-center justify-between p-4">
               <div>
-                <h3 className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.16em]">
+                <h3 className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   Session
                 </h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Sign out of this browser. Your other sessions stay signed in.
                 </p>
               </div>

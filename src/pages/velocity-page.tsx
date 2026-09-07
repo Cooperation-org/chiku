@@ -1,17 +1,13 @@
-﻿import { useVelocityData } from "@/lib/queries/milestones"
-import { useProjectBySlug } from "@/lib/queries/projects"
-import { ModuleDisabled } from "@/components/project/module-disabled"
+﻿import { PageLoading } from "@/components/layout/page-state"
 import {
   PagePresence,
   PageTransition,
 } from "@/components/layout/page-transition"
-import { PageLoading } from "@/components/layout/page-state"
-import {
-  REPORT_KICKER,
-  ReportFigures,
-  ReportMasthead,
-} from "@/components/layout/report"
+import { REPORT_KICKER, ReportFigures } from "@/components/layout/report"
+import { ModuleDisabled } from "@/components/project/module-disabled"
 import { viewEnabled } from "@/lib/project-views"
+import { useVelocityData } from "@/lib/queries/milestones"
+import { useProjectBySlug } from "@/lib/queries/projects"
 
 export default function VelocityPage({ slug }: { slug: string }) {
   const { project: currentProject } = useProjectBySlug(slug)
@@ -34,7 +30,6 @@ export default function VelocityPage({ slug }: { slug: string }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-5xl px-6 py-6">
-        <ReportMasthead kicker="Velocity" tag={currentProject.name} />
         <PagePresence>
           {isLoading ? (
             <PageLoading key="loading" label="Loading velocity data" />
@@ -99,21 +94,30 @@ function VelocityContent({
             barColor: "bg-amber-500",
             progress:
               data.reduce((sum, m) => sum + m.total_points, 0) > 0
-                ? Math.round((backlogPoints / data.reduce((sum, m) => sum + m.total_points, 0)) * 100)
+                ? Math.round(
+                    (backlogPoints /
+                      data.reduce((sum, m) => sum + m.total_points, 0)) *
+                      100
+                  )
                 : 0,
             sub: "open points not in a sprint",
           },
           {
             label: "Sprints left",
             value: String(sprintsRemaining || "—"),
-            sub: sprintsRemaining > 0 ? "to finish the backlog" : "no backlog left",
+            sub:
+              sprintsRemaining > 0
+                ? "to finish the backlog"
+                : "no backlog left",
           },
           {
             label: "Current sprint",
             value: `${currentProgress}%`,
             barColor: "bg-emerald-500",
             progress: currentProgress,
-            sub: current ? `${current.closed_points}/${current.total_points} points` : "no active sprint",
+            sub: current
+              ? `${current.closed_points}/${current.total_points} points`
+              : "no active sprint",
           },
         ]}
       />
@@ -131,7 +135,7 @@ function VelocityContent({
                 >
                   {milestone.name}
                 </div>
-                <div className="bg-muted h-5 flex-1 overflow-hidden rounded">
+                <div className="h-5 flex-1 overflow-hidden rounded bg-muted">
                   <div
                     className={`h-full rounded transition-all duration-300 ${
                       milestone.closed ? "bg-primary" : "bg-amber-500"
@@ -154,31 +158,37 @@ function VelocityContent({
           <div className="flex items-center justify-between">
             <h2 className={REPORT_KICKER}>Current sprint</h2>
             {current && (
-              <span className="text-muted-foreground text-xs">{current.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {current.name}
+              </span>
             )}
           </div>
 
           {current ? (
             <div className="mt-4 space-y-3">
               <div>
-                <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs tabular-nums">
+                <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground tabular-nums">
                   <span>
                     {current.closed_points} / {current.total_points} points
                   </span>
                   <span>{currentProgress}%</span>
                 </div>
-                <div className="bg-muted h-2 overflow-hidden rounded-full">
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="bg-primary h-full rounded-full transition-all duration-300"
+                    className="h-full rounded-full bg-primary transition-all duration-300"
                     style={{ width: `${currentProgress}%` }}
                   />
                 </div>
               </div>
-              <div className="text-muted-foreground space-y-0.5 text-xs tabular-nums">
+              <div className="space-y-0.5 text-xs text-muted-foreground tabular-nums">
                 <div>
-                  <span className="text-foreground">{current.estimated_start}</span>
+                  <span className="text-foreground">
+                    {current.estimated_start}
+                  </span>
                   {" → "}
-                  <span className="text-foreground">{current.estimated_finish}</span>
+                  <span className="text-foreground">
+                    {current.estimated_finish}
+                  </span>
                 </div>
               </div>
             </div>
@@ -194,14 +204,19 @@ function VelocityContent({
           <h2 className={REPORT_KICKER}>Completion projection</h2>
           {avgVelocity > 0 ? (
             <>
-              <p className="text-muted-foreground mt-4 max-w-xl text-sm">
+              <p className="mt-4 max-w-xl text-sm text-muted-foreground">
                 At the average velocity of{" "}
-                <span className="text-foreground font-medium">{avgVelocity} points/sprint</span>
+                <span className="font-medium text-foreground">
+                  {avgVelocity} points/sprint
+                </span>
                 , the remaining{" "}
-                <span className="text-amber-500 font-medium">{backlogPoints} backlog points</span>{" "}
+                <span className="font-medium text-amber-500">
+                  {backlogPoints} backlog points
+                </span>{" "}
                 land in roughly{" "}
-                <span className="text-emerald-500 font-medium">
-                  {sprintsRemaining} more {sprintsRemaining === 1 ? "sprint" : "sprints"}
+                <span className="font-medium text-emerald-500">
+                  {sprintsRemaining} more{" "}
+                  {sprintsRemaining === 1 ? "sprint" : "sprints"}
                 </span>
                 .
               </p>
@@ -228,7 +243,7 @@ function VelocityContent({
                     />
                   ))}
               </div>
-              <div className="text-muted-foreground mt-2 flex justify-between text-xs">
+              <div className="mt-2 flex justify-between text-xs text-muted-foreground">
                 <span>Sprint 1</span>
                 <span>
                   Sprint {Math.min(sprintsRemaining + completed.length, 20)}
@@ -237,7 +252,7 @@ function VelocityContent({
               </div>
             </>
           ) : (
-            <p className="text-muted-foreground mt-4 text-sm">
+            <p className="mt-4 text-sm text-muted-foreground">
               Complete at least one sprint to see projections.
             </p>
           )}

@@ -1,15 +1,11 @@
-﻿import { useState } from "react"
-import { toast } from "sonner"
-import { Avatar } from "@/components/app/avatar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+﻿import { Avatar } from "@/components/app/avatar"
+import { epicColors } from "@/components/epics/epic-colors"
+import { PageLoading } from "@/components/layout/page-state"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  PagePresence,
+  PageTransition,
+} from "@/components/layout/page-transition"
+import { ModuleDisabled } from "@/components/project/module-disabled"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,30 +16,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
 import {
-  useDeleteEpic,
-  useEpics,
-  useUpdateEpic,
-} from "@/lib/queries/epics"
-import { useProjectBySlug } from "@/lib/queries/projects"
-import { ModuleDisabled } from "@/components/project/module-disabled"
-import {
-  PagePresence,
-  PageTransition,
-} from "@/components/layout/page-transition"
-import { PageLoading } from "@/components/layout/page-state"
-import { ReportMasthead } from "@/components/layout/report"
-import { epicColors } from "@/components/epics/epic-colors"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import type { Epic } from "@/lib/api/types"
 import { formatRelativeDate } from "@/lib/format"
 import { viewEnabled } from "@/lib/project-views"
-import type { Epic } from "@/lib/api/types"
+import { useDeleteEpic, useEpics, useUpdateEpic } from "@/lib/queries/epics"
+import { useProjectBySlug } from "@/lib/queries/projects"
+import { useState } from "react"
+import { toast } from "sonner"
 
 function getProgress(epic: Epic): number {
   const counts = epic.user_stories_counts
   if (!counts || counts.total === 0) return 0
   return Math.round((counts.progress / counts.total) * 100)
 }
-
 
 function EpicDialog({
   epic,
@@ -277,15 +271,6 @@ export default function EpicsPage({ slug }: { slug: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mx-auto w-full max-w-5xl px-6">
-        <div className="border-b py-3">
-          <ReportMasthead
-            kicker="Epics"
-            tag={`${epics?.length ?? 0} total`}
-          />
-        </div>
-      </div>
-
       <div className="flex-1 overflow-auto p-6">
         <PagePresence>
           {isLoading ? (
