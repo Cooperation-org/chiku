@@ -1,5 +1,7 @@
 ﻿import { useVelocityData } from "@/lib/queries/milestones"
 import { useProjectBySlug } from "@/lib/queries/projects"
+import { ModuleDisabled } from "@/components/project/module-disabled"
+import { viewEnabled } from "@/lib/project-views"
 
 export default function VelocityPage({ slug }: { slug: string }) {
   const { project: currentProject } = useProjectBySlug(slug)
@@ -11,6 +13,10 @@ export default function VelocityPage({ slug }: { slug: string }) {
         <div className="text-muted-foreground">Select a project to view velocity</div>
       </div>
     )
+  }
+
+  if (!viewEnabled(currentProject, "velocity")) {
+    return <ModuleDisabled view="Velocity" slug={slug} />
   }
 
   return (

@@ -2,6 +2,8 @@
 import { toast } from "sonner"
 import { IssueModal } from "@/components/app/issue-modal"
 import { Button } from "@/components/ui/button"
+import { PagePresence, PageTransition } from "@/components/layout/page-transition"
+import { PageLoading, PageNotFound } from "@/components/layout/page-state"
 import { useMemberships } from "@/lib/queries/memberships"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { useStatuses, useStoryByRef } from "@/lib/queries/stories"
@@ -52,44 +54,46 @@ export default function SingleStoryPage({ slug, storyRef }: SingleStoryPageProps
     )
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground">Loading story...</div>
-      </div>
-    )
-  }
-
-  if (isError || !story) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3">
-        <div className="text-muted-foreground">Story #{storyRef} was not found in this project.</div>
-        <Button variant="outline" onClick={goBack}>
-          Back to board
-        </Button>
-      </div>
-    )
-  }
-
+  // Loading ⇄ content ⇄ not-found all crossfade through one presence, so
+  // ref-to-ref navigation (goToRef) never hard-cuts.
   return (
-    <IssueModal
-      story={story}
-      statuses={statuses}
-      members={members}
-      onClose={goBack}
-      onNavigateRef={goToRef}
-      onUpdate={(updated) => {
-        queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
-          old?.map((s) => (s.id === updated.id ? updated : s))
-        )
-      }}
-      onDelete={(id) => {
-        queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
-          old?.filter((s) => s.id !== id)
-        )
-        toast(`Deleted #${storyRef}`)
-        goBack()
-      }}
-    />
+    <PagePresence>
+      {isLoading ? (
+        <PageLoading key="loading" label="Loading story" />
+      ) : isError || !story ? (
+        <PageNotFound
+          key="missing"
+          title={`Story #${storyRef} was not found`}
+          description="It may have been deleted or moved to another project."
+          action={
+            <Button variant="outline" onClick={goBack}>
+              Back to board
+            </Button>
+          }
+        />
+      ) : (
+        <PageTransition key={story.id}>
+          <IssueModal
+            story={story}
+            statuses={statuses}
+            members={members}
+            onClose={goBack}
+            onNavigateRef={goToRef}
+            onUpdate={(updated) => {
+              queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
+                old?.map((s) => (s.id === updated.id ? updated : s))
+              )
+            }}
+            onDelete={(id) => {
+              queryClient.setQueryData<UserStory[]>(qk.stories(currentProject.id), (old) =>
+                old?.filter((s) => s.id !== id)
+              )
+              toast(`Deleted #${storyRef}`)
+              goBack()
+            }}
+          />
+        </PageTransition>
+      )}
+    </PagePresence>
   )
 }

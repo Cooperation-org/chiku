@@ -9,7 +9,14 @@
     <link rel="icon" href="/favicon.ico" />
     <script>
       (function () {
-        if (!/(^|\.)workers\.vc$/.test(location.hostname)) return;
+        // %VITE_BRAND% is replaced by Vite at serve/build time; when unset it
+        // stays a literal "%VITE_BRAND%" (or empty), which never equals a brand
+        // id, so production hostname detection is unaffected. In dev it lets
+        // VITE_BRAND=workersvc force the brand on localhost before first paint.
+        var isWorkersVc =
+          "%VITE_BRAND%" === "workersvc" || /(^|\.)workers\.vc$/.test(location.hostname);
+        if (!isWorkersVc) return;
+        document.documentElement.dataset.brand = "workersvc";
         var svg = document.createElement("link");
         svg.rel = "icon";
         svg.type = "image/svg+xml";
@@ -17,6 +24,8 @@
         document.head.appendChild(svg);
         var ico = document.querySelector('link[rel="icon"]:not([type])');
         if (ico) ico.href = "/favicon-workersvc.ico";
+        var host = location.hostname.replace(/\..*/, "");
+        document.title = host + " \u00b7 workers.vc";
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

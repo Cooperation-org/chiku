@@ -1,9 +1,16 @@
-import { Link, Outlet } from "@tanstack/react-router"
-import { Button } from "@/components/ui/button"
 import { SETTINGS_SECTIONS } from "@/components/settings/settings-nav"
-import { SettingsContext, useSettings } from "@/components/settings/use-settings"
+import {
+  SettingsContext,
+  useSettings,
+} from "@/components/settings/use-settings"
+import { Button } from "@/components/ui/button"
+import {
+  canDeleteProject,
+  canModifyProject,
+  isProjectAdmin,
+} from "@/lib/permissions"
 import { useProjectBySlug } from "@/lib/queries/projects"
-import { canDeleteProject, canModifyProject, isProjectAdmin } from "@/lib/permissions"
+import { Link, Outlet } from "@tanstack/react-router"
 
 function sectionVisible(key: string, canDelete: boolean) {
   const meta = SETTINGS_SECTIONS.find((s) => s.key === key)
@@ -13,12 +20,20 @@ function sectionVisible(key: string, canDelete: boolean) {
 }
 
 /** Guard for leaf routes that require delete rights (danger zone). */
-export function SettingsGuard({ section, children }: { section: string; children: React.ReactNode }) {
+export function SettingsGuard({
+  section,
+  children,
+}: {
+  section: string
+  children: React.ReactNode
+}) {
   const { canDelete } = useSettings()
   if (!sectionVisible(section, canDelete)) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-muted-foreground text-sm">You don't have access to this section</div>
+        <div className="text-sm text-muted-foreground">
+          You don't have access to this section
+        </div>
       </div>
     )
   }
@@ -32,7 +47,9 @@ export function SettingsLayout({ slug }: { slug: string }) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-muted-foreground">
-          {isLoading ? "Loading settings..." : "Select a project to view its settings"}
+          {isLoading
+            ? "Loading settings..."
+            : "Select a project to view its settings"}
         </div>
       </div>
     )
@@ -44,13 +61,13 @@ export function SettingsLayout({ slug }: { slug: string }) {
         <header className="flex shrink-0 items-center justify-between border-b px-6 py-4">
           <div>
             <h1 className="text-lg font-semibold">Settings</h1>
-            <p className="text-muted-foreground text-sm">{project.name}</p>
+            <p className="text-sm text-muted-foreground">{project.name}</p>
           </div>
         </header>
         <div className="flex min-h-0 flex-1 items-center justify-center p-6">
           <div className="max-w-sm space-y-3 text-center">
             <p className="text-sm font-medium">Project admins only</p>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Ask a project admin to change settings or manage your access.
             </p>
             <Button
@@ -72,19 +89,6 @@ export function SettingsLayout({ slug }: { slug: string }) {
   return (
     <SettingsContext.Provider value={{ project, canEdit, canDelete }}>
       <div className="flex h-full flex-col">
-        <header className="flex shrink-0 items-center justify-between border-b px-6 py-4">
-          <div>
-            <h1 className="text-lg font-semibold">Settings</h1>
-            <p className="text-muted-foreground text-sm">{project.name}</p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            render={<Link to="/projects/$slug/members" params={{ slug }} />}
-          >
-            Members
-          </Button>
-        </header>
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-3xl">
             <Outlet />

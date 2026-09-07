@@ -1,5 +1,29 @@
 ﻿// Taiga API types
 
+/** One row of GET /projects/{id}/stats — remaining points per sprint. */
+export interface ProjectSprintStat {
+	name: string;
+	optimal: number | null;
+	evolution: number | null;
+	"team-increment": number | number[] | null;
+	"client-increment": number | number[] | null;
+}
+
+/** GET /projects/{id}/stats — agile totals plus the per-sprint series. */
+export interface ProjectStats {
+	name: string;
+	total_milestones: number;
+	total_points: number | null;
+	defined_points: number;
+	closed_points: number;
+	assigned_points: number;
+	defined_points_per_role: Record<string, number>;
+	closed_points_per_role: Record<string, number>;
+	assigned_points_per_role: Record<string, number>;
+	milestones: ProjectSprintStat[];
+	speed: number;
+}
+
 export interface User {
 	id: number;
 	username: string;

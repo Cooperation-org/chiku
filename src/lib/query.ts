@@ -64,6 +64,8 @@ export const qk = {
   search: (projectId: number, text: string) => ["project", projectId, "search", text] as const,
   epics: (projectId: number) => ["project", projectId, "epics"] as const,
   milestones: (projectId: number) => ["project", projectId, "milestones"] as const,
+  /** Agile totals + per-sprint series for the project homepage. */
+  stats: (projectId: number) => ["project", projectId, "stats"] as const,
   memberships: (projectId: number) => ["project", projectId, "memberships"] as const,
   comments: (storyId: number) => ["story", storyId, "comments"] as const,
   attachments: (storyId: number) => ["story", storyId, "attachments"] as const,

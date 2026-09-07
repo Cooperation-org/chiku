@@ -4,8 +4,10 @@ import { CirclePlus } from "lucide-react"
 import { Avatar } from "@/components/app/avatar"
 import { CreateStoryDialog } from "@/components/app/create-story-dialog"
 import { Button } from "@/components/ui/button"
+import { ModuleDisabled } from "@/components/project/module-disabled"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { useStories } from "@/lib/queries/stories"
+import { viewEnabled } from "@/lib/project-views"
 
 function formatRelativeDate(dateStr: string): string {
   const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
@@ -40,6 +42,10 @@ export default function BacklogPage({ slug }: BacklogPageProps) {
         <div className="text-muted-foreground">Select a project to view the backlog</div>
       </div>
     )
+  }
+
+  if (!viewEnabled(currentProject, "backlog")) {
+    return <ModuleDisabled view="Backlog" slug={slug} />
   }
 
   return (

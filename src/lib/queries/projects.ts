@@ -6,6 +6,7 @@ import {
   createProject,
   deleteProject,
   getProjects,
+  getProjectStats,
   isArchived,
   reorderProjects,
   unarchiveProject,
@@ -106,4 +107,12 @@ export function useProjectBySlug(slug: string | undefined) {
     [projects, slug]
   )
   return { project, isLoading }
+}
+
+export function useProjectStats(projectId: number | null) {
+  return useQuery({
+    queryKey: qk.stats(projectId ?? 0),
+    queryFn: () => getProjectStats(projectId!),
+    enabled: projectId != null,
+  })
 }

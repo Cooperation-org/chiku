@@ -4,12 +4,16 @@ import { useNavigate } from "@tanstack/react-router"
 import { Board } from "@/components/board/board"
 import { CreateStoryDialog } from "@/components/app/create-story-dialog"
 import { ColumnEditorDialog } from "@/components/app/column-editor-dialog"
+import { PagePresence, PageTransition } from "@/components/layout/page-transition"
+import { PageLoading } from "@/components/layout/page-state"
+import { ModuleDisabled } from "@/components/project/module-disabled"
 import { Button } from "@/components/ui/button"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { isArchived, unarchiveProject } from "@/lib/api/projects"
 import { useReorderKanbanOrder, useSetStoryStatus, useStories, useStatuses } from "@/lib/queries/stories"
 import { EMPTY_FILTER, filterStories } from "@/lib/filters/stories"
 import { qk, queryClient } from "@/lib/query"
+import { viewEnabled } from "@/lib/project-views"
 import { useBoardStore } from "@/lib/stores/board"
 import { useToolbarStore } from "@/lib/stores/toolbar"
 import type { UserStory } from "@/lib/api/types"
@@ -106,14 +110,20 @@ export default function BoardPage({ slug }: BoardPageProps) {
     }
   }
 
+  const isLoading = statusesLoading || storiesLoading
+
   if (!currentProject) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-muted-foreground">
-          {statusesLoading || storiesLoading ? "Loading board..." : "Select a project to view the board"}
+          {isLoading ? "Loading board..." : "Select a project to view the board"}
         </div>
       </div>
     )
+  }
+
+  if (!viewEnabled(currentProject, "board")) {
+    return <ModuleDisabled view="Board" slug={slug} />
   }
 
   return (
@@ -128,30 +138,32 @@ export default function BoardPage({ slug }: BoardPageProps) {
       )}
 
       <div className="min-h-0 flex-1 overflow-hidden">
-        {statusesLoading || storiesLoading ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-muted-foreground">Loading board...</div>
-          </div>
-        ) : (
-          <Board
-            statuses={statuses}
-            stories={visible}
-            onMoveStory={handleMoveStory}
-            onReorderStory={handleReorderStory}
-            onSelect={(story) =>
-              navigate({
-                to: "/projects/$slug/board/$storyRef",
-                params: { slug, storyRef: String(story.ref) },
-              })
-            }
-            onAddToColumn={(statusId) => {
-              setCreateStatusId(statusId)
-              setShowCreate(true)
-            }}
-            onEditColumns={() => setColumnEditorOpen(true)}
-            onNewList={() => setColumnEditorOpen(true)}
-          />
-        )}
+        <PagePresence>
+          {isLoading ? (
+            <PageLoading key="loading" label="Loading board" />
+          ) : (
+            <PageTransition key="board">
+              <Board
+                statuses={statuses}
+                stories={visible}
+                onMoveStory={handleMoveStory}
+                onReorderStory={handleReorderStory}
+                onSelect={(story) =>
+                  navigate({
+                    to: "/projects/$slug/board/$storyRef",
+                    params: { slug, storyRef: String(story.ref) },
+                  })
+                }
+                onAddToColumn={(statusId) => {
+                  setCreateStatusId(statusId)
+                  setShowCreate(true)
+                }}
+                onEditColumns={() => setColumnEditorOpen(true)}
+                onNewList={() => setColumnEditorOpen(true)}
+              />
+            </PageTransition>
+          )}
+        </PagePresence>
       </div>
 
       <CreateStoryDialog

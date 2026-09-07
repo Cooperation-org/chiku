@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useCreateEpic, useDeleteEpic, useEpics, useUpdateEpic } from "@/lib/queries/epics"
 import { useProjectBySlug } from "@/lib/queries/projects"
+import { ModuleDisabled } from "@/components/project/module-disabled"
+import { viewEnabled } from "@/lib/project-views"
 import type { Epic } from "@/lib/api/types"
 
 const epicColors = [
@@ -342,6 +344,10 @@ export default function EpicsPage({ slug }: { slug: string }) {
         <div className="text-muted-foreground">Select a project to view epics</div>
       </div>
     )
+  }
+
+  if (!viewEnabled(currentProject, "epics")) {
+    return <ModuleDisabled view="Epics" slug={slug} />
   }
 
   return (

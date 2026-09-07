@@ -6,7 +6,7 @@ import { broadcastQueryClient } from "@tanstack/query-broadcast-client-experimen
 import { routeTree } from "./routeTree.gen"
 import { queryClient, queryPersistOptions } from "@/lib/query"
 import { useAuth } from "@/lib/stores/auth"
-import { BrandLogo } from "@/components/app/brand-logo"
+import { PageError, PageLoading, PageNotFound } from "@/components/layout/page-state"
 import "./index.css"
 
 // Sync localStorage tokens into the store before the first route guard runs.
@@ -15,11 +15,28 @@ useAuth.getState().init()
 const router = createRouter({
   routeTree,
   defaultPreload: "intent",
+  // Unified page states (see components/layout/page-state.tsx): the same
+  // components render for route-loader pending/errors, unmatched URLs, and
+  // per-page React Query branches. Pending timings avoid flash-of-spinner
+  // on fast loader resolutions.
+  defaultPendingComponent: () => (
+    <div className="h-dvh">
+      <PageLoading label="Loading" />
+    </div>
+  ),
+  defaultPendingMs: 300,
+  defaultPendingMinMs: 500,
+  defaultErrorComponent: ({ error, reset }) => (
+    <div className="h-dvh">
+      <PageError
+        message={error instanceof Error ? error.message : undefined}
+        onRetry={reset}
+      />
+    </div>
+  ),
   defaultNotFoundComponent: () => (
-    <div className="flex h-screen flex-col items-center justify-center gap-2">
-      <BrandLogo className="h-12 w-12 opacity-50" />
-      <p className="font-semibold">Page not found</p>
-      <p className="text-muted-foreground text-sm">That URL does not match any view.</p>
+    <div className="h-dvh">
+      <PageNotFound />
     </div>
   ),
 })

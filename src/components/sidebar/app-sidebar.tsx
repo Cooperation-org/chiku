@@ -17,6 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
@@ -26,26 +27,9 @@ import { useAuth } from "@/lib/stores/auth"
 import { useSidebarStore } from "@/lib/stores/sidebar"
 import { useProjectStore } from "@/lib/stores/project"
 import { useProjectBySlug } from "@/lib/queries/projects"
+import { viewEnabled } from "@/lib/project-views"
 import { canDeleteProject, isProjectAdmin } from "@/lib/permissions"
 import { SETTINGS_SECTIONS } from "@/components/settings/settings-nav"
-import type { Project } from "@/lib/api/types"
-
-function viewEnabled(
-  project: Project | null,
-  view: "board" | "backlog" | "epics" | "velocity"
-): boolean {
-  if (!project) return true
-  switch (view) {
-    case "board":
-      return project.is_kanban_activated !== false
-    case "backlog":
-      return project.is_backlog_activated !== false
-    case "epics":
-      return project.is_epics_activated !== false
-    case "velocity":
-      return project.is_backlog_activated !== false
-  }
-}
 
 /** Persisted collapsible group, wired to the shadcn sidebar group pattern. */
 function CollapsibleGroup({
@@ -95,7 +79,7 @@ export function AppSidebar() {
   const urlSlug = (params as { slug?: string }).slug ?? null
   const selectedSlug = useProjectStore((s) => s.selectedSlug)
   const activeSlug = urlSlug ?? selectedSlug
-  const { project } = useProjectBySlug(activeSlug ?? undefined)
+  const { project, isLoading: projectsLoading } = useProjectBySlug(activeSlug ?? undefined)
 
   function go(to: string, slug?: string) {
     if (slug) setSelectedSlug(slug)
@@ -142,19 +126,26 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <CollapsibleGroup id="views" label="Views" forceOpen={rail}>
-          {views.map((v) => (
-            <SidebarMenuItem key={v.key}>
-              <SidebarMenuButton
-                isActive={location.pathname === `/projects/${activeSlug}/${v.key}`}
-                disabled={!v.enabled}
-                tooltip={v.label}
-                onClick={() => projectView(v.key)}
-              >
-                {v.icon}
-                <span>{v.label}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {activeSlug && projectsLoading && !project
+            ? [0, 1, 2, 3].map((i) => (
+                <SidebarMenuItem key={i}>
+                  <SidebarMenuSkeleton showIcon />
+                </SidebarMenuItem>
+              ))
+            : views
+                .filter((v) => v.enabled)
+                .map((v) => (
+                  <SidebarMenuItem key={v.key}>
+                    <SidebarMenuButton
+                      isActive={location.pathname === `/projects/${activeSlug}/${v.key}`}
+                      tooltip={v.label}
+                      onClick={() => projectView(v.key)}
+                    >
+                      {v.icon}
+                      <span>{v.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
         </CollapsibleGroup>
 
         <CollapsibleGroup id="general" label="General" forceOpen={rail}>

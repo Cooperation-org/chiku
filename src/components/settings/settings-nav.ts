@@ -1,4 +1,4 @@
-import { Crown, OctagonAlert, Settings2, type LucideIcon } from "lucide-react"
+import { Crown, Settings2, type LucideIcon } from "lucide-react"
 
 export type SettingsRouteId =
   | "/projects/$slug/settings/general"
@@ -64,12 +64,12 @@ export const SETTINGS_SECTIONS: SettingsSectionMeta[] = [
     icon: Crown,
     route: "/projects/$slug/settings/ownership",
   },
-  {
-    key: "danger",
-    label: "Danger zone",
-    description: "Archive & delete",
-    icon: OctagonAlert,
-    route: "/projects/$slug/settings/danger",
-    requiresDelete: true,
-  },
+  // {
+  //   key: "danger",
+  //   label: "Danger zone",
+  //   description: "Archive & delete",
+  //   icon: OctagonAlert,
+  //   route: "/projects/$slug/settings/danger",
+  //   requiresDelete: true,
+  // },
 ]

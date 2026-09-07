@@ -46,6 +46,10 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    /* Motion tokens (animate / emil-design-eng house curves). */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 :root {
@@ -115,6 +119,25 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* workers.vc brand — green accent derived from the leaf logo (#029927 → #29C033). */
+[data-brand="workersvc"] {
+  --primary: oklch(0.55 0.17 145);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.55 0.17 145);
+  --sidebar-primary: oklch(0.55 0.17 145);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --chart-1: oklch(0.55 0.17 145);
+}
+
+[data-brand="workersvc"].dark {
+  --primary: oklch(0.65 0.17 145);
+  --primary-foreground: oklch(0.145 0 0);
+  --ring: oklch(0.65 0.17 145);
+  --sidebar-primary: oklch(0.65 0.17 145);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --chart-1: oklch(0.65 0.17 145);
 }
 
 @layer base {
