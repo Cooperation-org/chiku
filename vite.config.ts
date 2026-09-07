@@ -1,4 +1,5 @@
 import path from "path"
+import { readFileSync } from "fs"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
@@ -7,6 +8,12 @@ import mdx from "@mdx-js/rollup"
 import remarkGfm from "remark-gfm"
 import remarkFrontmatter from "remark-frontmatter"
 import remarkMdxFrontmatter from "remark-mdx-frontmatter"
+
+// The app version is baked at build/serve time as a compile-time constant —
+// no runtime read of package.json in the bundle.
+const pkg = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
+) as { version: string }
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -24,6 +31,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),

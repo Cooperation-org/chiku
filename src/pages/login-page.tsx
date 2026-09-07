@@ -232,7 +232,10 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-muted-foreground mt-4 text-center text-sm">Connecting to Taiga backend</p>
+        <div className="text-muted-foreground mt-6 flex flex-col items-center gap-1 text-center">
+          <p className="text-sm">Connecting to Taiga backend</p>
+          <p className="font-mono text-[11px] tracking-wide">v{__APP_VERSION__}</p>
+        </div>
       </div>
     </div>
   )

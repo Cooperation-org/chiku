@@ -34,6 +34,7 @@ import {
 import { PageLoading } from "@/components/layout/page-state"
 import { ReportMasthead } from "@/components/layout/report"
 import { epicColors } from "@/components/epics/epic-colors"
+import { formatRelativeDate } from "@/lib/format"
 import { viewEnabled } from "@/lib/project-views"
 import type { Epic } from "@/lib/api/types"
 
@@ -41,18 +42,6 @@ function getProgress(epic: Epic): number {
   const counts = epic.user_stories_counts
   if (!counts || counts.total === 0) return 0
   return Math.round((counts.progress / counts.total) * 100)
-}
-
-function formatRelativeDate(dateStr: string): string {
-  const diffDays = Math.floor(
-    (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24)
-  )
-  if (diffDays === 0) return "today"
-  if (diffDays === 1) return "1d"
-  if (diffDays < 7) return `${diffDays}d`
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo`
-  return `${Math.floor(diffDays / 365)}y`
 }
 
 

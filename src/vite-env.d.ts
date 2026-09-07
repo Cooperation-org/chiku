@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+/** Baked by vite.config.ts `define` from package.json's version field. */
+declare const __APP_VERSION__: string
+
 declare module "*.mdx" {
   export const frontmatter: { version: string; date: string; title: string }
   const Component: import("react").ComponentType
