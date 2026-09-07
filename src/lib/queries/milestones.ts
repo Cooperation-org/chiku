@@ -4,6 +4,15 @@ import { getMilestones } from "@/lib/api/milestones"
 import { getUserStories } from "@/lib/api/userstories"
 import type { Milestone, UserStory } from "@/lib/api/types"
 
+export function useMilestones(projectId: number | null) {
+  return useQuery({
+    queryKey: qk.milestones(projectId ?? 0),
+    queryFn: () => getMilestones(projectId!),
+    enabled: projectId != null,
+    meta: { label: "sprints list", projectId: projectId ?? 0 },
+  })
+}
+
 export function useVelocityData(projectId: number | null) {
   return useQuery({
     queryKey: [...qk.milestones(projectId ?? 0), "velocity"],

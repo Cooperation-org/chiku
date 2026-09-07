@@ -46,6 +46,7 @@ import { Route as _authedProjectsSlugSettingsIntegrationsRouteImport } from './r
 import { Route as _authedProjectsSlugSettingsNotificationsRouteImport } from './routes/(_authed)/projects/$slug/settings/notifications'
 import { Route as _authedProjectsSlugSettingsOwnershipRouteImport } from './routes/(_authed)/projects/$slug/settings/ownership'
 import { Route as _authedProjectsSlugSettingsWebhooksRouteImport } from './routes/(_authed)/projects/$slug/settings/webhooks'
+import { Route as _authedProjectsSlugStatsIndexRouteImport } from './routes/(_authed)/projects/$slug/stats/index'
 
 const _authedRouteRoute = _authedRouteRouteImport.update({
   id: '/(_authed)',
@@ -250,6 +251,12 @@ const _authedProjectsSlugSettingsWebhooksRoute =
     path: '/webhooks',
     getParentRoute: () => _authedProjectsSlugSettingsRouteRoute,
   } as any)
+const _authedProjectsSlugStatsIndexRoute =
+  _authedProjectsSlugStatsIndexRouteImport.update({
+    id: '/projects/$slug/stats/',
+    path: '/projects/$slug/stats/',
+    getParentRoute: () => _authedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof _authedIndexRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/p/$slug/board/': typeof _authedPSlugBoardIndexRoute
   '/projects/$slug/board/': typeof _authedProjectsSlugBoardIndexRoute
   '/projects/$slug/settings/': typeof _authedProjectsSlugSettingsIndexRoute
+  '/projects/$slug/stats/': typeof _authedProjectsSlugStatsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof _authedIndexRoute
@@ -325,6 +333,7 @@ export interface FileRoutesByTo {
   '/p/$slug/board': typeof _authedPSlugBoardIndexRoute
   '/projects/$slug/board': typeof _authedProjectsSlugBoardIndexRoute
   '/projects/$slug/settings': typeof _authedProjectsSlugSettingsIndexRoute
+  '/projects/$slug/stats': typeof _authedProjectsSlugStatsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -365,6 +374,7 @@ export interface FileRoutesById {
   '/(_authed)/p/$slug/board/': typeof _authedPSlugBoardIndexRoute
   '/(_authed)/projects/$slug/board/': typeof _authedProjectsSlugBoardIndexRoute
   '/(_authed)/projects/$slug/settings/': typeof _authedProjectsSlugSettingsIndexRoute
+  '/(_authed)/projects/$slug/stats/': typeof _authedProjectsSlugStatsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/p/$slug/board/'
     | '/projects/$slug/board/'
     | '/projects/$slug/settings/'
+    | '/projects/$slug/stats/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/p/$slug/board'
     | '/projects/$slug/board'
     | '/projects/$slug/settings'
+    | '/projects/$slug/stats'
   id:
     | '__root__'
     | '/(_authed)'
@@ -481,6 +493,7 @@ export interface FileRouteTypes {
     | '/(_authed)/p/$slug/board/'
     | '/(_authed)/projects/$slug/board/'
     | '/(_authed)/projects/$slug/settings/'
+    | '/(_authed)/projects/$slug/stats/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -756,6 +769,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _authedProjectsSlugSettingsWebhooksRouteImport
       parentRoute: typeof _authedProjectsSlugSettingsRouteRoute
     }
+    '/(_authed)/projects/$slug/stats/': {
+      id: '/(_authed)/projects/$slug/stats/'
+      path: '/projects/$slug/stats'
+      fullPath: '/projects/$slug/stats/'
+      preLoaderRoute: typeof _authedProjectsSlugStatsIndexRouteImport
+      parentRoute: typeof _authedRouteRoute
+    }
   }
 }
 
@@ -815,6 +835,7 @@ interface _authedRouteRouteChildren {
   _authedProjectsSlugBoardStoryRefRoute: typeof _authedProjectsSlugBoardStoryRefRoute
   _authedPSlugBoardIndexRoute: typeof _authedPSlugBoardIndexRoute
   _authedProjectsSlugBoardIndexRoute: typeof _authedProjectsSlugBoardIndexRoute
+  _authedProjectsSlugStatsIndexRoute: typeof _authedProjectsSlugStatsIndexRoute
 }
 
 const _authedRouteRouteChildren: _authedRouteRouteChildren = {
@@ -839,6 +860,7 @@ const _authedRouteRouteChildren: _authedRouteRouteChildren = {
   _authedProjectsSlugBoardStoryRefRoute: _authedProjectsSlugBoardStoryRefRoute,
   _authedPSlugBoardIndexRoute: _authedPSlugBoardIndexRoute,
   _authedProjectsSlugBoardIndexRoute: _authedProjectsSlugBoardIndexRoute,
+  _authedProjectsSlugStatsIndexRoute: _authedProjectsSlugStatsIndexRoute,
 }
 
 const _authedRouteRouteWithChildren = _authedRouteRoute._addFileChildren(
