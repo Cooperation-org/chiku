@@ -1,0 +1,29 @@
+---
+version: "0.4.0"
+date: "2026-09-07"
+title: "A single toolbar, live sync, and project homes"
+---
+
+The revamp release. One toolbar now carries navigation, search, and every
+action; the app tells you what it is doing in real time; and every project
+got a stats-driven homepage.
+
+### Added
+
+- **Unified toolbar** — breadcrumbs, search, and route actions live in one bar. Controls glide between routes with spring motion instead of jumping.
+- **New story button** on the board toolbar, opening the create-story dialog with no preset column.
+- **Share button** on stories — copies a direct link to your clipboard.
+- **Sync indicator** in the toolbar — colors show idle, syncing (with a live orbit animation), offline-queued, success, and error states for all queries and mutations.
+- **Project overview** — `/projects/<slug>` is now a homepage with point totals, team speed, sprint count, and per-sprint progress bars.
+- **Module gating** — the sidebar shows skeleton rows while projects load and lists only the modules a project has enabled.
+
+### Changed
+
+- **Story header moved into the toolbar** — back, story ref, and prev/next navigation sit next to the sidebar toggle; edit, duplicate, share, and delete sit at the far right.
+- **Status picker moved into the story page** — the colored status pill now lives in the meta row and opens the status dropdown on click.
+- **Project landing** — opening a project now goes to its overview instead of the board.
+- **Direct links to disabled modules** render a clear "not enabled on this project" notice instead of a broken page.
+
+### Fixed
+
+- Toolbar controls no longer reposition when merely hovering navigation links; only committed navigation changes them.

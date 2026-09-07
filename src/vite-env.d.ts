@@ -1,5 +1,11 @@
 /// <reference types="vite/client" />
 
+declare module "*.mdx" {
+  export const frontmatter: { version: string; date: string; title: string }
+  const Component: import("react").ComponentType
+  export default Component
+}
+
 interface ImportMetaEnv {
   /** Taiga API base, e.g. https://taiga.workers.vc/api/v1 (defaults to /api/v1) */
   readonly VITE_API_URL?: string

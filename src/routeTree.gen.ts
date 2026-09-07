@@ -17,6 +17,8 @@ import { Route as PublicAuthDevTokenRouteImport } from './routes/_public/auth/de
 import { Route as PublicLoginIndexRouteImport } from './routes/_public/login/index'
 import { Route as PublicOauthCallbackRouteImport } from './routes/_public/oauth/callback'
 import { Route as PublicSsoRelayRouteImport } from './routes/_public/sso/relay'
+import { Route as PublicWhatsNewIndexRouteImport } from './routes/_public/whats-new/index'
+import { Route as PublicWhatsNewVersionRouteImport } from './routes/_public/whats-new/$version'
 import { Route as _authedPSlugIndexRouteImport } from './routes/(_authed)/p/$slug/index'
 import { Route as _authedPSlugBacklogRouteImport } from './routes/(_authed)/p/$slug/backlog'
 import { Route as _authedPSlugEpicsRouteImport } from './routes/(_authed)/p/$slug/epics'
@@ -82,6 +84,16 @@ const PublicOauthCallbackRoute = PublicOauthCallbackRouteImport.update({
 const PublicSsoRelayRoute = PublicSsoRelayRouteImport.update({
   id: '/_public/sso/relay',
   path: '/sso/relay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicWhatsNewIndexRoute = PublicWhatsNewIndexRouteImport.update({
+  id: '/_public/whats-new/',
+  path: '/whats-new/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicWhatsNewVersionRoute = PublicWhatsNewVersionRouteImport.update({
+  id: '/_public/whats-new/$version',
+  path: '/whats-new/$version',
   getParentRoute: () => rootRouteImport,
 } as any)
 const _authedPSlugIndexRoute = _authedPSlugIndexRouteImport.update({
@@ -244,9 +256,11 @@ export interface FileRoutesByFullPath {
   '/auth/dev-token': typeof PublicAuthDevTokenRoute
   '/oauth/callback': typeof PublicOauthCallbackRoute
   '/sso/relay': typeof PublicSsoRelayRoute
+  '/whats-new/$version': typeof PublicWhatsNewVersionRoute
   '/account/': typeof _authedAccountIndexRoute
   '/tasks/': typeof _authedTasksIndexRoute
   '/login/': typeof PublicLoginIndexRoute
+  '/whats-new/': typeof PublicWhatsNewIndexRoute
   '/projects/$slug/settings': typeof _authedProjectsSlugSettingsRouteRouteWithChildren
   '/p/$slug/backlog': typeof _authedPSlugBacklogRoute
   '/p/$slug/epics': typeof _authedPSlugEpicsRoute
@@ -280,9 +294,11 @@ export interface FileRoutesByTo {
   '/auth/dev-token': typeof PublicAuthDevTokenRoute
   '/oauth/callback': typeof PublicOauthCallbackRoute
   '/sso/relay': typeof PublicSsoRelayRoute
+  '/whats-new/$version': typeof PublicWhatsNewVersionRoute
   '/account': typeof _authedAccountIndexRoute
   '/tasks': typeof _authedTasksIndexRoute
   '/login': typeof PublicLoginIndexRoute
+  '/whats-new': typeof PublicWhatsNewIndexRoute
   '/p/$slug/backlog': typeof _authedPSlugBacklogRoute
   '/p/$slug/epics': typeof _authedPSlugEpicsRoute
   '/p/$slug/members': typeof _authedPSlugMembersRoute
@@ -317,9 +333,11 @@ export interface FileRoutesById {
   '/_public/auth/dev-token': typeof PublicAuthDevTokenRoute
   '/_public/oauth/callback': typeof PublicOauthCallbackRoute
   '/_public/sso/relay': typeof PublicSsoRelayRoute
+  '/_public/whats-new/$version': typeof PublicWhatsNewVersionRoute
   '/(_authed)/account/': typeof _authedAccountIndexRoute
   '/(_authed)/tasks/': typeof _authedTasksIndexRoute
   '/_public/login/': typeof PublicLoginIndexRoute
+  '/_public/whats-new/': typeof PublicWhatsNewIndexRoute
   '/(_authed)/projects/$slug/settings': typeof _authedProjectsSlugSettingsRouteRouteWithChildren
   '/(_authed)/p/$slug/backlog': typeof _authedPSlugBacklogRoute
   '/(_authed)/p/$slug/epics': typeof _authedPSlugEpicsRoute
@@ -355,9 +373,11 @@ export interface FileRouteTypes {
     | '/auth/dev-token'
     | '/oauth/callback'
     | '/sso/relay'
+    | '/whats-new/$version'
     | '/account/'
     | '/tasks/'
     | '/login/'
+    | '/whats-new/'
     | '/projects/$slug/settings'
     | '/p/$slug/backlog'
     | '/p/$slug/epics'
@@ -391,9 +411,11 @@ export interface FileRouteTypes {
     | '/auth/dev-token'
     | '/oauth/callback'
     | '/sso/relay'
+    | '/whats-new/$version'
     | '/account'
     | '/tasks'
     | '/login'
+    | '/whats-new'
     | '/p/$slug/backlog'
     | '/p/$slug/epics'
     | '/p/$slug/members'
@@ -427,9 +449,11 @@ export interface FileRouteTypes {
     | '/_public/auth/dev-token'
     | '/_public/oauth/callback'
     | '/_public/sso/relay'
+    | '/_public/whats-new/$version'
     | '/(_authed)/account/'
     | '/(_authed)/tasks/'
     | '/_public/login/'
+    | '/_public/whats-new/'
     | '/(_authed)/projects/$slug/settings'
     | '/(_authed)/p/$slug/backlog'
     | '/(_authed)/p/$slug/epics'
@@ -464,7 +488,9 @@ export interface RootRouteChildren {
   PublicAuthDevTokenRoute: typeof PublicAuthDevTokenRoute
   PublicOauthCallbackRoute: typeof PublicOauthCallbackRoute
   PublicSsoRelayRoute: typeof PublicSsoRelayRoute
+  PublicWhatsNewVersionRoute: typeof PublicWhatsNewVersionRoute
   PublicLoginIndexRoute: typeof PublicLoginIndexRoute
+  PublicWhatsNewIndexRoute: typeof PublicWhatsNewIndexRoute
   PublicAuthAtprotoCallbackRoute: typeof PublicAuthAtprotoCallbackRoute
   PublicAuthGoogleCallbackRoute: typeof PublicAuthGoogleCallbackRoute
 }
@@ -525,6 +551,20 @@ declare module '@tanstack/react-router' {
       path: '/sso/relay'
       fullPath: '/sso/relay'
       preLoaderRoute: typeof PublicSsoRelayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/whats-new/': {
+      id: '/_public/whats-new/'
+      path: '/whats-new'
+      fullPath: '/whats-new/'
+      preLoaderRoute: typeof PublicWhatsNewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/whats-new/$version': {
+      id: '/_public/whats-new/$version'
+      path: '/whats-new/$version'
+      fullPath: '/whats-new/$version'
+      preLoaderRoute: typeof PublicWhatsNewVersionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(_authed)/p/$slug/': {
@@ -810,7 +850,9 @@ const rootRouteChildren: RootRouteChildren = {
   PublicAuthDevTokenRoute: PublicAuthDevTokenRoute,
   PublicOauthCallbackRoute: PublicOauthCallbackRoute,
   PublicSsoRelayRoute: PublicSsoRelayRoute,
+  PublicWhatsNewVersionRoute: PublicWhatsNewVersionRoute,
   PublicLoginIndexRoute: PublicLoginIndexRoute,
+  PublicWhatsNewIndexRoute: PublicWhatsNewIndexRoute,
   PublicAuthAtprotoCallbackRoute: PublicAuthAtprotoCallbackRoute,
   PublicAuthGoogleCallbackRoute: PublicAuthGoogleCallbackRoute,
 }
