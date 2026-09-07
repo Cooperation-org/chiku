@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+import { useSearch } from "@tanstack/react-router"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -9,6 +10,7 @@ import {
   Clock,
   Copy,
   Download,
+  Link2,
   OctagonAlert,
   Pencil,
   Share2,
@@ -17,7 +19,6 @@ import {
 } from "lucide-react"
 import type { Attachment, HistoryEntry, Project, UserStory, UserStoryStatus } from "@/lib/api/types"
 import { getUserStory, updateUserStory } from "@/lib/api/userstories"
-import { getStoryComments } from "@/lib/api/comments"
 import { getProject } from "@/lib/api/projects"
 import { pointsPatch, storyPointId } from "@/lib/api/points"
 import {
@@ -49,6 +50,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useUpdateStory } from "@/lib/queries/stories"
+import {
+  useComments,
+  useDeleteStoryComment,
+  useEditStoryComment,
+  useUndeleteStoryComment,
+} from "@/lib/queries/comments"
+import { qk, queryClient } from "@/lib/query"
+import { cn } from "cn"
 import { StoryStatusSelect } from "@/components/inputs/story-status-select"
 import { AssigneeSelect } from "@/components/inputs/assignee-select"
 import { PointsSelect } from "@/components/inputs/points-select"
@@ -77,6 +86,26 @@ function formatRelative(dateStr: string): string {
   return date.toLocaleDateString()
 }
 
+/** Clipboard write with a legacy fallback for non-secure contexts. */
+async function copyToClipboard(text: string, successMessage: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success(successMessage)
+  } catch {
+    const ta = document.createElement("textarea")
+    ta.value = text
+    document.body.appendChild(ta)
+    ta.select()
+    try {
+      document.execCommand("copy")
+      toast.success(successMessage)
+    } catch {
+      toast.error("Could not copy link")
+    }
+    ta.remove()
+  }
+}
+
 export function IssueModal({ story, statuses, members, onClose, onUpdate, onDelete, onNavigateRef }: IssueModalProps) {
   const [fullStory, setFullStory] = useState<UserStory>(story)
   const [project, setProject] = useState<Project | null>(null)
@@ -90,8 +119,9 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const [comments, setComments] = useState<HistoryEntry[]>([])
-  const [commentsLoaded, setCommentsLoaded] = useState(false)
+  const [pendingComments, setPendingComments] = useState<HistoryEntry[]>([])
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editCommentText, setEditCommentText] = useState("")
   const [newComment, setNewComment] = useState("")
   const [isPostingComment, setIsPostingComment] = useState(false)
   const [commentError, setCommentError] = useState("")
@@ -109,8 +139,25 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   // Story writes (field saves, comments) go through the query mutation layer
   // so they register with the sync indicator and query inspector.
   const updateStory = useUpdateStory(fullStory.project)
+  const { data: comments, isLoading: commentsLoading } = useComments(story.id)
+  const editCommentMutation = useEditStoryComment(story.id)
+  const deleteCommentMutation = useDeleteStoryComment(story.id)
+  const undeleteCommentMutation = useUndeleteStoryComment(story.id)
   const breadcrumbEl = useToolbarSlots((s) => s.breadcrumbEl)
   const actionsEl = useToolbarSlots((s) => s.actionsEl)
+
+  // Deep link support: ?comment=<history entry id> scrolls to and highlights
+  // that comment. (DOM scroll is the sanctioned external-sync effect.)
+  const search = useSearch({ strict: false }) as { comment?: number }
+  const highlightId = search?.comment != null ? String(search.comment) : null
+  const commentsResolved = comments !== undefined
+
+  useEffect(() => {
+    if (highlightId == null || !commentsResolved) return
+    const el =
+      document.getElementById(`comment-${highlightId}`) ?? document.getElementById("comments-section")
+    el?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [highlightId, commentsResolved])
 
   useEffect(() => {
     let cancelled = false
@@ -131,14 +178,6 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
         console.error("Failed to load project:", err)
       }
       try {
-        const loaded = await getStoryComments(story.id)
-        if (!cancelled) setComments(loaded)
-      } catch (err) {
-        console.error("Failed to load comments:", err)
-      } finally {
-        if (!cancelled) setCommentsLoaded(true)
-      }
-      try {
         const loaded = await getStoryAttachments(story.id, story.project)
         if (!cancelled) setAttachments(loaded)
       } catch (err) {
@@ -151,18 +190,19 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story.id])
 
-  // Esc cascade: move dropdown/editing handled per-field; Esc closes last.
+  // Esc cascade: comment edit → field editing → confirm dialog → close.
   useEffect(() => {
     function onKeydown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        if (editingField) setEditingField(null)
+        if (editingCommentId) setEditingCommentId(null)
+        else if (editingField) setEditingField(null)
         else if (showDeleteConfirm) setShowDeleteConfirm(false)
         else onClose()
       }
     }
     window.addEventListener("keydown", onKeydown)
     return () => window.removeEventListener("keydown", onKeydown)
-  }, [editingField, showDeleteConfirm, onClose])
+  }, [editingCommentId, editingField, showDeleteConfirm, onClose])
 
   async function saveField(field: string, data: Record<string, unknown>) {
     const prev = { ...fullStory }
@@ -281,14 +321,14 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     updateStory.mutate(
       { id: fullStory.id, data: { comment: text, version: fullStory.version } },
       {
-        onSuccess: async (updated) => {
+        onSuccess: (updated) => {
           setFullStory(updated)
           onUpdate(updated)
           setNewComment("")
 
           // Taiga's history feed lags a beat behind the write, so the comment
-          // is shown from what was posted, and the server's copy replaces it
-          // once the feed catches up.
+          // shows from the optimistic pending list; the invalidated comments
+          // query replaces it with the server's entry as soon as it lands.
           const pending: HistoryEntry = {
             id: `pending-${updated.version}`,
             user: {
@@ -306,10 +346,8 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
             type: 1,
             values_diff: {},
           } as unknown as HistoryEntry
-          setComments((old) => [...old, pending])
-
-          const fresh = await getStoryComments(story.id)
-          if (fresh.some((c) => c.comment.trim() === text)) setComments(fresh)
+          setPendingComments((old) => [...old, pending])
+          queryClient.invalidateQueries({ queryKey: qk.comments(story.id) })
         },
         onError: (err) => {
           console.error("Failed to post comment:", err)
@@ -318,6 +356,67 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
         onSettled: () => setIsPostingComment(false),
       },
     )
+  }
+
+  // --- Comment actions (edit / delete / restore / permalink) ---
+
+  const allComments = [
+    ...(comments ?? []),
+    ...pendingComments.filter(
+      (p) =>
+        !(comments ?? []).some(
+          (c) => c.comment.trim() === p.comment.trim() && c.user.pk === p.user.pk,
+        ),
+    ),
+  ]
+
+  function startEditComment(entry: HistoryEntry) {
+    setEditingCommentId(String(entry.id))
+    setEditCommentText(entry.comment)
+  }
+
+  function saveEditComment() {
+    if (!editingCommentId) return
+    const trimmed = editCommentText.trim()
+    if (!trimmed) return
+    editCommentMutation.mutate(
+      { entryId: editingCommentId, comment: trimmed },
+      {
+        onError: (err) => toast.error(`Failed to edit comment: ${(err as Error).message}`),
+      },
+    )
+    setEditingCommentId(null)
+  }
+
+  function handleDeleteComment(entry: HistoryEntry) {
+    const entryId = String(entry.id)
+    deleteCommentMutation.mutate(
+      { entryId },
+      { onError: (err) => toast.error(`Failed to delete comment: ${(err as Error).message}`) },
+    )
+    toast("Comment deleted", {
+      action: {
+        label: "Undo",
+        onClick: () =>
+          undeleteCommentMutation.mutate(
+            { entryId },
+            { onError: (err) => toast.error(`Failed to restore comment: ${(err as Error).message}`) },
+          ),
+      },
+    })
+  }
+
+  function handleRestoreComment(entry: HistoryEntry) {
+    undeleteCommentMutation.mutate(
+      { entryId: String(entry.id) },
+      { onError: (err) => toast.error(`Failed to restore comment: ${(err as Error).message}`) },
+    )
+  }
+
+  async function copyCommentLink(entry: HistoryEntry) {
+    const url = new URL(window.location.href)
+    url.searchParams.set("comment", String(entry.id))
+    await copyToClipboard(url.toString(), "Comment link copied to clipboard")
   }
 
   // --- Attachments ---
@@ -377,24 +476,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   }
 
   async function handleShare() {
-    const url = window.location.href
-    try {
-      await navigator.clipboard.writeText(url)
-      toast.success("Link copied to clipboard")
-    } catch {
-      // Clipboard API needs a secure context — fall back to execCommand.
-      const ta = document.createElement("textarea")
-      ta.value = url
-      document.body.appendChild(ta)
-      ta.select()
-      try {
-        document.execCommand("copy")
-        toast.success("Link copied to clipboard")
-      } catch {
-        toast.error("Could not copy link")
-      }
-      ta.remove()
-    }
+    await copyToClipboard(window.location.href, "Link copied to clipboard")
   }
 
   async function handleDuplicate() {
@@ -438,7 +520,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   const statusInfo = getStatus(fullStory.status)
 
   return (
-    <div className="bg-background flex h-full flex-col">
+    <div className="flex h-full flex-col">
       {/* Header groups live in the app toolbar via portals — back/ref/nav/status
           after the sidebar toggle, actions at the far right. */}
       {breadcrumbEl &&
@@ -968,28 +1050,152 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
             {commentError && (
               <p className="text-destructive mb-4 text-sm">{commentError} â€” nothing you typed was lost.</p>
             )}
-            {!commentsLoaded ? (
-              <p className="text-muted-foreground text-sm">Loading comments...</p>
-            ) : comments.length === 0 ? (
-              <p className="text-muted-foreground text-sm italic">No comments yet</p>
-            ) : (
-              <div className="space-y-3">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <Avatar name={comment.user.name} photo={comment.user.photo} size="sm" className="mt-0.5" />
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-0.5 flex items-center gap-2">
-                        <span className="text-sm font-medium">{comment.user.name}</span>
-                        <span className="text-muted-foreground text-xs">{formatRelative(comment.created_at)}</span>
+            {!commentsLoading ? (
+              allComments.length === 0 ? (
+                <p className="text-muted-foreground text-sm italic">No comments yet</p>
+              ) : (
+                <div id="comments-section" className="space-y-3">
+                  {allComments.map((comment) => {
+                    const commentId = String(comment.id)
+                    const isPending = commentId.startsWith("pending-")
+                    const isDeleted = comment.delete_comment_date != null
+                    const isMine = comment.user.pk === me?.id
+                    const isEditingThis = editingCommentId === commentId
+                    const isHighlighted = highlightId != null && commentId === highlightId
+                    const deleter = comment.delete_comment_user as { pk?: number; name?: string } | null
+                    const canRestore = isDeleted && (deleter?.pk === me?.id || isMine)
+
+                    return (
+                      <div
+                        key={commentId}
+                        id={isPending ? undefined : `comment-${commentId}`}
+                        className={cn(
+                          "group -mx-2 flex gap-3 rounded-md p-2 transition-colors",
+                          isHighlighted && "bg-primary/5 ring-ring/40 ring-2",
+                        )}
+                      >
+                        <Avatar name={comment.user.name} photo={comment.user.photo} size="sm" className="mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-0.5 flex items-center gap-2">
+                            <span className="text-sm font-medium">{comment.user.name}</span>
+                            <span className="text-muted-foreground text-xs">{formatRelative(comment.created_at)}</span>
+                            {comment.edit_comment_date && !isDeleted && (
+                              <span className="text-muted-foreground/70 text-xs">(edited)</span>
+                            )}
+
+                            <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                              {!isPending && !isDeleted && (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        onClick={() => copyCommentLink(comment)}
+                                        aria-label="Copy comment link"
+                                      />
+                                    }
+                                  >
+                                    <Link2 className="h-3.5 w-3.5" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Copy link</TooltipContent>
+                                </Tooltip>
+                              )}
+                              {isMine && !isPending && !isDeleted && (
+                                <>
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={
+                                        <Button
+                                          variant="ghost"
+                                          size="icon-sm"
+                                          onClick={() => startEditComment(comment)}
+                                          aria-label="Edit comment"
+                                        />
+                                      }
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">Edit</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={
+                                        <Button
+                                          variant="ghost"
+                                          size="icon-sm"
+                                          onClick={() => handleDeleteComment(comment)}
+                                          className="hover:text-destructive"
+                                          aria-label="Delete comment"
+                                        />
+                                      }
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">Delete</TooltipContent>
+                                  </Tooltip>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {isDeleted ? (
+                            <div className="flex items-center gap-3">
+                              <p className="text-muted-foreground text-sm italic">
+                                Comment deleted
+                                {deleter?.name ? ` by ${deleter.name}` : ""}
+                                {comment.delete_comment_date ? ` · ${formatRelative(comment.delete_comment_date)}` : ""}
+                              </p>
+                              {canRestore && (
+                                <Button variant="ghost" size="sm" onClick={() => handleRestoreComment(comment)}>
+                                  Restore
+                                </Button>
+                              )}
+                            </div>
+                          ) : isEditingThis ? (
+                            <div className="space-y-2">
+                              <MarkdownEditor
+                                value={editCommentText}
+                                onChange={setEditCommentText}
+                                rows={4}
+                                ariaLabel="Edit comment"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEditComment()
+                                }}
+                              />
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => setEditingCommentId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={saveEditComment}
+                                  disabled={!editCommentText.trim()}
+                                >
+                                  Save
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <Markdown
+                              source={comment.comment}
+                              className="text-muted-foreground break-words [&>*:first-child]:mt-0"
+                            />
+                          )}
+                        </div>
                       </div>
-                      <Markdown
-                        source={comment.comment}
-                        className="text-muted-foreground break-words [&>*:first-child]:mt-0"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    )
+                  })}
+                </div>
+              )
+            ) : (
+              <p className="text-muted-foreground text-sm">Loading comments...</p>
             )}
           </div>
 

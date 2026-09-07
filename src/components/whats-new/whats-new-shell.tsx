@@ -96,7 +96,7 @@ export function WhatsNewShell({
   children: ReactNode
 }) {
   return (
-    <div className="bg-background min-h-dvh">
+    <div className="min-h-dvh">
       <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-10 lg:py-14">
         <div className="grid gap-10 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-14">
           <aside className="hidden lg:block">

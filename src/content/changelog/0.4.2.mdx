@@ -1,0 +1,21 @@
+---
+version: "0.4.2"
+date: "2026-09-07"
+title: "Keyboard-first navigation, real settings, and a faster cache"
+---
+
+The speed release. Every corner of the app is now reachable without touching
+the mouse, project settings are complete and per-project, and the cache works
+harder so pages paint before the network answers.
+
+### Added
+
+- **Command palette** — press `⌘K` (`Ctrl+K` on Windows/Linux) anywhere to search stories and epics, jump to any view, switch projects, toggle the theme, or open settings. Prefer pure navigation? Type `V` then `C` to open the palette already scoped to links, views, and settings.
+- **Project switching from the keyboard** — tap `⌘/Ctrl+Shift+P` for the project list, press a number to jump instantly, or hold the combo and press `P` to cycle through projects and release to confirm — Alt-Tab style.
+- **Keyboard shortcut cheat sheet** — press `?` (or pick "Keyboard shortcuts" inside the palette) to see every shortcut with the right key symbols for your platform.
+- **Project settings hub** — every project now has proper settings: rename and describe it in **General**, set its logo in **Brand**, toggle modules (Board, Backlog, Epics, Issues, Wiki, Contact) and public/private visibility in **Modules & visibility**, choose an email level in **Notifications**, store VCS secrets in **Integrations**, and POST every project event to your own service with **Webhooks** — including test deliveries and logs.
+- **Data & ownership tools** — back up, duplicate, or save a project as a template from **Data**; leave the project or transfer ownership to another admin (confirmed by email) from **Ownership**; and archive or delete from a guarded **Danger zone** that only members with delete rights can reach.
+
+### Changed
+
+- **Cache optimization** — the app boots straight from the last known cache and refetches in the background, so revisits paint without a loading flash. Cached data survives restarts for up to a week, per-keystroke search results are kept out of local storage to stay lean, story updates apply optimistically and roll back on failure, and nothing refetches just because you refocused the window.

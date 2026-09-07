@@ -2,13 +2,11 @@ import type { ComponentType } from "react"
 import { useMatches } from "@tanstack/react-router"
 import { AnimatePresence, motion } from "motion/react"
 import { Moon, Sun } from "lucide-react"
-import { SearchField } from "@/components/layout/search-field"
-import { SearchPalette } from "@/components/board/search-palette"
+import { CommandPaletteTrigger } from "@/components/layout/command-palette-trigger"
 import { SyncStatus } from "@/components/layout/sync-status"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useToolbarStore } from "@/lib/stores/toolbar"
 import { useTheme } from "@/lib/stores/theme"
 
 declare module "@tanstack/react-router" {
@@ -23,10 +21,8 @@ declare module "@tanstack/react-router" {
 /** Shared spring so every toolbar item glides on the same physics. */
 const toolbarSpring = { type: "spring", stiffness: 500, damping: 38 } as const
 
-/** The single app bar: trigger · search (+ palette) · theme · route controls. */
-export function AppToolbar({ slug }: { slug: string | null }) {
-  const search = useToolbarStore((s) => s.search)
-  const setSearch = useToolbarStore((s) => s.setSearch)
+/** The single app bar: trigger · command palette button · theme · route controls. */
+export function AppToolbar() {
   const { theme, toggle } = useTheme()
 
   // Leaf match wins; matches only reflect committed navigations, so hovering
@@ -59,13 +55,7 @@ export function AppToolbar({ slug }: { slug: string | null }) {
       </div>
 
       <motion.div layout transition={toolbarSpring} className="relative max-w-xl flex-1">
-        <SearchField
-          value={search}
-          onChange={setSearch}
-          placeholder="Search or go to…"
-          className="w-full"
-        />
-        <SearchPalette slug={slug ?? ""} text={search} />
+        <CommandPaletteTrigger />
       </motion.div>
 
       <motion.div layout transition={toolbarSpring} className="ml-auto flex shrink-0 items-center gap-1">

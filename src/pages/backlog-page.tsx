@@ -92,7 +92,7 @@ export default function BacklogPage({ slug }: BacklogPageProps) {
           ) : (
             <PageTransition key="backlog">
               <table className="w-full">
-                <thead className="sticky top-0 border-b bg-background/95 backdrop-blur">
+                <thead className="sticky top-0 border-b bg-background/70 backdrop-blur">
                   <tr className="text-left text-xs tracking-wider text-muted-foreground uppercase">
                     <th className="w-16 px-6 py-3">Ref</th>
                     <th className="px-6 py-3">Story</th>
@@ -212,7 +212,7 @@ export default function BacklogPage({ slug }: BacklogPageProps) {
       </div>
 
       {sorted.length > 0 && (
-        <footer className="flex items-center justify-between border-t bg-background/95 px-6 py-3 text-sm">
+        <footer className="flex items-center justify-between border-t bg-background/70 px-6 py-3 text-sm">
           <span className="text-muted-foreground">
             {sorted.length} total stories
           </span>

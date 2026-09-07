@@ -17,24 +17,35 @@ describe("compareVersions", () => {
 })
 
 describe("changelog entries", () => {
-  it("loads the 0.4.0 entry newest-first", () => {
-    expect(changelogEntries.length).toBeGreaterThan(0)
-    expect(changelogEntries[0]?.version).toBe("0.4.0")
+  it("loads entries newest-first with valid frontmatter", () => {
+    expect(changelogEntries.length).toBeGreaterThan(1)
+    for (let i = 1; i < changelogEntries.length; i++) {
+      expect(compareVersions(changelogEntries[i - 1]!.version, changelogEntries[i]!.version)).toBeGreaterThan(0)
+    }
+    expect(changelogEntries[0]?.version).toBe("0.4.2")
     expect(changelogEntries[0]?.date).toBe("2026-09-07")
-    expect(changelogEntries[0]?.title).toBeTruthy()
-    expect(typeof changelogEntries[0]?.Component).toBe("function")
+    for (const entry of changelogEntries) {
+      expect(entry.title).toBeTruthy()
+      expect(typeof entry.Component).toBe("function")
+    }
   })
 
   it("exposes the latest version and lookup", () => {
     expect(latestVersion()).toBe(changelogEntries[0]?.version)
+    expect(getChangelogEntry("0.4.2")).toBeDefined()
     expect(getChangelogEntry("0.4.0")).toBeDefined()
     expect(getChangelogEntry("9.9.9")).toBeUndefined()
   })
 
   it("provides neighbors for navigation", () => {
-    const single = changelogNeighbors("0.4.0")
-    expect(single.next).toBeNull()
-    expect(single.prev).toBeNull()
+    const newest = changelogNeighbors("0.4.2")
+    expect(newest.next).toBeNull()
+    expect(newest.prev).toBeDefined()
+
+    const oldest = changelogNeighbors("0.4.0")
+    expect(oldest.prev).toBeNull()
+    expect(oldest.next).toBeDefined()
+
     expect(changelogNeighbors("nope")).toEqual({ prev: null, next: null })
   })
 })

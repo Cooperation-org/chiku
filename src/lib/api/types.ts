@@ -282,10 +282,11 @@ export interface HistoryEntry {
 	created_at: string;
 	comment: string;
 	comment_html: string;
-	delete_comment_date: string | null;
-	delete_comment_user: object | null;
-	type: number;
-	values_diff: Record<string, unknown>;
+delete_comment_date: string | null;
+delete_comment_user: object | null;
+edit_comment_date?: string | null;
+type: number;
+values_diff: Record<string, unknown>;
 }
 
 export interface AuthResponse {

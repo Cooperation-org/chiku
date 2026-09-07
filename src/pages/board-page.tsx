@@ -15,14 +15,15 @@ import { EMPTY_FILTER, filterStories } from "@/lib/filters/stories"
 import { qk, queryClient } from "@/lib/query"
 import { viewEnabled } from "@/lib/project-views"
 import { useBoardStore } from "@/lib/stores/board"
-import { useToolbarStore } from "@/lib/stores/toolbar"
 import type { UserStory } from "@/lib/api/types"
 
 interface BoardPageProps {
   slug: string
+  /** Client-side text filter, carried by the board route's ?q= param. */
+  q?: string
 }
 
-export default function BoardPage({ slug }: BoardPageProps) {
+export default function BoardPage({ slug, q = "" }: BoardPageProps) {
   const navigate = useNavigate()
   const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
@@ -34,11 +35,10 @@ export default function BoardPage({ slug }: BoardPageProps) {
 
   const [showCreate, setShowCreate] = useState(false)
   const [createStatusId, setCreateStatusId] = useState<number | null>(null)
-  const search = useToolbarStore((s) => s.search)
   const columnEditorOpen = useBoardStore((s) => s.columnEditorOpen)
   const setColumnEditorOpen = useBoardStore((s) => s.setColumnEditorOpen)
 
-  const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q: search })
+  const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q })
 
   function handleMoveStory(story: UserStory, newStatusId: number) {
     const statusName = statuses.find((s) => s.id === newStatusId)?.name ?? "another column"

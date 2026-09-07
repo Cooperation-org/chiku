@@ -1,4 +1,4 @@
-﻿import { useState } from "react"
+﻿import { useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   Check,
@@ -44,6 +44,7 @@ import { createStatus, deleteStatus, getStatuses } from "@/lib/api/statuses"
 import { createProject } from "@/lib/api/projects"
 import { qk, queryClient } from "@/lib/query"
 import { useProjectStore } from "@/lib/stores/project"
+import { useCreateProjectStore } from "@/lib/stores/create-project"
 import { useAuth } from "@/lib/stores/auth"
 import type { Project } from "@/lib/api/types"
 
@@ -63,11 +64,21 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
   const setSelectedSlug = useProjectStore((s) => s.setSelectedSlug)
   const { data: projects, isPending: projectsLoading } = useProjects()
 
-  const [showCreate, setShowCreate] = useState(false)
+  // Dialog state lives in a store so the command palette can open it too.
+  const showCreate = useCreateProjectStore((s) => s.open)
+  const setShowCreate = useCreateProjectStore((s) => s.setOpen)
   const [newName, setNewName] = useState("")
   const [newDesc, setNewDesc] = useState("")
   const [cloneFrom, setCloneFrom] = useState("none")
   const [creating, setCreating] = useState(false)
+
+  useEffect(() => {
+    if (showCreate) {
+      setNewName("")
+      setNewDesc("")
+      setCloneFrom("none")
+    }
+  }, [showCreate])
 
   const activeProjects = (projects ?? []).filter((p) => !isArchived(p))
   const current = activeProjects.find((p) => p.slug === slug)
@@ -214,9 +225,6 @@ export function ProjectSwitcher({ slug }: ProjectSwitcherProps) {
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
-                setNewName("")
-                setNewDesc("")
-                setCloneFrom("none")
                 setShowCreate(true)
               }}
             >

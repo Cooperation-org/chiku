@@ -1,6 +1,10 @@
 import { useParams } from "@tanstack/react-router"
 import { CohortNav } from "@/components/app/cohort-nav"
+import { ShortcutsHelpDialog } from "@/components/app/shortcut-help-dialog"
+import { ProjectHoldPicker } from "@/components/app/project-hold-picker"
 import { AppToolbar } from "@/components/layout/app-toolbar"
+import { AppHotkeys } from "@/components/layout/hotkeys"
+import { CommandPalette } from "@/components/layout/command-palette"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import {
   SidebarInset,
@@ -26,19 +30,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const org = urlSlug ?? selectedSlug
 
   return (
-    <TooltipProvider>
-      <div className="flex h-dvh flex-col overflow-hidden">
-        {/* The cohort top bar is a static background element — never modified. */}
-        <CohortNav org={org} />
+    <AppHotkeys>
+      <TooltipProvider>
+        <div className="flex h-dvh flex-col overflow-hidden">
+          {/* The cohort top bar is a static background element — never modified. */}
+          <CohortNav org={org} />
 
-        <SidebarProvider open={expanded} onOpenChange={setExpanded} className="min-h-0 flex-1">
-          <AppSidebar />
-          <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
-            <AppToolbar slug={org} />
-            <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
-          </SidebarInset>
-        </SidebarProvider>
-      </div>
-    </TooltipProvider>
+          <SidebarProvider open={expanded} onOpenChange={setExpanded} className="min-h-0 flex-1">
+            <AppSidebar />
+            <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
+              <AppToolbar />
+              <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
+            </SidebarInset>
+          </SidebarProvider>
+
+          <CommandPalette />
+          <ProjectHoldPicker />
+          <ShortcutsHelpDialog />
+        </div>
+      </TooltipProvider>
+    </AppHotkeys>
   )
 }
