@@ -5,7 +5,8 @@ import {
 } from "@/components/table/registry-chrome"
 import { BrailleLoader } from "@/components/ui/braille-loader"
 import { Button } from "@/components/ui/button"
-import type { Membership, Project } from "@/lib/api/memberships"
+import type { Membership } from "@/lib/api/memberships"
+import type { Project } from "@/lib/api/types"
 import { useMemberships, useRemoveMembership } from "@/lib/queries/memberships"
 import { appTableFeatures, filterFn, MEMBERS_PAGE_SIZE } from "@/lib/table"
 import {

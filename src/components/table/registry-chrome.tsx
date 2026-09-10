@@ -1,4 +1,4 @@
-import { FlexRender, type Header } from "@tanstack/react-table"
+import { FlexRender, type Header, type RowData } from "@tanstack/react-table"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { appTableFeatures } from "@/lib/table"
@@ -13,7 +13,7 @@ import { cn } from "cn"
  */
 
 /** Th cell — hairline-ruled; sortable columns get a mono button with ↑/↓. */
-export function RegistryTh<TData>({
+export function RegistryTh<TData extends RowData>({
   header,
 }: {
   header: Header<typeof appTableFeatures, TData>

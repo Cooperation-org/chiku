@@ -17,8 +17,12 @@ export function BacklogFilterControl() {
       <Input
         value={search.q ?? ""}
         onChange={(e) =>
+          // The toolbar control is route-agnostic (mounted via staticData),
+          // so the route search shape is unknown here and the reducer must
+          // satisfy the `never` fallback TanStack Router types it as.
           navigate({
-            search: (prev) => ({ ...prev, q: e.target.value || undefined }),
+            search: (prev) =>
+              ({ ...(prev as Record<string, unknown>), q: e.target.value || undefined }) as never,
             replace: true,
           })
         }
