@@ -2,11 +2,11 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <!-- Default brand: the Taiga favicon. The workersvc leaf only on the
-         workers.vc deployment — this bundle is shared, so every other host
-         (linkedtrust.us, localhost, …) keeps the default. DNS-safe match:
-         workers.vc and *.workers.vc only. -->
-    <link rel="icon" href="/favicon.ico" />
+    <!-- Baked at serve/build time by the brand-meta plugin in vite.config.ts:
+         title, description, favicon, and the og:/twitter: tags resolved from
+         VITE_BRAND_* env (shipped defaults when unset). See README
+         "Branding your deployment". -->
+    <!--brand-meta-->
     <script>
       // Restore the persisted theme before first paint — the html tag ships
       // with class="dark" (the default), so a stored "light" must remove it
@@ -22,27 +22,84 @@
     </script>
     <script>
       (function () {
-        // %VITE_BRAND% is replaced by Vite at serve/build time; when unset it
-        // stays a literal "%VITE_BRAND%" (or empty), which never equals a brand
-        // id, so production hostname detection is unaffected. In dev it lets
-        // VITE_BRAND=workersvc force the brand on localhost before first paint.
-        var isWorkersVc =
-          "%VITE_BRAND%" === "workersvc" || /(^|\.)workers\.vc$/.test(location.hostname);
-        if (!isWorkersVc) return;
-        document.documentElement.dataset.brand = "workersvc";
-        var svg = document.createElement("link");
-        svg.rel = "icon";
-        svg.type = "image/svg+xml";
-        svg.href = "/favicon.svg";
-        document.head.appendChild(svg);
-        var ico = document.querySelector('link[rel="icon"]:not([type])');
-        if (ico) ico.href = "/favicon-workersvc.ico";
-        var host = location.hostname.replace(/\..*/, "");
-        document.title = host + " \u00b7 workers.vc";
+        // Everything the baked head already does statically (README
+        // "Branding your deployment"); this script only handles what baking
+        // cannot: the brand accent colors and CSS data attribute, and the
+        // shared-bundle case where env config is baked but this host is NOT
+        // in VITE_BRAND_HOSTS and the deployment's default look must win.
+        // Vite replaces %VITE_*% at serve/build time; an unfilled placeholder
+        // stays a literal "%…%", which is how an unset var is detected.
+        function env(v) {
+          return v && !/^%.*%$/.test(v.trim()) ? v.trim() : null;
+        }
+        function hostMatches(hostname, suffixes) {
+          for (var i = 0; i < suffixes.length; i++) {
+            var s = suffixes[i];
+            if (hostname === s || hostname.slice(-(s.length + 1)) === "." + s) return true;
+          }
+          return false;
+        }
+        var force = env("%VITE_BRAND%") === "1";
+        var rawName = env("%VITE_BRAND_NAME%");
+        var rawAccent = env("%VITE_BRAND_NAME_ACCENT%");
+        var rawLogo = env("%VITE_BRAND_LOGO%");
+        var rawFavicon = env("%VITE_BRAND_FAVICON%");
+        var rawOg = env("%VITE_BRAND_OG_IMAGE%");
+        var primary = env("%VITE_BRAND_PRIMARY%");
+        var primaryDark = env("%VITE_BRAND_PRIMARY_DARK%");
+        var primaryFg = env("%VITE_BRAND_PRIMARY_FG%") || "oklch(0.985 0 0)";
+        var primaryDarkFg = env("%VITE_BRAND_PRIMARY_DARK_FG%")
+          || "oklch(0.145 0 0)";
+        var hasConfig = Boolean(
+          rawName || rawAccent || rawLogo || rawFavicon || rawOg || primary
+        );
+        var suffixes = env("%VITE_BRAND_HOSTS%");
+        suffixes = suffixes
+          ? suffixes.split(",").filter(Boolean)
+          : [];
+        var hosts = suffixes.some(function (s) {
+          return hostMatches(location.hostname, s);
+        });
+        // Same activation rule as lib/brand.ts: dev force flag, hostname
+        // match for shared bundles, or plain per-deployment env config.
+        var active = force || hosts || (hasConfig && suffixes.length === 0);
+
+        if (active) {
+          var root = document.documentElement;
+          root.dataset.brand = "custom";
+          var style = root.style;
+          if (primary) style.setProperty("--brand-primary", primary);
+          if (primaryDark) style.setProperty("--brand-primary-dark", primaryDark);
+          style.setProperty("--brand-primary-fg", primaryFg);
+          style.setProperty("--brand-primary-fg-dark", primaryDarkFg);
+        } else if (hasConfig) {
+          // A configured bundle served on a foreign host: the baked head
+          // carries the org's branding, so pull it back to the default —
+          // title, OG tags, and favicon (the type attribute too).
+          var title = "Chiku";
+          document.title = title;
+          var metas = {
+            "og:title": title,
+            "og:site_name": "Chiku",
+            "og:image": location.origin + "/favicon.ico",
+            "twitter:title": title,
+            "twitter:image": location.origin + "/favicon.ico",
+          };
+          for (var property in metas) {
+            var meta = document.querySelector(
+              'meta[property="' + property + '"], meta[name="' + property + '"]'
+            );
+            if (meta) meta.setAttribute("content", metas[property]);
+          }
+          var link = document.querySelector('link[rel="icon"]');
+          if (link) {
+            link.href = "/favicon.ico";
+            link.removeAttribute("type");
+          }
+        }
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TaigaLT</title>
   </head>
   <body>
     <div id="root"></div>

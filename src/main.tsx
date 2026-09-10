@@ -6,11 +6,16 @@ import { broadcastQueryClient } from "@tanstack/query-broadcast-client-experimen
 import { routeTree } from "./routeTree.gen"
 import { queryClient, queryPersistOptions } from "@/lib/query"
 import { useAuth } from "@/lib/stores/auth"
+import { applyBrand } from "@/lib/brand"
 import { PageError, PageLoading, PageNotFound } from "@/components/layout/page-state"
 import "./index.css"
 
 // Sync localStorage tokens into the store before the first route guard runs.
 useAuth.getState().init()
+
+// Re-apply the deployment brand (idempotent): the inline script in index.html
+// already did this pre-paint; this covers any path where it did not.
+applyBrand()
 
 const router = createRouter({
   routeTree,

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { brandId } from "@/lib/brand"
 
 export function CohortNav({ org }: { org?: string | null }) {
   const [mounted, setMounted] = useState(true)
@@ -8,8 +7,9 @@ export function CohortNav({ org }: { org?: string | null }) {
     const existing = document.querySelector("script[data-cohort-nav]")
     if (existing) return
     const pinned = import.meta.env.VITE_COHORT_NAV_SRC
-    const host =
-      brandId === "workersvc" ? "workers.vc" : location.hostname.split(".").slice(-2).join(".")
+    // Deployments pin the bar URL themselves (VITE_COHORT_NAV_SRC); without a
+    // pin it is conventionally served by the bare apex of this host.
+    const host = location.hostname.split(".").slice(-2).join(".")
     // Pinned value is a full script URL — use it directly, not as a hostname.
     const src = pinned || (host ? `https://${host}/static/embed/cohort-nav.js` : "")
     if (!src) {

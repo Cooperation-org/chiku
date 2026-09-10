@@ -1,0 +1,44 @@
+---
+version: "0.4.3"
+date: "2026-09-10"
+title: "Brings your own brand: name, logo, favicon, colors, titles and previews"
+---
+
+The white-label release. Chiku is now a product any org can run as its own:
+deployment branding is configured entirely through env vars in your `.env` —
+no code changes, no extra server, nothing committed.
+
+### Added
+
+- **Your org's branding in five env vars** — set `VITE_BRAND_NAME`, drop a logo and
+  favicon into `static/brand/` (gitignored, served at `/brand/…`), point
+  `VITE_BRAND_LOGO` and `VITE_BRAND_FAVICON` at them, and pick an accent with
+  `VITE_BRAND_PRIMARY` / `VITE_BRAND_PRIMARY_DARK`. The accent drives buttons,
+  focus rings, charts, and the sidebar and page glow; contrast text colors are
+  sensible defaults, tunable when needed. See README → "Branding your deployment".
+- **Brand activation that fits how you deploy** — force the brand with `VITE_BRAND=1`
+  for local preview, or let the hostname match suffixes in `VITE_BRAND_HOSTS` so one
+  shared bundle brands itself per host. Inactive deployments show the pure shipped
+  default.
+- **Brand-native titles and social previews** — every page's tab title is
+  `chiku | <app name>`, and the full `og:*` / `twitter:*` head tags are baked
+  into the served HTML from your brand config — they carry the brand even for
+  crawlers that run no JavaScript. `og:image` follows
+  `VITE_BRAND_OG_IMAGE` → logo → favicon, and `VITE_BRAND_URL` adds
+  `og:url` / `twitter:url` with absolute image URLs.
+- **No flash of the wrong look** — an inline script in `index.html` applies the
+  favicon, title, and accent colors before first paint, so the branded look is
+  there from the very first frame.
+
+### Changed
+
+- **Graceful fallbacks everywhere** — a bare clone with no brand env shows the
+  default "Chiku" name with the neutral theme and the Taiga favicon; partial
+  configuration fills only what you set. The LinkedTrust sign-in stays shared by
+  every tenant.
+- **Attribution made honest** — the login footer and empty states now say
+  "Powered by Chiku", and the empty project state derives its mark from your
+  configured name.
+
+Under the hood: the brand logic lives in `src/lib/brand.ts` (unit-tested) with a
+pre-paint mirror in `index.html`, both reading the same env contract.

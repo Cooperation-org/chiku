@@ -78,6 +78,11 @@ push to `main` triggers `.github/workflows/deploy-to-cohort.yml`, which SSHes
 to the cohort VM and runs `/opt/earnkit/bin/update-marten` (pull, build,
 publish). No manual steps.
 
+One-time setup on that VM (its `.env` and `static/brand/` are untracked, so
+they survive every pull): place the green leaf assets as
+`static/brand/favicon.svg` + `static/brand/favicon.ico` and set the brand env
+from the example in [Branding your deployment](#branding-your-deployment).
+
 ### Any Taiga server
 
 ```bash
@@ -106,6 +111,131 @@ location /api/ {
 
 The app must be served at the origin root (routes like `/projects/<slug>/board` are
 absolute); it is not designed to run under a path prefix.
+
+## Branding your deployment
+
+Chiku is a product; every deployment looks like the org that runs it. Branding is
+configured entirely through Vite env vars in your own `.env` (never committed) —
+brand name, logo, favicon and accent colors. No code changes, no server. The app's
+name is `Chiku`, the shipped default look is the plain "Chiku" name with the neutral
+theme, and the LinkedTrust sign-in flow is shared by every tenant and stays as-is.
+
+A bare clone with no brand env shows the default: "Chiku" name, Taiga
+favicon, and the neutral theme — no colored accent, no custom assets.
+
+### The convention
+
+All brand assets live in `static/brand/` — gitignored, so whatever you put there
+stays on your machines and never gets pushed. Vite copies `static/` into the
+build verbatim, so `static/brand/logo.svg` is served at `/brand/logo.svg` and the
+untracked file rides along in your deployed `build/`.
+
+```
+static/
+  favicon.ico    # tracked — shipped default (Taiga), the fallback for everyone
+  logo.svg       # tracked — LinkedTrust mark (shared sign-in; not brand config)
+  brand/         # gitignored — YOUR deployment's assets go here
+```
+
+With no assets present you get the defaults, so partial configuration is fine:
+
+| What | Fallback chain |
+|------|----------------|
+| Favicon | `VITE_BRAND_FAVICON` → `/favicon.ico` |
+| App logo (loading / error / not-found states) | `VITE_BRAND_LOGO` → favicon → `/favicon.ico` |
+| App name | `VITE_BRAND_NAME` → `Chiku` (plain; add `VITE_BRAND_NAME_ACCENT` for a colored wordmark tail) |
+| Accent colors | `VITE_BRAND_PRIMARY`/`_DARK` → the neutral theme |
+| Page title & OG tags | `"chiku | " + app name`, always — og:image falls back to the logo, then the favicon |
+
+External URLs work too (`VITE_BRAND_LOGO=https://cdn.yourorg.com/logo.svg`) — handy
+if you build from a fresh clone in CI, where gitignored files won't exist; either
+inject the assets into the CI workspace or use external URLs.
+
+### Activation
+
+The branding applies when:
+
+1. `VITE_BRAND=1` — force it on (handy for previewing on localhost),
+2. the hostname matches a suffix in `VITE_BRAND_HOSTS` — for one shared bundle
+   serving several hosts, or
+3. any brand var is set **and** `VITE_BRAND_HOSTS` is unset — the normal
+   single-domain deployment.
+
+Without activation, the bundle shows the pure default everywhere.
+
+### Titles and social previews
+
+The tab title and the `og:*` / `twitter:*` meta tags are brand-native: every
+page's title is `chiku | <app name>` — e.g. `chiku | workers.vc` on that
+deployment — with the unbranded default simply titled `Chiku` (no redundant
+"chiku | chiku" prefix). These tags are **baked into the served HTML at
+HTML at build/dev time** by a small Vite plugin (`vite.config.ts`) that resolves
+the `VITE_BRAND_*` env and rewrites the `<head>` — that's what makes them work
+for social crawlers (Facebook, LinkedIn, X, Discord, Slack, Bluesky…), which
+fetch the raw HTML and run no JavaScript. Set `VITE_BRAND_URL` to your
+deployment's public origin and the plugin also emits `og:url` / `twitter:url`
+and absolute preview-image URLs; unset, those tags are simply omitted.
+
+The inline pre-paint script in `index.html` handles what baking cannot: the
+accent colors and `data-brand` attribute before first paint, and the shared
+bundle case — one bundle whose env config is baked but which must show the
+default look on hosts outside `VITE_BRAND_HOSTS` (there it reverts the head
+tags at runtime). The same activation logic lives in `src/lib/brand.ts`,
+unit-tested in `src/lib/__tests__/brand.test.ts`.
+
+### Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_BRAND` | `1` forces the configured brand on |
+| `VITE_BRAND_NAME` | App display name (titles, login and empty-state wordmarks) |
+| `VITE_BRAND_NAME_ACCENT` | Colored wordmark suffix; omit (or set empty) with `VITE_BRAND_NAME` for a plain wordmark |
+| `VITE_BRAND_LOGO` | App logo URL |
+| `VITE_BRAND_FAVICON` | Favicon URL; MIME type derived from the extension |
+| `VITE_BRAND_OG_IMAGE` | Social-preview image for `og:image` (raster preferred — crawlers render SVG poorly); falls back to the logo, then the favicon |
+| `VITE_BRAND_URL` | This deployment's public origin (e.g. `https://chiku.yourorg.org`) — enables `og:url`/`twitter:url` and makes preview-image URLs absolute |
+| `VITE_BRAND_PRIMARY` / `VITE_BRAND_PRIMARY_DARK` | Light/dark accent colors — any CSS color picks up the whole accent |
+| `VITE_BRAND_PRIMARY_FG` / `VITE_BRAND_PRIMARY_DARK_FG` | Text on the accent (defaults: near-white / near-black) |
+| `VITE_BRAND_HOSTS` | Comma-separated hostname suffixes that activate the brand |
+
+All `VITE_*` vars are build-time: rebuild after changing (and restart the dev
+server).
+
+Example — a full org setup:
+
+```bash
+git clone git@github.com:Cooperation-org/chiku.git && cd chiku
+pnpm install --frozen-lockfile
+mkdir static/brand
+# drop your logo.svg and favicon.svg into static/brand/
+cat > .env <<'EOF'
+VITE_API_URL=https://taiga.yourorg.org/api/v1
+VITE_BRAND_NAME=YourOrg
+VITE_BRAND_LOGO=/brand/logo.svg
+VITE_BRAND_FAVICON=/brand/favicon.svg
+VITE_BRAND_PRIMARY=oklch(0.60 0.14 260)
+VITE_BRAND_PRIMARY_DARK=oklch(0.70 0.14 260)
+EOF
+pnpm build
+```
+
+Example — the workers.vc deployment (assets and `.env` both live on the cohort
+VM, untracked; one-time setup there):
+
+```env
+VITE_BRAND=1
+VITE_BRAND_NAME=workers.vc
+VITE_BRAND_LOGO=/brand/favicon.svg
+VITE_BRAND_FAVICON=/brand/favicon.svg
+VITE_BRAND_PRIMARY=oklch(0.55 0.17 145)
+VITE_BRAND_PRIMARY_DARK=oklch(0.65 0.17 145)
+VITE_BRAND_HOSTS=workers.vc
+```
+
+Under the hood: a pre-paint inline script in `index.html` applies the favicon,
+title and accent colors before first paint (no flash of the default), and the
+same activation logic lives in `src/lib/brand.ts`, unit-tested in
+`src/lib/__tests__/brand.test.ts`.
 
 ## Development
 
@@ -156,9 +286,12 @@ non-Taiga Django apps.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `VITE_API_URL` | Taiga API URL | `/api/v1` (uses nginx proxy) |
-| `PUBLIC_GOOGLE_CLIENT_ID` | Optional: enables the direct "Continue with Google" button | unset (button hidden) |
+| `VITE_GOOGLE_CLIENT_ID` | Optional: enables the direct "Continue with Google" button | unset (button hidden) |
+| `VITE_BRAND_*` | Deployment branding — name, logo, favicon, colors, host activation | see [Branding your deployment](#branding-your-deployment) |
+| `VITE_COHORT_NAV_SRC` | Cohort cross-app bar bundle URL | unset (standalone app) |
+| `VITE_SSO_RELAY_ORIGINS` | Allowlisted origins for the `/sso/relay` hop | unset (relay disabled) |
 
-Sign in with LinkedTrust needs no frontend variables ΓÇö the OIDC client
+Sign in with LinkedTrust needs no frontend variables — the OIDC client
 lives in taiga-back. See `.env.example`.
 
 ## Tech Stack

@@ -163,23 +163,30 @@
       );
 }
 
-/* workers.vc brand — green accent derived from the leaf logo (#029927 → #29C033). */
-[data-brand="workersvc"] {
-  --primary: oklch(0.55 0.17 145);
-  --primary-foreground: oklch(0.985 0 0);
-  --ring: oklch(0.55 0.17 145);
-  --sidebar-primary: oklch(0.55 0.17 145);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --chart-1: oklch(0.55 0.17 145);
+/* Custom deployment brand — the accent colors arrive as inline custom
+   properties (--brand-primary*) set pre-paint by the inline script in
+   index.html from VITE_BRAND_* env vars (see README "Branding your
+   deployment"). The var() fallbacks copy this theme's neutral values, so a
+   brand configured without colors renders exactly like the default. */
+[data-brand="custom"] {
+  --primary: var(--brand-primary, oklch(0.205 0 0));
+  --primary-foreground: var(--brand-primary-fg, oklch(0.985 0 0));
+  --ring: var(--brand-primary, oklch(0.708 0 0));
+  --sidebar-primary: var(--brand-primary, oklch(0.205 0 0));
+  --sidebar-primary-foreground: var(--brand-primary-fg, oklch(0.985 0 0));
+  --chart-1: var(--brand-primary, oklch(0.87 0 0));
 }
 
-[data-brand="workersvc"].dark {
-  --primary: oklch(0.65 0.17 145);
-  --primary-foreground: oklch(0.145 0 0);
-  --ring: oklch(0.65 0.17 145);
-  --sidebar-primary: oklch(0.65 0.17 145);
-  --sidebar-primary-foreground: oklch(0.145 0 0);
-  --chart-1: oklch(0.65 0.17 145);
+[data-brand="custom"].dark {
+  --primary: var(--brand-primary-dark, var(--brand-primary, oklch(0.922 0 0)));
+  --primary-foreground: var(--brand-primary-fg-dark, oklch(0.205 0 0));
+  --ring: var(--brand-primary-dark, var(--brand-primary, oklch(0.556 0 0)));
+  --sidebar-primary: var(
+    --brand-primary-dark,
+    var(--brand-primary, oklch(0.488 0.243 264.376))
+  );
+  --sidebar-primary-foreground: var(--brand-primary-fg-dark, oklch(0.985 0 0));
+  --chart-1: var(--brand-primary-dark, var(--brand-primary, oklch(0.87 0 0)));
 }
 
 @layer base {

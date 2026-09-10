@@ -3,6 +3,8 @@ import { queryClient } from "@/lib/query"
 import { projectsQueryOptions } from "@/lib/queries/projects"
 import { isArchived } from "@/lib/api/projects"
 import { useProjectStore } from "@/lib/stores/project"
+import { brand } from "@/lib/brand"
+import { initialsFor } from "@/lib/utils/initials"
 
 // Effect-free redirect: the loader resolves the destination before the page
 // renders â€” saved slug first, else the first active project.
@@ -29,12 +31,12 @@ function RouteComponent() {
     <div className="flex h-full items-center justify-center">
       <div className="space-y-6 text-center">
         <div className="bg-card mx-auto flex h-24 w-24 items-center justify-center rounded-2xl border">
-          <span className="text-2xl font-bold">LT</span>
+          <span className="text-2xl font-bold">{brand.accent || initialsFor(brand.name)}</span>
         </div>
         <div>
-          <h1 className="text-2xl font-bold">TaigaLT</h1>
+          <h1 className="text-2xl font-bold">{brand.name}</h1>
           <p className="text-muted-foreground mt-2">
-            Fast, modern project management powered by Taiga
+            Fast, modern project management. Powered by Chiku.
           </p>
         </div>
         <div className="bg-card rounded-lg border p-4">

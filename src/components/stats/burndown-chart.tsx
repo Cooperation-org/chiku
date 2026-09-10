@@ -13,7 +13,7 @@ import type { MilestoneStats } from "@/lib/api/types"
 /**
  * Sprint burndown: actual remaining points against the ideal slope, from
  * GET /milestones/{id}/stats. Colors are CSS tokens so the chart follows the
- * theme (and the workersvc brand) automatically.
+ * theme (and any deployment brand) automatically.
  */
 export function BurndownChart({ stats }: { stats: MilestoneStats }) {
   const definition = useMemo(() => {

@@ -22,9 +22,8 @@ describe("changelog entries", () => {
     for (let i = 1; i < changelogEntries.length; i++) {
       expect(compareVersions(changelogEntries[i - 1]!.version, changelogEntries[i]!.version)).toBeGreaterThan(0)
     }
-    expect(changelogEntries[0]?.version).toBe("0.4.2")
-    expect(changelogEntries[0]?.date).toBe("2026-09-07")
     for (const entry of changelogEntries) {
+      expect(entry.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
       expect(entry.title).toBeTruthy()
       expect(typeof entry.Component).toBe("function")
     }
@@ -32,19 +31,28 @@ describe("changelog entries", () => {
 
   it("exposes the latest version and lookup", () => {
     expect(latestVersion()).toBe(changelogEntries[0]?.version)
-    expect(getChangelogEntry("0.4.2")).toBeDefined()
-    expect(getChangelogEntry("0.4.0")).toBeDefined()
+    for (const entry of changelogEntries) {
+      expect(getChangelogEntry(entry.version)).toBeDefined()
+    }
     expect(getChangelogEntry("9.9.9")).toBeUndefined()
   })
 
   it("provides neighbors for navigation", () => {
-    const newest = changelogNeighbors("0.4.2")
-    expect(newest.next).toBeNull()
-    expect(newest.prev).toBeDefined()
+    const versions = [...changelogEntries].sort((a, b) => compareVersions(a.version, b.version))
+    expect(versions.length).toBe(changelogEntries.length)
 
-    const oldest = changelogNeighbors("0.4.0")
+    // Newest has no newer neighbor; its older neighbor is the runner-up.
+    const newest = changelogNeighbors(changelogEntries[0]!.version)
+    expect(newest.next).toBeNull()
+    expect(newest.prev?.version).toBe(changelogEntries[1]?.version ?? null)
+
+    // Oldest has no older neighbor; its newer neighbor is the runner-up.
+    const oldestVersion = versions[0]!.version
+    const oldest = changelogNeighbors(oldestVersion)
     expect(oldest.prev).toBeNull()
-    expect(oldest.next).toBeDefined()
+    expect(oldest.next?.version).toBe(
+      versions.length > 1 ? versions[versions.length - 2]!.version : null,
+    )
 
     expect(changelogNeighbors("nope")).toEqual({ prev: null, next: null })
   })

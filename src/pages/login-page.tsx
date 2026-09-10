@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
+import { BrandWordmark } from "@/components/app/brand-logo"
 import { Moon, Sun } from "lucide-react"
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ""
@@ -98,10 +99,9 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
+          {/* The LinkedTrust mark stays: sign-in is shared by every tenant. */}
           <img src="/logo.svg" alt="LinkedTrust" className="mx-auto mb-4 h-16 w-16" />
-          <h1 className="text-2xl font-semibold">
-            Taiga<span className="text-primary">LT</span>
-          </h1>
+          <BrandWordmark className="text-2xl font-semibold" />
           <p className="mt-1 text-sm text-primary">Welcome! Sign in to continue.</p>
         </div>
 
@@ -233,7 +233,7 @@ export default function LoginPage() {
         </Card>
 
         <div className="text-muted-foreground mt-6 flex flex-col items-center gap-1 text-center">
-          <p className="text-sm">Connecting to Taiga backend</p>
+          <p className="text-sm">Powered by Chiku</p>
           <p className="font-mono text-[11px] tracking-wide">v{__APP_VERSION__}</p>
         </div>
       </div>

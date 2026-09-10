@@ -30,6 +30,10 @@ node_modules
 build/
 .svelte-kit/
 
+# Deployment branding (see README "Branding your deployment"):
+# each org drops its own assets here, never committed
+static/brand/
+
 # Environment (contains secrets)
 .env
 .env.local
