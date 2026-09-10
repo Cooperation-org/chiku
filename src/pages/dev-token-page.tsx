@@ -40,7 +40,7 @@ function parse(input: string): { token: string; refresh?: string; user: string }
       }
     }
   } catch {
-    // not JSON â€” fall through
+    // not JSON — fall through
   }
   return null
 }
@@ -78,7 +78,7 @@ export default function DevTokenPage() {
       <div className="w-full max-w-lg">
         {!isDev ? (
           <p className="text-muted-foreground text-center text-sm">
-            Dev tool â€” not available in production builds.
+            Dev tool — not available in production builds.
           </p>
         ) : (
           <>
@@ -104,7 +104,7 @@ export default function DevTokenPage() {
             )}
             {success && (
               <div className="mt-3 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-500">
-                Token imported â€” taking you to the app...
+                Token imported — taking you to the app...
               </div>
             )}
             <Button onClick={importToken} disabled={!blob.trim() || success} className="mt-4 w-full">

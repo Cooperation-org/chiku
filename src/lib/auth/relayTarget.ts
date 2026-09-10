@@ -1,11 +1,11 @@
 // Cross-origin SSO relay target.
 //
-// Marten's own post-login return (returnTo.ts) is SAME-ORIGIN by design â€” an
+// Marten's own post-login return (returnTo.ts) is SAME-ORIGIN by design — an
 // open-redirect guard. The SSO relay is the deliberate, narrow exception: it
 // lets a partner app (e.g. the workers.vc sign-in cascade) send the browser
 // through Marten's LinkedTrust login and then straight back to itself, so the
 // member signs in once for every team app. Because that means redirecting to
-// another origin, the target is checked against a strict allowlist â€” never a
+// another origin, the target is checked against a strict allowlist — never a
 // caller-supplied origin, only origins we explicitly trust.
 //
 // Allowlist source: VITE_SSO_RELAY_ORIGINS (comma-separated absolute origins),

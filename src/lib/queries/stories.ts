@@ -83,7 +83,7 @@ export function useMyTasks(includeClosed: boolean) {
   })
 }
 
-/** Optimistic column move â€” the board PATCHes status with rollback on failure. */
+/** Optimistic column move — the board PATCHes status with rollback on failure. */
 export function useSetStoryStatus(projectId: number) {
   const qc = useQueryClient()
   const key = qk.stories(projectId)

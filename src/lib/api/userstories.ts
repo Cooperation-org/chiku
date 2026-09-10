@@ -72,7 +72,7 @@ function isVersionConflict(error: unknown): boolean {
  * Set a story's status, surviving a version we no longer hold.
  *
  * The board caches each story's version from page load, so anything that has
- * touched the story since Ã¢â‚¬â€ another drag, the detail view, a teammate, amebo Ã¢â‚¬â€
+ * touched the story since — another drag, the detail view, a teammate, amebo —
  * makes that number stale and Taiga rejects the move. Dropping a card is an
  * explicit "put it in this column", so re-read the current version and send the
  * move once more rather than failing in the user's face.

@@ -43,12 +43,11 @@ const buttonVariants = cva(
 /**
  * Base UI's button assumes it owns a native <button> (nativeButton); when a
  * render element swaps it for something else — our router <Link /> above all
- * — that assumption breaks and Base UI warns. An element whose type is the
- * literal "button" is still native; anything else (or a function render)
- * is not. An explicit nativeButton prop always wins.
+ * — that assumption breaks and Base UI warns. With no render prop the element
+ * is a native <button> as usual. An explicit nativeButton prop always wins.
  */
 function rendersNativeButton(render: ButtonPrimitive.Props["render"]): boolean {
-  return isValidElement(render) && render.type === "button"
+  return render === undefined || (isValidElement(render) && render.type === "button")
 }
 
 function Button({

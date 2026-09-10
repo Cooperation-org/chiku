@@ -52,7 +52,7 @@ export const queryPersistOptions = {
   dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
 }
 
-/** Canonical query keys â€” every hook must build keys from these. */
+/** Canonical query keys — every hook must build keys from these. */
 export const qk = {
   projects: ["projects"] as const,
   project: (id: number) => ["project", id] as const,

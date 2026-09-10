@@ -14,7 +14,7 @@ export interface StoryFilter {
 	/** Story creator (Taiga `owner`), or null for any. */
 	creator: number | null;
 	project: number | null;
-	/** Status name, not id â€” status ids differ per project. */
+	/** Status name, not id — status ids differ per project. */
 	status: string;
 	/** Story must carry every tag listed. */
 	tags: string[];

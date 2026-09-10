@@ -42,7 +42,7 @@ export function useUpdateProject() {
       qc.setQueryData<Project[]>(qk.projects, (old) =>
         old?.map((p) => (p.id === updated.id ? updated : p))
       )
-      // project detail caches are keyed by id â€” refresh statuses/stories etc. lazily
+      // project detail caches are keyed by id — refresh statuses/stories etc. lazily
       qc.invalidateQueries({ queryKey: qk.project(updated.id) })
     },
   })

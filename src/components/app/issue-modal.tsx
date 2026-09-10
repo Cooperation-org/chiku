@@ -962,7 +962,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                           <span className="group-hover:text-primary block truncate text-sm">{a.name}</span>
                           <span className="text-muted-foreground text-xs">
                             {formatFileSize(a.size)}
-                            {uploaderName(a) && ` Â· ${uploaderName(a)}`} Â· {formatRelative(a.created_date)}
+                            {uploaderName(a) && ` · ${uploaderName(a)}`} · {formatRelative(a.created_date)}
                           </span>
                         </button>
                         <a
@@ -1048,7 +1048,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
               </Button>
             </div>
             {commentError && (
-              <p className="text-destructive mb-4 text-sm">{commentError} â€” nothing you typed was lost.</p>
+              <p className="text-destructive mb-4 text-sm">{commentError} — nothing you typed was lost.</p>
             )}
             {!commentsLoading ? (
               allComments.length === 0 ? (

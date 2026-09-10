@@ -7,7 +7,7 @@ import { brand } from "@/lib/brand"
 import { initialsFor } from "@/lib/utils/initials"
 
 // Effect-free redirect: the loader resolves the destination before the page
-// renders â€” saved slug first, else the first active project.
+// renders — saved slug first, else the first active project.
 export const Route = createFileRoute("/(_authed)/")({
   loader: async () => {
     const projects = await queryClient.ensureQueryData(projectsQueryOptions)
@@ -41,7 +41,7 @@ function RouteComponent() {
         </div>
         <div className="bg-card rounded-lg border p-4">
           <p className="text-muted-foreground text-sm">
-            No projects yet â€” create one from the sidebar to get started.
+            No projects yet — create one from the sidebar to get started.
           </p>
         </div>
       </div>

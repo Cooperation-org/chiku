@@ -4,7 +4,7 @@ import { saveRelayTarget } from "@/lib/auth/relayTarget"
 
 // SSO relay: a partner app (e.g. the workers.vc sign-in cascade) sends the
 // browser here with ?next=<its own URL>. We sign the member in via
-// LinkedTrust and then bounce straight back to that URL â€” so one login covers
+// LinkedTrust and then bounce straight back to that URL — so one login covers
 // every team app. The ?next is accepted only if it is on the allowlist
 // (relayTarget.ts / VITE_SSO_RELAY_ORIGINS); anything else is refused and the
 // member simply lands on Marten.

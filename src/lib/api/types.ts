@@ -176,13 +176,13 @@ export interface UserStory {
 export interface Attachment {
 	id: number;
 	project: number;
-	/** User id of whoever uploaded it Ã¢â‚¬â€ resolve against project members for a name. */
+	/** User id of whoever uploaded it — resolve against project members for a name. */
 	owner: number;
 	name: string;
 	/** Storage-relative path. Use `url` to fetch; it carries the access token. */
 	attached_file: string;
 	size: number;
-	/** Signed, absolute media URL Ã¢â‚¬â€ usable directly as href/src without an auth header. */
+	/** Signed, absolute media URL — usable directly as href/src without an auth header. */
 	url: string;
 	preview_url: string | null;
 	thumbnail_card_url: string | null;

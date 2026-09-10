@@ -13,7 +13,7 @@ const AUTH_ROUTES = /^\/(login|oauth|auth)(\/|\?|#|$)/;
 
 /**
  * Accept only same-app absolute paths. Rejects full URLs, protocol-relative
- * paths (//host, /\host) and auth-flow routes â€” so a tampered stored value can
+ * paths (//host, /\host) and auth-flow routes — so a tampered stored value can
  * never become an open redirect.
  */
 export function sanitizeReturnTo(raw: string | null | undefined): string | null {

@@ -139,7 +139,7 @@ function EpicDialog({
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {epic.user_stories_counts?.progress ?? 0}/
-                    {epic.user_stories_counts?.total ?? 0} stories Â·{" "}
+                    {epic.user_stories_counts?.total ?? 0} stories ·{" "}
                     {getProgress(epic)}%
                   </span>
                 </div>

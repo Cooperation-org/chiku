@@ -129,7 +129,7 @@ class TaigaClient {
 			}
 		}
 
-		// FormData sets its own multipart Content-Type (with boundary) â€” never override it.
+		// FormData sets its own multipart Content-Type (with boundary) — never override it.
 		const isFormData =
 			typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
 
@@ -178,7 +178,7 @@ class TaigaClient {
 			} else {
 				// Field-level validation errors. Taiga sends the message either as a list
 				// ({"description": ["This field is required."]}) or as a bare string
-				// ({"version": "The version parameter is not valid"}) â€” read both, or the
+				// ({"version": "The version parameter is not valid"}) — read both, or the
 				// user is shown raw JSON.
 				const fieldErrors = Object.entries(error)
 					.filter(([, v]) => Array.isArray(v) || typeof v === 'string')

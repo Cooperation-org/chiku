@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { BrandWordmark } from "@/components/app/brand-logo"
+import { brand } from "@/lib/brand"
 import { Moon, Sun } from "lucide-react"
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ""
@@ -99,8 +100,10 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          {/* The LinkedTrust mark stays: sign-in is shared by every tenant. */}
-          <img src="/logo.svg" alt="LinkedTrust" className="mx-auto mb-4 h-16 w-16" />
+          {/* The deployment's logo: the configured brand image, else the favicon,
+              else the shipped Taiga default. The SSO button below still carries
+              the LinkedTrust mark — sign-in is shared by every tenant. */}
+          <img src={brand.logo} alt={brand.name} className="mx-auto mb-4 h-16 w-16" />
           <BrandWordmark className="text-2xl font-semibold" />
           <p className="mt-1 text-sm text-primary">Welcome! Sign in to continue.</p>
         </div>
@@ -162,7 +165,7 @@ export default function LoginPage() {
                   autoFocus
                 />
                 <Button type="submit" disabled={isLoadingBluesky}>
-                  {isLoadingBluesky ? "â€¦" : "Go"}
+                  {isLoadingBluesky ? "…" : "Go"}
                 </Button>
                 <Button
                   type="button"
@@ -172,7 +175,7 @@ export default function LoginPage() {
                     setError("")
                   }}
                 >
-                  âœ•
+                  ✕
                 </Button>
               </form>
             ) : (
@@ -222,7 +225,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                 />
               </div>
               <Button type="submit" disabled={isLoading} className="w-full">

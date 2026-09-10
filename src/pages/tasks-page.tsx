@@ -158,7 +158,7 @@ export default function TasksPage() {
               value={filter.q}
               onChange={(e) => setFilter((f) => ({ ...f, q: e.target.value }))}
               type="search"
-              placeholder="Search tasks â€” title, description, tag, person, #ref"
+              placeholder="Search tasks — title, description, tag, person, #ref"
               className="pr-12"
             />
             {!filter.q && (
@@ -414,7 +414,7 @@ export default function TasksPage() {
         {data && !data.loadedEverything && (
           <span className="text-amber-500">
             {" "}
-            â€” too many to load; showing the most recent {stories.length}
+            — too many to load; showing the most recent {stories.length}
           </span>
         )}
       </div>
@@ -422,7 +422,7 @@ export default function TasksPage() {
   )
 }
 
-/** URLSearchParams â†’ TanStack search object (flat strings, "" omitted). */
+/** URLSearchParams → TanStack search object (flat strings, "" omitted). */
 function filterToParamsObject(f: StoryFilter): Record<string, string> {
   const out: Record<string, string> = {}
   filterToParams(f).forEach((v, k) => {

@@ -26,7 +26,7 @@ export default function GoogleCallbackPage() {
       return
     }
 
-    // The auth-code POST must run exactly once â€” a retry consumes an already
+    // The auth-code POST must run exactly once — a retry consumes an already
     // used code and always fails.
     useAuth
       .getState()

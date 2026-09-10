@@ -16,7 +16,7 @@ interface SingleStoryPageProps {
 }
 
 /**
- * The canonical story view â€” /p/<slug>/board/<ref>. Deep-linkable on its own,
+ * The canonical story view — /p/<slug>/board/<ref>. Deep-linkable on its own,
  * reached from the board, the backlog and My Tasks. The story resolves
  * straight by its human ref, no list walk needed.
  */

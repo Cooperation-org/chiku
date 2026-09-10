@@ -18,7 +18,7 @@ interface ProjectSelectProps {
   ariaLabel?: string
 }
 
-/** Project picker â€” projects come from the backend. */
+/** Project picker — projects come from the backend. */
 export function ProjectSelect({
   valueKey = "id",
   value,
