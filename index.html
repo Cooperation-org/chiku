@@ -27,8 +27,9 @@
         // cannot: the brand accent colors and CSS data attribute, and the
         // shared-bundle case where env config is baked but this host is NOT
         // in VITE_BRAND_HOSTS and the deployment's default look must win.
-        // Vite replaces %VITE_*% at serve/build time; an unfilled placeholder
-        // stays a literal "%…%", which is how an unset var is detected.
+        // Vite bakes VITE_* placeholders at serve/build time; an unfilled
+        // placeholder stays a literal "%…%", which is how an unset var is
+        // detected.
         function env(v) {
           return v && !/^%.*%$/.test(v.trim()) ? v.trim() : null;
         }

@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
-import { BrandWordmark } from "@/components/app/brand-logo"
-import { brand } from "@/lib/brand"
+import { BrandLogo, BrandWordmark } from "@/components/app/brand-logo"
 import { Moon, Sun } from "lucide-react"
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || ""
@@ -101,9 +100,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           {/* The deployment's logo: the configured brand image, else the favicon,
-              else the shipped Taiga default. The SSO button below still carries
-              the LinkedTrust mark — sign-in is shared by every tenant. */}
-          <img src={brand.logo} alt={brand.name} className="mx-auto mb-4 h-16 w-16" />
+              else the shipped Taiga default (BrandLogo degrades automatically).
+              The SSO button below still carries the LinkedTrust mark — sign-in
+              is shared by every tenant. */}
+          <BrandLogo className="mx-auto mb-4 h-16 w-16" />
           <BrandWordmark className="text-2xl font-semibold" />
           <p className="mt-1 text-sm text-primary">Welcome! Sign in to continue.</p>
         </div>

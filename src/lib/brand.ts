@@ -19,7 +19,8 @@
  */
 
 const DEFAULT_NAME = "Chiku"
-const DEFAULT_FAVICON = "/favicon.ico"
+/** Shipped fallback asset: the Taiga favicon every logo ultimately degrades to. */
+export const DEFAULT_FAVICON = "/favicon.ico"
 
 /** Value of the data-brand attribute, matching the selectors in index.css. */
 export const BRAND_DATA = "custom" as const

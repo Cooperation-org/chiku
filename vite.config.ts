@@ -88,12 +88,24 @@ function brandMeta(env: Record<string, string>, production: boolean): Plugin {
 
   return {
     name: "brand-meta",
-    // Run after Vite's env replacement; swaps the <!--brand-meta--> marker
-    // for the resolved block.
+    // Runs after Vite's env replacement; swaps the <!--brand-meta--> marker
+    // for the resolved block. Production builds additionally ship a
+    // comment-free head: HTML comments and full-line `//` comments inside
+    // classic inline scripts (Vite minifies bundles, not these) are stripped
+    // — dev keeps everything for readability.
     transformIndexHtml: {
       order: "post",
       handler(html) {
-        return html.replace("<!--brand-meta-->", metas.filter(Boolean).join("\n    "))
+        let out = html.replace("<!--brand-meta-->", metas.filter(Boolean).join("\n    "))
+        if (production) {
+          out = out.replace(/<!--[\s\S]*?-->/g, "")
+          out = out.replace(
+            /(<script(?![^>]*\bsrc\b)[^>]*>)([\s\S]*?)(<\/script>)/g,
+            (_match, open, body, close) =>
+              open + String(body).replace(/^[ \t]*\/\/.*$\n?/gm, "") + close,
+          )
+        }
+        return out
       },
     },
   }

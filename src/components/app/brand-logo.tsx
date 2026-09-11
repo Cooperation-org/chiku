@@ -1,7 +1,21 @@
-import { brand, wordmarkParts } from "@/lib/brand"
+import { useState } from "react"
+import { brand, DEFAULT_FAVICON, wordmarkParts } from "@/lib/brand"
 
 export function BrandLogo({ className = "" }: { className?: string }) {
-  return <img src={brand.logo} alt={brand.name} className={className} />
+  const [src, setSrc] = useState(brand.logo)
+  return (
+    <img
+      src={src}
+      // A misconfigured logo path (missing static/brand file, dead CDN URL)
+      // degrades to the shipped favicon instead of a broken image. The guard
+      // keeps a failing fallback from retry-looping.
+      onError={() => {
+        if (src !== DEFAULT_FAVICON) setSrc(DEFAULT_FAVICON)
+      }}
+      alt={brand.name}
+      className={className}
+    />
+  )
 }
 
 /**
