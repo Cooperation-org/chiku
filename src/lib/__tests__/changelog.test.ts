@@ -51,7 +51,7 @@ describe("changelog entries", () => {
     const oldest = changelogNeighbors(oldestVersion)
     expect(oldest.prev).toBeNull()
     expect(oldest.next?.version).toBe(
-      versions.length > 1 ? versions[versions.length - 2]!.version : null,
+      versions.length > 1 ? versions[1]!.version : null,
     )
 
     expect(changelogNeighbors("nope")).toEqual({ prev: null, next: null })

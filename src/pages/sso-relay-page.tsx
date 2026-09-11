@@ -23,8 +23,11 @@ export default function SsoRelayPage() {
     }
     // Kick off LinkedTrust login. A durable LinkedTrust session completes this
     // silently; the callback then reads the saved target and returns there.
+    // The ?next= tells the backend which frontend host to return the browser
+    // to (see login-page); backends that don't know the param ignore it.
     const apiBase = import.meta.env.VITE_API_URL || "/api/v1"
-    window.location.href = `${apiBase}/auth/linkedtrust/redirect`
+    const loginNext = encodeURIComponent(`${window.location.origin}/oauth/callback`)
+    window.location.href = `${apiBase}/auth/linkedtrust/redirect?next=${loginNext}`
   }, [navigate])
 
   return (

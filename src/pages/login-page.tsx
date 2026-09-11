@@ -36,9 +36,14 @@ export default function LoginPage() {
   async function handleLinkedTrustLogin() {
     setError("")
     setIsLoadingLinkedTrust(true)
-    // Navigate to taiga-back, which 302s to the IdP server-side.
+    // Navigate to taiga-back, which 302s to the IdP server-side. The ?next=
+    // tells the backend which frontend host to return the browser to — needed
+    // when several deployments (marten, chiku, …) share one backend; the
+    // backend allowlists it and ignores anything unlisted, so backends that
+    // don't know the param behave exactly as before.
     const apiBase = import.meta.env.VITE_API_URL || "/api/v1"
-    window.location.href = `${apiBase}/auth/linkedtrust/redirect`
+    const next = encodeURIComponent(`${window.location.origin}/oauth/callback`)
+    window.location.href = `${apiBase}/auth/linkedtrust/redirect?next=${next}`
   }
 
   function handleGoogleLogin() {
