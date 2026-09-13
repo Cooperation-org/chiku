@@ -1,5 +1,5 @@
 import { useDroppable } from "@dnd-kit/react"
-import { ChevronRight, Plus, Settings2 } from "lucide-react"
+import { ChevronRight, Plus } from "lucide-react"
 import { BoardCard } from "./board-card"
 import { useBoardStore } from "@/lib/stores/board"
 import type { UserStory, UserStoryStatus } from "@/lib/api/types"
@@ -9,10 +9,9 @@ interface BoardColumnProps {
   stories: UserStory[]
   onSelect: (story: UserStory) => void
   onAdd: () => void
-  onEditColumns: () => void
 }
 
-export function BoardColumn({ status, stories, onSelect, onAdd, onEditColumns }: BoardColumnProps) {
+export function BoardColumn({ status, stories, onSelect, onAdd }: BoardColumnProps) {
   const { ref, isDropTarget } = useDroppable({
     id: `column-${status.id}`,
     data: { statusId: status.id },
@@ -102,14 +101,6 @@ export function BoardColumn({ status, stories, onSelect, onAdd, onEditColumns }:
               title="Add story"
             >
               <Plus className="h-4 w-4" />
-            </button>
-            <button
-              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
-              onClick={onEditColumns}
-              aria-label="Edit columns"
-              title="Edit columns"
-            >
-              <Settings2 className="h-4 w-4" />
             </button>
           </header>
         </div>

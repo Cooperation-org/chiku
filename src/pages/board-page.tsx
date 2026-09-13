@@ -158,7 +158,6 @@ export default function BoardPage({ slug, q = "" }: BoardPageProps) {
                   setCreateStatusId(statusId)
                   setShowCreate(true)
                 }}
-                onEditColumns={() => setColumnEditorOpen(true)}
                 onNewList={() => setColumnEditorOpen(true)}
               />
             </PageTransition>

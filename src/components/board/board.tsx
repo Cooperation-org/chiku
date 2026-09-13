@@ -26,7 +26,6 @@ interface BoardProps {
   onReorderStory: (storyId: number, overId: number | null, statusId: number) => void
   onSelect: (story: UserStory) => void
   onAddToColumn: (statusId: number) => void
-  onEditColumns: () => void
   onNewList: () => void
 }
 
@@ -37,7 +36,6 @@ export function Board({
   onReorderStory,
   onSelect,
   onAddToColumn,
-  onEditColumns,
   onNewList,
 }: BoardProps) {
   const sorted = [...statuses].sort((a, b) => a.order - b.order)
@@ -81,7 +79,6 @@ export function Board({
               stories={storiesByStatus[status.id] || []}
               onSelect={onSelect}
               onAdd={() => onAddToColumn(status.id)}
-              onEditColumns={onEditColumns}
             />
           ))}
           <div className="flex shrink-0 items-start py-1">
