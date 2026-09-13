@@ -17,7 +17,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSkeleton,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
@@ -26,9 +25,6 @@ import { ProjectSwitcher } from "@/components/sidebar/project-switcher"
 import { useAuth } from "@/lib/stores/auth"
 import { useSidebarStore } from "@/lib/stores/sidebar"
 import { useProjectStore } from "@/lib/stores/project"
-import { useProjectBySlug } from "@/lib/queries/projects"
-import { viewEnabled } from "@/lib/project-views"
-import { canDeleteProject, isProjectAdmin } from "@/lib/permissions"
 import { SETTINGS_SECTIONS } from "@/components/settings/settings-nav"
 
 /** Persisted collapsible group, wired to the shadcn sidebar group pattern. */
@@ -79,7 +75,6 @@ export function AppSidebar() {
   const urlSlug = (params as { slug?: string }).slug ?? null
   const selectedSlug = useProjectStore((s) => s.selectedSlug)
   const activeSlug = urlSlug ?? selectedSlug
-  const { project, isLoading: projectsLoading } = useProjectBySlug(activeSlug ?? undefined)
 
   function go(to: string, slug?: string) {
     if (slug) setSelectedSlug(slug)
@@ -97,26 +92,22 @@ export function AppSidebar() {
       key: "board",
       label: "Board",
       icon: <KanbanSquare />,
-      enabled: viewEnabled(project, "board"),
     },
     {
       key: "backlog",
       label: "Backlog",
       icon: <Rows3 />,
-      enabled: viewEnabled(project, "backlog"),
     },
-    { key: "epics", label: "Epics", icon: <Layers />, enabled: viewEnabled(project, "epics") },
+    { key: "epics", label: "Epics", icon: <Layers /> },
     {
       key: "velocity",
       label: "Velocity",
       icon: <LineChart />,
-      enabled: viewEnabled(project, "velocity"),
     },
     {
       key: "stats",
       label: "Stats",
       icon: <BarChart3 />,
-      enabled: project != null,
     },
   ] as const
 
@@ -132,26 +123,20 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <CollapsibleGroup id="views" label="Views" forceOpen={rail}>
-          {activeSlug && projectsLoading && !project
-            ? [0, 1, 2, 3, 4].map((i) => (
-                <SidebarMenuItem key={i}>
-                  <SidebarMenuSkeleton showIcon />
+          {activeSlug
+            ? views.map((v) => (
+                <SidebarMenuItem key={v.key}>
+                  <SidebarMenuButton
+                    isActive={location.pathname === `/projects/${activeSlug}/${v.key}`}
+                    tooltip={v.label}
+                    onClick={() => projectView(v.key)}
+                  >
+                    {v.icon}
+                    <span>{v.label}</span>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))
-            : views
-                .filter((v) => v.enabled)
-                .map((v) => (
-                  <SidebarMenuItem key={v.key}>
-                    <SidebarMenuButton
-                      isActive={location.pathname === `/projects/${activeSlug}/${v.key}`}
-                      tooltip={v.label}
-                      onClick={() => projectView(v.key)}
-                    >
-                      {v.icon}
-                      <span>{v.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+            : null}
         </CollapsibleGroup>
 
         <CollapsibleGroup id="general" label="General" forceOpen={rail}>
@@ -178,14 +163,13 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </CollapsibleGroup>
 
-        {activeSlug && (!project || isProjectAdmin(project)) && (
+        {activeSlug && (
           <CollapsibleGroup
             id="settings"
             label="Settings"
             forceOpen={rail || location.pathname.includes(`/projects/${activeSlug}/settings`)}
           >
-            {SETTINGS_SECTIONS.filter((s) => !s.requiresDelete || canDeleteProject(project)).map(
-              (s) => {
+            {SETTINGS_SECTIONS.map((s) => {
                 const to = `/projects/${activeSlug}/settings/${s.key}`
                 const Icon = s.icon
                 return (
@@ -200,8 +184,7 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
-              },
-            )}
+              })}
           </CollapsibleGroup>
         )}
       </SidebarContent>
