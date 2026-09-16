@@ -66,3 +66,36 @@ export function formatSprintCountdown(
   const label = days >= 1 ? `${days}d` : `${Math.max(hours, 1)}h`;
   return urgency === "overdue" ? `Overdue by ${label}` : `${label} left`;
 }
+
+/**
+ * Shared create/edit validation — returns the error message, or null when
+ * the input is a committable sprint window.
+ */
+export function validateSprintInput(
+  name: string,
+  from: Date | undefined,
+  to: Date | undefined,
+): string | null {
+  if (!name.trim()) return "A sprint needs a name.";
+  if (from == null || to == null) return "Pick a start and finish date for the sprint.";
+  if (to.getTime() < from.getTime()) return "The finish date must be on or after the start date.";
+  return null;
+}
+
+/**
+ * Parse the board's `?sprint=` scope param into milestone ids. Accepts a
+ * single id (`12`, `12.0`, `12 `) or a comma list (`12,13`); drops blanks,
+ * non-numeric junk and duplicates. Empty/blank input means "all tasks".
+ */
+export function parseSprintIdsParam(raw: unknown): number[] {
+  if (typeof raw === "number") return Number.isFinite(raw) ? [Math.trunc(raw)] : [];
+  if (typeof raw !== "string") return [];
+  const ids: number[] = [];
+  for (const part of raw.split(",")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const n = Number(trimmed);
+    if (Number.isFinite(n) && !ids.includes(Math.trunc(n))) ids.push(Math.trunc(n));
+  }
+  return ids;
+}

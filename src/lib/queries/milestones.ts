@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { qk } from "@/lib/query"
-import { closeMilestone, createMilestone, getMilestones, reopenMilestone, updateMilestone } from "@/lib/api/milestones"
+import { closeMilestone, createMilestone, deleteMilestone, getMilestones, reopenMilestone, updateMilestone } from "@/lib/api/milestones"
 import { getUserStories, moveUserStoryToSprint } from "@/lib/api/userstories"
 import type { Milestone, UserStory } from "@/lib/api/types"
 
@@ -123,6 +123,35 @@ export function useReopenMilestone(projectId: number) {
   return useMutation({
     mutationFn: (id: number) => reopenMilestone(id),
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.milestones(projectId) })
+    },
+  })
+}
+
+/**
+ * Delete a sprint, moving every story it holds to the destination first
+ * (null = backlog). Sequential moves keep Taiga's version checks happy; a
+ * failure aborts before the delete so no work is stranded or orphaned.
+ */
+export function useDeleteMilestone(projectId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      sprintId,
+      stories,
+      destinationId,
+    }: {
+      sprintId: number
+      stories: UserStory[]
+      destinationId: number | null
+    }) => {
+      for (const s of stories) {
+        await moveUserStoryToSprint(s.id, destinationId, s.version)
+      }
+      return deleteMilestone(sprintId)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.stories(projectId) })
       qc.invalidateQueries({ queryKey: qk.milestones(projectId) })
     },
   })

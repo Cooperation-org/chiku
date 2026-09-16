@@ -35,3 +35,11 @@ export async function closeMilestone(id: number): Promise<Milestone> {
 export async function reopenMilestone(id: number): Promise<Milestone> {
 	return api.patch<Milestone>(`/milestones/${id}`, { closed: false });
 }
+
+/**
+ * Delete a sprint. Stories must be moved out first (see queries) — the
+ * backend must never be left to decide what happens to them.
+ */
+export async function deleteMilestone(id: number): Promise<void> {
+	await api.delete(`/milestones/${id}`);
+}

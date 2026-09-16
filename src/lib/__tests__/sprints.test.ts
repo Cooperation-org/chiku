@@ -4,8 +4,10 @@ import {
   formatSprintCountdown,
   getSprintUrgency,
   openSprintsSorted,
+  parseSprintIdsParam,
   rolloverTarget,
   unfinishedStories,
+  validateSprintInput,
   SPRINT_WARNING_MS,
 } from "@/lib/sprints";
 import type { Milestone, UserStory } from "@/lib/api/types";
@@ -82,5 +84,45 @@ describe("sprint sets", () => {
     expect(openSprintsSorted(sprints).map((m) => m.id)).toEqual([7, 8]);
     expect(rolloverTarget(sprints, 7)?.id).toBe(8);
     expect(rolloverTarget([milestone(7)], 7)).toBeNull();
+  });
+});
+
+describe("parseSprintIdsParam", () => {
+  it("parses single ids and comma lists", () => {
+    expect(parseSprintIdsParam("12")).toEqual([12]);
+    expect(parseSprintIdsParam("12,13")).toEqual([12, 13]);
+    expect(parseSprintIdsParam(12)).toEqual([12]);
+  });
+
+  it("means all tasks when empty or blank", () => {
+    expect(parseSprintIdsParam("")).toEqual([]);
+    expect(parseSprintIdsParam(",,,")).toEqual([]);
+    expect(parseSprintIdsParam(undefined)).toEqual([]);
+    expect(parseSprintIdsParam(null)).toEqual([]);
+  });
+
+  it("drops junk and duplicates", () => {
+    expect(parseSprintIdsParam("12,abc,,13,12, 14 ")).toEqual([12, 13, 14]);
+    expect(parseSprintIdsParam(Number.NaN)).toEqual([]);
+  });
+});
+
+describe("validateSprintInput", () => {
+  const from = new Date("2026-09-16T00:00:00");
+  const to = new Date("2026-09-30T00:00:00");
+  it("accepts a named window", () => {
+    expect(validateSprintInput("Sprint 12", from, to)).toBeNull();
+  });
+  it("rejects blank names, missing dates, and backwards windows", () => {
+    expect(validateSprintInput("  ", from, to)).toBe("A sprint needs a name.");
+    expect(validateSprintInput("Sprint 12", undefined, to)).toBe(
+      "Pick a start and finish date for the sprint.",
+    );
+    expect(validateSprintInput("Sprint 12", from, undefined)).toBe(
+      "Pick a start and finish date for the sprint.",
+    );
+    expect(validateSprintInput("Sprint 12", to, from)).toBe(
+      "The finish date must be on or after the start date.",
+    );
   });
 });

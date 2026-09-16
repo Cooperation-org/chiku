@@ -24,11 +24,11 @@ interface BoardPageProps {
   slug: string
   /** Client-side text filter, carried by the board route's ?q= param. */
   q?: string
-  /** Sprint scope, carried by the board route's ?sprint= param (milestone id). */
-  sprintId?: number
+  /** Sprint scope, carried by the board route's ?sprint= param (milestone ids). Empty = all tasks. */
+  sprintIds?: number[]
 }
 
-export default function BoardPage({ slug, q = "", sprintId }: BoardPageProps) {
+export default function BoardPage({ slug, q = "", sprintIds = [] }: BoardPageProps) {
   const navigate = useNavigate()
   const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
@@ -45,11 +45,10 @@ export default function BoardPage({ slug, q = "", sprintId }: BoardPageProps) {
   const setColumnEditorOpen = useBoardStore((s) => s.setColumnEditorOpen)
 
   const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q }).filter(
-    (s) => sprintId == null || s.milestone === sprintId
+    (s) => sprintIds.length === 0 || (s.milestone != null && sprintIds.includes(s.milestone))
   )
-  const activeSprint = sprintId != null ? milestones.find((m) => m.id === sprintId) : undefined
-  const sprintUnfinished = sprintId != null ? unfinishedStories(stories ?? [], sprintId) : []
-  const sprintRollover = sprintId != null ? rolloverTarget(milestones, sprintId) : null
+  const scopedSprints = milestones.filter((m) => sprintIds.includes(m.id))
+  const unknownSprintIds = sprintIds.filter((id) => !milestones.some((m) => m.id === id))
 
   function handleMoveStory(story: UserStory, newStatusId: number) {
     const statusName = statuses.find((s) => s.id === newStatusId)?.name ?? "another column"
@@ -148,17 +147,26 @@ export default function BoardPage({ slug, q = "", sprintId }: BoardPageProps) {
         </div>
       )}
 
-      {sprintId != null && (
+      {sprintIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-1.5 text-sm">
-          <span className="font-medium">
-            {activeSprint ? activeSprint.name : `Sprint #${sprintId}`}
-          </span>
-          {activeSprint && (
-            <SprintCountdownBadge
-              sprint={activeSprint}
-              unfinishedCount={sprintUnfinished.length}
-              rolloverName={sprintRollover?.name}
-            />
+          {scopedSprints.length > 0 ? (
+            scopedSprints.map((sprint) => (
+              <span key={sprint.id} className="inline-flex items-center gap-2">
+                <span className="font-medium">{sprint.name}</span>
+                <SprintCountdownBadge
+                  sprint={sprint}
+                  unfinishedCount={unfinishedStories(stories ?? [], sprint.id).length}
+                  rolloverName={rolloverTarget(milestones, sprint.id)?.name}
+                />
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground">
+              No matching sprints for this filter
+              {unknownSprintIds.length > 0 && (
+                <> ({unknownSprintIds.map((id) => `#${id}`).join(", ")})</>
+              )}
+            </span>
           )}
           <Button
             size="sm"

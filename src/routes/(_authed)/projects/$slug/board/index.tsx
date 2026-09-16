@@ -1,10 +1,12 @@
 ﻿import BoardPage from "@/pages/board-page";
 import { BoardToolbarControls } from "@/components/board/board-toolbar-controls";
+import { SprintScopeCrumb } from "@/components/sprints/sprint-scope-picker";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { CrumbBoard } from "@/components/layout/breadcrumbs";
+import { parseSprintIdsParam } from "@/lib/sprints";
 
-/** Legacy `?story=<ref>` deep links redirect to the canonical /board/<ref>. `q` filters the board, `sprint` scopes it to one sprint. */
-type BoardSearch = { story?: number; q?: string; sprint?: number };
+/** Legacy `?story=<ref>` deep links redirect to the canonical /board/<ref>. `q` filters the board, `sprint` scopes it to a comma-separated sprint set. */
+type BoardSearch = { story?: number; q?: string; sprint?: string };
 
 export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
   validateSearch: (search: Record<string, unknown>): BoardSearch => {
@@ -15,10 +17,12 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
       if (Number.isFinite(story)) out.story = story;
     }
     if (typeof search.q === "string" && search.q !== "") out.q = search.q;
+    // Single ids (`12`), legacy numbers, and lists (`12,13`) all funnel
+    // through the parser; empty/junk input means "all tasks" (no param).
     const rawSprint = search.sprint;
-    if (rawSprint !== undefined && rawSprint !== null && rawSprint !== "") {
-      const sprint = Number(rawSprint);
-      if (Number.isFinite(sprint)) out.sprint = sprint;
+    if ((typeof rawSprint === "string" || typeof rawSprint === "number") && rawSprint !== "") {
+      const ids = parseSprintIdsParam(rawSprint);
+      if (ids.length > 0) out.sprint = ids.join(",");
     }
     return out;
   },
@@ -34,7 +38,7 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
     }
   },
   staticData: {
-    toolbarBreadcrumbs: [CrumbBoard],
+    toolbarBreadcrumbs: [CrumbBoard, SprintScopeCrumb],
     toolbarControls: [BoardToolbarControls],
   },
   component: RouteComponent,
@@ -43,5 +47,5 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
 function RouteComponent() {
   const { slug } = Route.useParams();
   const { q, sprint } = Route.useSearch();
-  return <BoardPage slug={slug} q={q} sprintId={sprint} />;
+  return <BoardPage slug={slug} q={q} sprintIds={parseSprintIdsParam(sprint)} />;
 }

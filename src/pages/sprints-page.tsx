@@ -8,11 +8,13 @@ import { ModuleDisabled } from "@/components/project/module-disabled";
 import { SprintCountdownBadge } from "@/components/sprints/sprint-countdown-badge";
 import { CreateSprintDialog } from "@/components/sprints/create-sprint-dialog";
 import { CloseSprintDialog } from "@/components/sprints/close-sprint-dialog";
+import { DeleteSprintDialog } from "@/components/sprints/delete-sprint-dialog";
+import { EditSprintDialog } from "@/components/sprints/edit-sprint-dialog";
 import { viewEnabled } from "@/lib/project-views";
 import { useProjectBySlug } from "@/lib/queries/projects";
 import { useStories } from "@/lib/queries/stories";
 import { useMilestones, useReopenMilestone } from "@/lib/queries/milestones";
-import { backlogStories, rolloverTarget, unfinishedStories } from "@/lib/sprints";
+import { backlogStories, openSprintsSorted, rolloverTarget, unfinishedStories } from "@/lib/sprints";
 import type { Milestone } from "@/lib/api/types";
 
 function SprintProgress({ sprint }: { sprint: Milestone }) {
@@ -41,6 +43,8 @@ export default function SprintsPage({ slug }: { slug: string }) {
 
   const [showCreate, setShowCreate] = useState(false);
   const [closing, setClosing] = useState<Milestone | null>(null);
+  const [editing, setEditing] = useState<Milestone | null>(null);
+  const [deleting, setDeleting] = useState<Milestone | null>(null);
 
   if (!currentProject) {
     return (
@@ -65,7 +69,7 @@ export default function SprintsPage({ slug }: { slug: string }) {
     navigate({
       to: "/projects/$slug/board",
       params: { slug },
-      search: sprintId != null ? { sprint: sprintId } : undefined,
+      search: sprintId != null ? { sprint: String(sprintId) } : undefined,
     });
   }
 
@@ -116,6 +120,9 @@ export default function SprintsPage({ slug }: { slug: string }) {
                               Board
                             </Button>
                           )}
+                          <Button size="sm" variant="outline" onClick={() => setEditing(sprint)}>
+                            Edit
+                          </Button>
                           {sprint.closed ? (
                             <Button size="sm" variant="outline" onClick={() => handleReopen(sprint)}>
                               Reopen
@@ -125,6 +132,14 @@ export default function SprintsPage({ slug }: { slug: string }) {
                               Close…
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleting(sprint)}
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
@@ -165,6 +180,28 @@ export default function SprintsPage({ slug }: { slug: string }) {
           sprint={closing}
           unfinished={unfinishedStories(stories ?? [], closing.id)}
           rollover={rolloverTarget(milestones ?? [], closing.id)}
+        />
+      )}
+      {editing && currentProject && (
+        <EditSprintDialog
+          open={editing != null}
+          onOpenChange={(open) => {
+            if (!open) setEditing(null);
+          }}
+          projectId={currentProject.id}
+          sprint={editing}
+        />
+      )}
+      {deleting && currentProject && (
+        <DeleteSprintDialog
+          open={deleting != null}
+          onOpenChange={(open) => {
+            if (!open) setDeleting(null);
+          }}
+          projectId={currentProject.id}
+          sprint={deleting}
+          stories={(stories ?? []).filter((s) => s.milestone === deleting.id)}
+          destinations={openSprintsSorted(milestones ?? []).filter((m) => m.id !== deleting.id)}
         />
       )}
     </div>

@@ -142,7 +142,7 @@ export default function BacklogPage({ slug, filter }: BacklogPageProps) {
                           navigate({
                             to: "/projects/$slug/board",
                             params: { slug },
-                            search: { sprint: sprint.id },
+                            search: { sprint: String(sprint.id) },
                           })
                         }
                       >

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import type { DateRange } from "react-day-picker";
 import { Input } from "@/components/ui/input";
 import { DateRangePicker } from "@/components/ui/range-picker";
-import { toISODateString } from "@/components/ui/date-picker";
+import { parseISODateString, toISODateString } from "@/components/ui/date-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,31 +14,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCreateMilestone } from "@/lib/queries/milestones";
+import { useUpdateMilestone } from "@/lib/queries/milestones";
 import { validateSprintInput } from "@/lib/sprints";
+import type { Milestone } from "@/lib/api/types";
 
-function todayPlus(days: number): Date {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-/** Sprint creation — name plus a start/finish window (the deadline). */
-export function CreateSprintDialog({
+/** Rename / reschedule a sprint. Mounted conditionally, so prop initializers are fresh per open. */
+export function EditSprintDialog({
   open,
   onOpenChange,
   projectId,
+  sprint,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: number;
+  sprint: Milestone;
 }) {
-  const [name, setName] = useState("");
+  const [name, setName] = useState(sprint.name);
   const [range, setRange] = useState<DateRange | undefined>({
-    from: todayPlus(0),
-    to: todayPlus(14),
+    from: parseISODateString(sprint.estimated_start),
+    to: parseISODateString(sprint.estimated_finish),
   });
-  const create = useCreateMilestone(projectId);
+  const update = useUpdateMilestone(projectId);
 
   function commit() {
     const problem = validateSprintInput(name, range?.from, range?.to);
@@ -46,17 +43,21 @@ export function CreateSprintDialog({
       toast.error(problem);
       return;
     }
-    const start = toISODateString(range!.from!);
-    const finish = toISODateString(range!.to!);
-    create.mutate(
-      { name: name.trim(), estimated_start: start, estimated_finish: finish },
+    update.mutate(
+      {
+        id: sprint.id,
+        data: {
+          name: name.trim(),
+          estimated_start: toISODateString(range!.from!),
+          estimated_finish: toISODateString(range!.to!),
+        },
+      },
       {
         onSuccess: () => {
-          toast.success(`Sprint "${name.trim()}" created`);
-          setName("");
+          toast.success(`Sprint "${name.trim()}" updated`);
           onOpenChange(false);
         },
-        onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to create sprint"),
+        onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to update sprint"),
       },
     );
   }
@@ -65,10 +66,10 @@ export function CreateSprintDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>New sprint</AlertDialogTitle>
+          <AlertDialogTitle>Edit sprint</AlertDialogTitle>
           <AlertDialogDescription>
-            A timeboxed iteration. Plan backlog stories into it, work it on the board, then close it —
-            unfinished stories roll over to the next sprint.
+            Rename or reschedule “{sprint.name}”. Stories stay where they are — only the
+            window changes.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex flex-col gap-3 py-2">
@@ -83,8 +84,8 @@ export function CreateSprintDialog({
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={commit} disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create sprint"}
+          <AlertDialogAction onClick={commit} disabled={update.isPending}>
+            {update.isPending ? "Saving…" : "Save changes"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
