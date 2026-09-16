@@ -1,0 +1,48 @@
+---
+version: "0.4.5"
+date: "2026-09-16"
+title: "Mentions, replies, comment moderation, notifications, and member profiles"
+---
+
+Conversations on a story just got direct: type `@` to mention a teammate,
+hit reply on any comment to answer it with a quote, catch everything
+from the new bell in the toolbar — and every mention links to that
+member's new profile page.
+
+### Added
+
+- **@mentions with autocomplete** — typing `@` in a comment or description
+  suggests members of the active project by real username and full name. Only
+  project members are ever suggested, matching who Taiga itself can notify.
+  Pick with `Enter`/`Tab`, navigate with `↑`/`↓`, dismiss with `Esc`.
+- **Reply to any comment** — a reply button on every comment drops an
+  `@mention` plus a block-quote of the original into the composer, so the
+  teammate is notified and the context travels with your answer. Taiga
+  comments stay flat under the hood, so this works with the existing backend
+  unchanged.
+- **Notifications bell** — the toolbar shows your unread Taiga
+  in-app notifications with a count badge, polling quietly every 30 seconds.
+  Clicking one marks it read and jumps straight to the story; a mark-all-read
+  button clears the rest.
+- **Comment moderation for project admins** — admins can now edit and delete
+  anyone's comments, matching Taiga's own rule; authors keep control of their
+  own.
+- **Delete confirmation for comments** — deleting asks first via a
+  confirmation dialog, with undo still available from the toast afterwards.
+- **Member profiles** — clicking an `@mention`, a comment author's name, or a
+  name in the members list opens that member's page: avatar, bio, project
+  role, and activity stats (stories closed, projects, contacts).
+
+### Changed
+
+- Comment actions (reply, edit, delete, copy link) are now always visible
+  instead of appearing only on hover, so they work on touch devices too.
+- Deleted comments no longer leave a placeholder row for everyone — only the
+  author and project admins still see it, with Restore.
+- Comment and description placeholders now hint that `@` mentions a project member.
+
+### Fixed
+
+- Mention suggestions previously offered display names instead of real Taiga
+  usernames, which Taiga would silently refuse to notify. Candidates now come
+  from a project-scoped join against the user directory.

@@ -25,6 +25,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { insertBlock, insertPrefixLines, TABLE_SNIPPET, wrapSelection } from "@/lib/markdown-insert"
+import {
+  filterMentionable,
+  findMentionQuery,
+  insertMention,
+  type Mentionable,
+} from "@/lib/mentions"
 import { cn } from "cn"
 
 interface MarkdownEditorProps {
@@ -38,6 +44,12 @@ interface MarkdownEditorProps {
   autoFocus?: boolean
   ariaLabel?: string
   className?: string
+  /**
+   * Project-scoped members for `@` autocomplete. Only these are suggested —
+   * Taiga only notifies project members, so outsiders are never offered.
+   * Omit to disable autocomplete.
+   */
+  mentionable?: Mentionable[]
 }
 
 interface WrapAction {
@@ -114,9 +126,48 @@ export function MarkdownEditor({
   autoFocus,
   ariaLabel,
   className,
+  mentionable,
 }: MarkdownEditorProps) {
   const [tab, setTab] = useState<"write" | "preview">("write")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // Open `@` query, synced from typing/caret events only (never read the ref
+  // during render). Null = popup closed.
+  const [mention, setMention] = useState<{ query: string; start: number } | null>(null)
+  const [mentionIndex, setMentionIndex] = useState(0)
+
+  const suggestions =
+    tab === "write" && mention && mentionable
+      ? filterMentionable(mentionable, mention.query)
+      : []
+  const mentionOpen = mention != null && suggestions.length > 0
+  const activeIndex = Math.min(mentionIndex, suggestions.length - 1)
+
+  function syncMention(nextValue: string, caret: number) {
+    if (tab !== "write" || !mentionable || mentionable.length === 0) {
+      setMention(null)
+      return
+    }
+    const found = findMentionQuery(nextValue, caret)
+    if (found?.query !== mention?.query || found?.start !== mention?.start) {
+      setMentionIndex(0)
+    }
+    setMention(found)
+  }
+
+  function acceptMention(choice?: Mentionable) {
+    const el = textareaRef.current
+    const picked = choice ?? suggestions[activeIndex]
+    if (!el || !picked) return
+    const caret = el.selectionStart ?? value.length
+    const result = insertMention(value, caret, picked.username)
+    onChange(result.text)
+    setMention(null)
+    requestAnimationFrame(() => {
+      const target = textareaRef.current
+      target?.focus()
+      target?.setSelectionRange(result.caret, result.caret)
+    })
+  }
 
   function apply(action: ToolbarAction) {
     const el = textareaRef.current
@@ -124,6 +175,7 @@ export function MarkdownEditor({
     const end = el?.selectionEnd ?? value.length
     const result = applyAction(value, start, end, action)
     onChange(result.text)
+    setMention(null)
     // Restore focus/selection once React commits the new value.
     requestAnimationFrame(() => {
       const target = textareaRef.current
@@ -221,13 +273,77 @@ export function MarkdownEditor({
         </div>
       </div>
 
+      {mentionOpen && (
+        <div className="border-b px-2 py-1.5" role="listbox" aria-label="Mention a project member">
+          <p className="text-muted-foreground px-1 pb-1 text-[11px]">
+            Project members only — mentions notify by username
+          </p>
+          <ul className="max-h-44 overflow-y-auto">
+            {suggestions.map((m, i) => (
+              <li key={m.username.toLowerCase()} role="option" aria-selected={i === activeIndex}>
+                <button
+                  type="button"
+                  // Never blur the textarea — same contract as toolbar buttons.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => acceptMention(m)}
+                  onMouseEnter={() => setMentionIndex(i)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors",
+                    i === activeIndex ? "bg-accent text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  <span className="text-primary font-mono font-medium">@{m.username}</span>
+                  {m.full_name && m.full_name !== m.username && (
+                    <span className="truncate text-xs">{m.full_name}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {tab === "write" ? (
         <textarea
           ref={textareaRef}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={onBlur}
+          onChange={(e) => {
+            onChange(e.target.value)
+            syncMention(e.target.value, e.target.selectionStart ?? e.target.value.length)
+          }}
+          onSelect={(e) => {
+            const el = e.currentTarget
+            syncMention(el.value, el.selectionStart ?? el.value.length)
+          }}
+          onBlur={() => {
+            setMention(null)
+            onBlur?.()
+          }}
           onKeyDown={(e) => {
+            // Cmd/Ctrl+Enter always means "submit" to the host (post/save) —
+            // close the popup and delegate.
+            const isSubmit = (e.metaKey || e.ctrlKey) && e.key === "Enter"
+            if (mentionOpen && !isSubmit) {
+              if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                e.preventDefault()
+                setMentionIndex((prev) =>
+                  e.key === "ArrowDown"
+                    ? (prev + 1) % suggestions.length
+                    : (prev - 1 + suggestions.length) % suggestions.length,
+                )
+                return
+              }
+              if (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey)) {
+                e.preventDefault()
+                acceptMention()
+                return
+              }
+              if (e.key === "Escape") {
+                e.preventDefault()
+                setMention(null)
+                return
+              }
+            }
             if (e.key === "Tab" && !e.shiftKey) {
               e.preventDefault()
               const el = e.currentTarget

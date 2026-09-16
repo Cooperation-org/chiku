@@ -102,6 +102,31 @@ export async function moveUserStory(storyId: number, targetProjectId: number, ta
 	});
 }
 
+/**
+ * Move a story into (or out of) a sprint. `milestoneId` null sends it back
+ * to the backlog. Survives a stale version the same way status moves do:
+ * re-read and retry once on a version conflict.
+ */
+export async function moveUserStoryToSprint(
+	storyId: number,
+	milestoneId: number | null,
+	version: number
+): Promise<UserStory> {
+	try {
+		return await api.patch<UserStory>(`/userstories/${storyId}`, {
+			milestone: milestoneId,
+			version
+		});
+	} catch (error) {
+		if (!isVersionConflict(error)) throw error;
+		const current = await getUserStory(storyId);
+		return api.patch<UserStory>(`/userstories/${storyId}`, {
+			milestone: milestoneId,
+			version: current.version
+		});
+	}
+}
+
 export async function createUserStory(data: {
 	project: number;
 	subject: string;

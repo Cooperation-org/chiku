@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router"
 import { Avatar } from "@/components/app/avatar"
 import {
   RegistryPagination,
@@ -7,6 +8,8 @@ import { BrailleLoader } from "@/components/ui/braille-loader"
 import { Button } from "@/components/ui/button"
 import type { Membership } from "@/lib/api/memberships"
 import type { Project } from "@/lib/api/types"
+import { memberPath } from "@/lib/api/users"
+import type { Mentionable } from "@/lib/mentions"
 import { useMemberships, useRemoveMembership } from "@/lib/queries/memberships"
 import { appTableFeatures, filterFn, MEMBERS_PAGE_SIZE } from "@/lib/table"
 import {
@@ -37,15 +40,26 @@ export function MembersTable({
   project,
   filter,
   canManage,
+  mentionable = [],
 }: {
   project: Project
   filter: string
   canManage: boolean
+  /** Project-scoped username directory — links names to member profiles. */
+  mentionable?: Mentionable[]
 }) {
   const { data: memberships = EMPTY_MEMBERS, isLoading } = useMemberships(
     project.id
   )
   const removeMembership = useRemoveMembership(project.id)
+
+  const usernameById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const c of mentionable) {
+      if (c.userId != null) map.set(c.userId, c.username)
+    }
+    return map
+  }, [mentionable])
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState<PaginationState>({
@@ -68,6 +82,7 @@ export function MembersTable({
         header: "Name",
         cell: (ctx) => {
           const m = ctx.row.original
+          const username = usernameById.get(m.user)
           return (
             <div className="flex min-w-0 items-center gap-2">
               <Avatar
@@ -77,9 +92,19 @@ export function MembersTable({
                 className="shrink-0"
               />
               <div className="min-w-0">
-                <span className="block truncate text-sm">
-                  {m.full_name || `user ${m.user}`}
-                </span>
+                {username ? (
+                  <Link
+                    to={memberPath(project.slug, username) as never}
+                    className="block truncate text-sm hover:text-primary hover:underline"
+                    title={`View @${username}'s profile`}
+                  >
+                    {m.full_name || `user ${m.user}`}
+                  </Link>
+                ) : (
+                  <span className="block truncate text-sm">
+                    {m.full_name || `user ${m.user}`}
+                  </span>
+                )}
                 {m.email && (
                   <span className="block truncate text-xs text-muted-foreground">
                     {m.email}
@@ -162,7 +187,7 @@ export function MembersTable({
         meta: { className: "w-24 text-right" },
       }),
     ])
-  }, [canManage, removeMembership])
+  }, [canManage, project.slug, removeMembership, usernameById])
 
   const table = useTable({
     features,

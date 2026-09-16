@@ -72,10 +72,14 @@ export const qk = {
   myTasks: () => ["my-tasks"] as const,
   me: ["me"] as const,
   users: (projectId: number) => ["project", projectId, "users"] as const,
+  /** Public member profile by exact username (global, not project-scoped). */
+  member: (username: string) => ["member", username] as const,
   projectModules: (projectId: number) => ["project", projectId, "modules"] as const,
   webhooks: (projectId: number) => ["project", projectId, "webhooks"] as const,
   webhookLogs: (webhookId: number) => ["webhook", webhookId, "logs"] as const,
   notifyPolicies: () => ["notify-policies"] as const,
+  /** Authed user's in-app notifications (the bell). */
+  notifications: () => ["notifications"] as const,
   projectTemplates: () => ["project-templates"] as const,
   issueStats: (projectId: number) => ["project", projectId, "issue-stats"] as const,
   milestoneStats: (milestoneId: number) => ["milestone", milestoneId, "stats"] as const,

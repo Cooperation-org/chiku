@@ -6,7 +6,7 @@ import { MembersFilterControl } from "@/components/members/members-filter-contro
 
 type MembersSearch = { q?: string };
 
-export const Route = createFileRoute("/(_authed)/projects/$slug/members")({
+export const Route = createFileRoute("/(_authed)/projects/$slug/members/")({
   staticData: {
     toolbarBreadcrumbs: [CrumbMembers],
     toolbarControls: [MembersFilterControl, MembersToolbarControls],

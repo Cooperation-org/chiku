@@ -4,6 +4,8 @@ import { toast } from "sonner"
 import { Avatar } from "@/components/app/avatar"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { parseISODateString, toISODateString } from "@/components/ui/date-picker"
+import { DateRangePicker } from "@/components/ui/range-picker"
 import { Input } from "@/components/ui/input"
 import {
   OptionsSelect,
@@ -264,25 +266,36 @@ export default function TasksPage() {
 
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <span>Due</span>
-            <Input
-              type="date"
-              value={filter.dueFrom}
-              onChange={(e) =>
-                setFilter((f) => ({ ...f, dueFrom: e.target.value }))
+            <DateRangePicker
+              value={
+                filter.dueFrom || filter.dueTo
+                  ? {
+                      from: parseISODateString(filter.dueFrom),
+                      to: parseISODateString(filter.dueTo),
+                    }
+                  : undefined
               }
-              className="h-8 w-36"
-              aria-label="Due from"
-            />
-            <span>to</span>
-            <Input
-              type="date"
-              value={filter.dueTo}
-              onChange={(e) =>
-                setFilter((f) => ({ ...f, dueTo: e.target.value }))
+              onChange={(range) =>
+                setFilter((f) => ({
+                  ...f,
+                  dueFrom: range?.from ? toISODateString(range.from) : "",
+                  dueTo: range?.to ? toISODateString(range.to) : "",
+                }))
               }
-              className="h-8 w-36"
-              aria-label="Due to"
+              placeholder="From – To"
+              ariaLabel="Due date range"
             />
+            {(filter.dueFrom || filter.dueTo) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  setFilter((f) => ({ ...f, dueFrom: "", dueTo: "" }))
+                }
+              >
+                Clear
+              </Button>
+            )}
           </div>
         </div>
 

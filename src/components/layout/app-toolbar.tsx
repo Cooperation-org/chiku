@@ -3,6 +3,7 @@ import { useMatches } from "@tanstack/react-router"
 import { AnimatePresence, motion } from "motion/react"
 import { ChevronRight, Moon, Sun } from "lucide-react"
 import { CommandPaletteTrigger } from "@/components/layout/command-palette-trigger"
+import { NotificationsBell } from "@/components/notifications/notifications-bell"
 import { SyncStatus } from "@/components/layout/sync-status"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -94,6 +95,10 @@ export function AppToolbar() {
             />
           )}
         </AnimatePresence>
+
+        <motion.div layout transition={toolbarSpring}>
+          <NotificationsBell />
+        </motion.div>
 
         <motion.div layout transition={toolbarSpring}>
           <Tooltip>

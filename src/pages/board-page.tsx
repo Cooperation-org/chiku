@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { isArchived, unarchiveProject } from "@/lib/api/projects"
 import { useReorderKanbanOrder, useSetStoryStatus, useStories, useStatuses } from "@/lib/queries/stories"
+import { useMilestones } from "@/lib/queries/milestones"
+import { rolloverTarget, unfinishedStories } from "@/lib/sprints"
+import { SprintCountdownBadge } from "@/components/sprints/sprint-countdown-badge"
 import { EMPTY_FILTER, filterStories } from "@/lib/filters/stories"
 import { qk, queryClient } from "@/lib/query"
 import { viewEnabled } from "@/lib/project-views"
@@ -21,15 +24,18 @@ interface BoardPageProps {
   slug: string
   /** Client-side text filter, carried by the board route's ?q= param. */
   q?: string
+  /** Sprint scope, carried by the board route's ?sprint= param (milestone id). */
+  sprintId?: number
 }
 
-export default function BoardPage({ slug, q = "" }: BoardPageProps) {
+export default function BoardPage({ slug, q = "", sprintId }: BoardPageProps) {
   const navigate = useNavigate()
   const { project: currentProject } = useProjectBySlug(slug)
   const projectId = currentProject?.id ?? null
 
   const { data: statuses = [], isLoading: statusesLoading } = useStatuses(projectId)
   const { data: stories, isLoading: storiesLoading } = useStories(projectId)
+  const { data: milestones = [] } = useMilestones(projectId)
   const setStatus = useSetStoryStatus(projectId ?? 0)
   const reorderKanban = useReorderKanbanOrder(projectId ?? 0)
 
@@ -38,7 +44,12 @@ export default function BoardPage({ slug, q = "" }: BoardPageProps) {
   const columnEditorOpen = useBoardStore((s) => s.columnEditorOpen)
   const setColumnEditorOpen = useBoardStore((s) => s.setColumnEditorOpen)
 
-  const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q })
+  const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q }).filter(
+    (s) => sprintId == null || s.milestone === sprintId
+  )
+  const activeSprint = sprintId != null ? milestones.find((m) => m.id === sprintId) : undefined
+  const sprintUnfinished = sprintId != null ? unfinishedStories(stories ?? [], sprintId) : []
+  const sprintRollover = sprintId != null ? rolloverTarget(milestones, sprintId) : null
 
   function handleMoveStory(story: UserStory, newStatusId: number) {
     const statusName = statuses.find((s) => s.id === newStatusId)?.name ?? "another column"
@@ -133,6 +144,28 @@ export default function BoardPage({ slug, q = "" }: BoardPageProps) {
           <span>This project is archived.</span>
           <Button size="sm" variant="outline" onClick={handleUnarchive}>
             Unarchive
+          </Button>
+        </div>
+      )}
+
+      {sprintId != null && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-1.5 text-sm">
+          <span className="font-medium">
+            {activeSprint ? activeSprint.name : `Sprint #${sprintId}`}
+          </span>
+          {activeSprint && (
+            <SprintCountdownBadge
+              sprint={activeSprint}
+              unfinishedCount={sprintUnfinished.length}
+              rolloverName={sprintRollover?.name}
+            />
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => navigate({ to: "/projects/$slug/board", params: { slug } })}
+          >
+            Show all
           </Button>
         </div>
       )}

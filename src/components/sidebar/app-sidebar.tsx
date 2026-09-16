@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router"
 import { useLocation } from "@tanstack/react-router"
-import { BarChart3, ChevronDown, KanbanSquare, Layers, LineChart, ListTodo, Rows3, Sparkles, Users } from "lucide-react"
+import { BarChart3, ChevronDown, KanbanSquare, Layers, LineChart, ListTodo, Rows3, Sparkles, Timer, Users } from "lucide-react"
 import {
   Collapsible,
   CollapsibleContent,
@@ -97,6 +97,11 @@ export function AppSidebar() {
       key: "backlog",
       label: "Backlog",
       icon: <Rows3 />,
+    },
+    {
+      key: "sprints",
+      label: "Sprints",
+      icon: <Timer />,
     },
     { key: "epics", label: "Epics", icon: <Layers /> },
     {

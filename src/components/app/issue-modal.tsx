@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { useSearch } from "@tanstack/react-router"
+import { Link, useSearch } from "@tanstack/react-router"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -13,12 +13,14 @@ import {
   Link2,
   OctagonAlert,
   Pencil,
+  Reply,
   Share2,
   Trash2,
   User as UserIcon,
 } from "lucide-react"
-import type { Attachment, HistoryEntry, Project, UserStory, UserStoryStatus } from "@/lib/api/types"
+import type { Attachment, HistoryEntry, Milestone, Project, UserStory, UserStoryStatus } from "@/lib/api/types"
 import { getUserStory, updateUserStory } from "@/lib/api/userstories"
+import { getMilestones } from "@/lib/api/milestones"
 import { getProject } from "@/lib/api/projects"
 import { pointsPatch, storyPointId } from "@/lib/api/points"
 import {
@@ -32,6 +34,8 @@ import {
 } from "@/lib/api/attachments"
 import { Markdown } from "@/components/app/markdown"
 import { MarkdownEditor } from "@/components/app/markdown-editor"
+import { buildQuoteReply, type Mentionable } from "@/lib/mentions"
+import { memberPath } from "@/lib/api/users"
 import { api } from "@/lib/api/client"
 import { useAuth } from "@/lib/stores/auth"
 import { useToolbarSlots } from "@/lib/stores/toolbar-slots"
@@ -61,11 +65,20 @@ import { cn } from "cn"
 import { StoryStatusSelect } from "@/components/inputs/story-status-select"
 import { AssigneeSelect } from "@/components/inputs/assignee-select"
 import { PointsSelect } from "@/components/inputs/points-select"
+import { ValueBadge } from "@/components/app/value-badge"
+import { ValueEditor } from "@/components/app/value-editor"
+import { TaskSprintSelector } from "@/components/sprints/task-sprint-selector"
+import { DatePicker, parseISODateString, toISODateString } from "@/components/ui/date-picker"
+import { parseCashValue, parseTeamValue, setValueTags } from "@/lib/values"
 
 interface IssueModalProps {
   story: UserStory
   statuses: UserStoryStatus[]
   members: { id: number; full_name: string; username: string }[]
+  /** Project-scoped @mention candidates with real usernames (see useMentionable). */
+  mentionable: Mentionable[]
+  /** Project admins may edit/delete others' comments, matching Taiga's rule. */
+  canModerate: boolean
   onClose: () => void
   onUpdate: (story: UserStory) => void
   onDelete: (id: number) => void
@@ -106,9 +119,11 @@ async function copyToClipboard(text: string, successMessage: string) {
   }
 }
 
-export function IssueModal({ story, statuses, members, onClose, onUpdate, onDelete, onNavigateRef }: IssueModalProps) {
+export function IssueModal({ story, statuses, members, mentionable, canModerate, onClose, onUpdate, onDelete, onNavigateRef }: IssueModalProps) {
   const [fullStory, setFullStory] = useState<UserStory>(story)
   const [project, setProject] = useState<Project | null>(null)
+  /** Open sprints for the sprint picker — empty on Kanban-only projects. */
+  const [milestones, setMilestones] = useState<Milestone[]>([])
 
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editingAll, setEditingAll] = useState(false)
@@ -118,6 +133,8 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
   const [editDueDate, setEditDueDate] = useState("")
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  /** Comment awaiting delete confirmation (shadcn AlertDialog below). */
+  const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<HistoryEntry | null>(null)
 
   const [pendingComments, setPendingComments] = useState<HistoryEntry[]>([])
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
@@ -178,6 +195,12 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
         console.error("Failed to load project:", err)
       }
       try {
+        setMilestones(await getMilestones(story.project))
+      } catch (err) {
+        // Kanban-only projects (or permission blocks) simply hide the picker.
+        console.error("Failed to load sprints:", err)
+      }
+      try {
         const loaded = await getStoryAttachments(story.id, story.project)
         if (!cancelled) setAttachments(loaded)
       } catch (err) {
@@ -190,11 +213,12 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story.id])
 
-  // Esc cascade: comment edit → field editing → confirm dialog → close.
+  // Esc cascade: delete confirm → comment edit → field editing → confirm dialog → close.
   useEffect(() => {
     function onKeydown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        if (editingCommentId) setEditingCommentId(null)
+        if (confirmDeleteEntry) setConfirmDeleteEntry(null)
+        else if (editingCommentId) setEditingCommentId(null)
         else if (editingField) setEditingField(null)
         else if (showDeleteConfirm) setShowDeleteConfirm(false)
         else onClose()
@@ -202,7 +226,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     }
     window.addEventListener("keydown", onKeydown)
     return () => window.removeEventListener("keydown", onKeydown)
-  }, [editingCommentId, editingField, showDeleteConfirm, onClose])
+  }, [confirmDeleteEntry, editingCommentId, editingField, showDeleteConfirm, onClose])
 
   async function saveField(field: string, data: Record<string, unknown>) {
     const prev = { ...fullStory }
@@ -283,12 +307,10 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     saveField("assigned_to", { assigned_to: userId })
   }
 
-  function saveDueDate() {
-    if (editDueDate === (fullStory.due_date || "")) {
-      if (!editingAll) setEditingField(null)
-      return
-    }
-    saveField("due_date", { due_date: editDueDate || null })
+  /** Plan into a sprint (or back to the backlog with null). */
+  function saveSprint(milestoneId: number | null) {
+    if (milestoneId === fullStory.milestone) return
+    saveField("milestone", { milestone: milestoneId })
   }
 
   function savePoints(pointId: number | null) {
@@ -308,6 +330,18 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
       .filter((t) => t.length > 0)
       .map((t) => [t, existingTagColors.get(t) || null])
     saveField("tags", { tags: newTags })
+  }
+
+  /**
+   * Pie-slicing value save — rewrites the `50cook` / `100usd` tags in place,
+   * preserving every other tag and its color. The Taiga story stays the
+   * record; GovKit's sync parses the tags with no backend change. Cash is
+   * required at the form level (the editor always passes a number, 0 counts
+   * as set) because the backend treats missing cash as 0.
+   */
+  function saveValue(team: number | null, cash: number) {
+    const tags = setValueTags(fullStory.tags, { teamValue: team, cashValue: cash })
+    saveField("tags", { tags })
   }
 
   async function postComment() {
@@ -370,6 +404,15 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     ),
   ]
 
+  // Deleted comments vanish for everyone except whoever can restore them
+  // (the author or a project admin) — deleted means gone, recovery stays
+  // discoverable only for those who can act.
+  const visibleComments = allComments.filter((c) => {
+    if (c.delete_comment_date == null) return true
+    const deleter = c.delete_comment_user as { pk?: number } | null
+    return deleter?.pk === me?.id || c.user.pk === me?.id || canModerate
+  })
+
   function startEditComment(entry: HistoryEntry) {
     setEditingCommentId(String(entry.id))
     setEditCommentText(entry.comment)
@@ -417,6 +460,22 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
     const url = new URL(window.location.href)
     url.searchParams.set("comment", String(entry.id))
     await copyToClipboard(url.toString(), "Comment link copied to clipboard")
+  }
+
+  // Taiga comments are flat, so a "reply" is a normal comment that @mentions
+  // the author and block-quotes their words — no backend change needed.
+  // The @mention only notifies project members, matching Taiga's own rule.
+  function replyToComment(entry: HistoryEntry) {
+    const prefix = buildQuoteReply(entry.user.username, entry.comment, entry.user.name)
+    setNewComment((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${prefix}` : prefix))
+    requestAnimationFrame(() => {
+      const composer = document.querySelector(
+        '[aria-label="New comment"]',
+      ) as HTMLTextAreaElement | null
+      composer?.scrollIntoView({ behavior: "smooth", block: "center" })
+      composer?.focus()
+      composer?.setSelectionRange(composer.value.length, composer.value.length)
+    })
   }
 
   // --- Attachments ---
@@ -796,20 +855,51 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
               </div>
             ) : null}
 
+            {/* Pie-slicing value (team cook + cash usd tags) */}
+            {isEditing("value") ? (
+              <ValueEditor
+                initialTeam={parseTeamValue(fullStory.tags)}
+                initialCash={parseCashValue(fullStory.tags)}
+                onSave={(team, cash) => saveValue(team, cash)}
+                onCancel={() => {
+                  if (!editingAll) setEditingField(null)
+                }}
+              />
+            ) : (
+              <button
+                onClick={() => startEdit("value")}
+                className="text-muted-foreground hover:bg-accent -mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors"
+                title="Click to set pie-slicing value"
+              >
+                <ValueBadge story={fullStory} />
+              </button>
+            )}
+
             {/* Due date */}
             {isEditing("due_date") ? (
-              <Input
-                type="date"
-                value={editDueDate}
-                onChange={(e) => setEditDueDate(e.target.value)}
-                onBlur={saveDueDate}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.currentTarget.blur()
-                  if (e.key === "Escape") setEditingField(null)
-                }}
-                className="h-8 w-40"
-                autoFocus
-              />
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  value={parseISODateString(editDueDate)}
+                  onChange={(d) => {
+                    const v = d ? toISODateString(d) : ""
+                    setEditDueDate(v)
+                    // The calendar commits on select — no blur step like the text input had.
+                    // saveField stays open in edit-all mode, so this is safe unconditionally.
+                    saveField("due_date", { due_date: v || null })
+                  }}
+                  placeholder="Pick a due date"
+                  ariaLabel="Due date"
+                />
+                {editDueDate && !editingAll && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => saveField("due_date", { due_date: null })}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             ) : (
               <button
                 onClick={() => startEdit("due_date")}
@@ -833,11 +923,22 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
               </button>
             )}
 
-            {fullStory.milestone_name && (
-              <div className="text-muted-foreground flex items-center gap-2 px-2 py-1">
-                <Clock className="h-4 w-4" />
-                <span>{fullStory.milestone_name}</span>
+            {milestones.length > 0 ? (
+              <div className="text-muted-foreground flex items-center gap-2 px-2 py-1" title="Sprint">
+                <Clock className="h-4 w-4 shrink-0" />
+                <TaskSprintSelector
+                  sprints={milestones}
+                  value={fullStory.milestone}
+                  onChange={(milestoneId) => saveSprint(milestoneId)}
+                />
               </div>
+            ) : (
+              fullStory.milestone_name && (
+                <div className="text-muted-foreground flex items-center gap-2 px-2 py-1">
+                  <Clock className="h-4 w-4" />
+                  <span>{fullStory.milestone_name}</span>
+                </div>
+              )
             )}
           </div>
 
@@ -889,9 +990,10 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                     if (e.key === "Escape") setEditingField(null)
                   }}
                   rows={12}
-                  placeholder="Add a description..."
+                  placeholder="Add a description... (type @ to mention a project member)"
                   autoFocus
                   ariaLabel="Story description"
+                  mentionable={mentionable}
                 />
                 <p className="text-muted-foreground mt-1 text-xs">
                   Click outside or press Esc to save · Markdown supported
@@ -904,7 +1006,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                 title="Click to edit"
               >
                 {fullStory.description ? (
-                  <Markdown source={fullStory.description} />
+                  <Markdown source={fullStory.description} projectSlug={fullStory.project_extra_info.slug} />
                 ) : (
                   <span className="text-muted-foreground/70 italic">Click to add a description...</span>
                 )}
@@ -1032,12 +1134,13 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                 value={newComment}
                 onChange={setNewComment}
                 rows={4}
-                placeholder="Add a comment..."
+                placeholder="Add a comment... (type @ to mention a project member)"
                 ariaLabel="New comment"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) postComment()
                 }}
                 className="flex-1"
+                mentionable={mentionable}
               />
               <Button
                 onClick={postComment}
@@ -1051,11 +1154,11 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
               <p className="text-destructive mb-4 text-sm">{commentError} — nothing you typed was lost.</p>
             )}
             {!commentsLoading ? (
-              allComments.length === 0 ? (
+              visibleComments.length === 0 ? (
                 <p className="text-muted-foreground text-sm italic">No comments yet</p>
               ) : (
                 <div id="comments-section" className="space-y-3">
-                  {allComments.map((comment) => {
+                  {visibleComments.map((comment) => {
                     const commentId = String(comment.id)
                     const isPending = commentId.startsWith("pending-")
                     const isDeleted = comment.delete_comment_date != null
@@ -1063,7 +1166,9 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                     const isEditingThis = editingCommentId === commentId
                     const isHighlighted = highlightId != null && commentId === highlightId
                     const deleter = comment.delete_comment_user as { pk?: number; name?: string } | null
-                    const canRestore = isDeleted && (deleter?.pk === me?.id || isMine)
+                    const canRestore = isDeleted && (deleter?.pk === me?.id || isMine || canModerate)
+                    // Authors manage their own comments; project admins manage anyone's.
+                    const canManage = !isPending && !isDeleted && (isMine || canModerate)
 
                     return (
                       <div
@@ -1077,31 +1182,54 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                         <Avatar name={comment.user.name} photo={comment.user.photo} size="sm" className="mt-0.5" />
                         <div className="min-w-0 flex-1">
                           <div className="mb-0.5 flex items-center gap-2">
-                            <span className="text-sm font-medium">{comment.user.name}</span>
+                            <Link
+                              to={memberPath(fullStory.project_extra_info.slug, comment.user.username) as never}
+                              className="truncate text-sm font-medium hover:text-primary hover:underline"
+                              title={`View ${comment.user.username}'s profile`}
+                            >
+                              {comment.user.name}
+                            </Link>
                             <span className="text-muted-foreground text-xs">{formatRelative(comment.created_at)}</span>
                             {comment.edit_comment_date && !isDeleted && (
                               <span className="text-muted-foreground/70 text-xs">(edited)</span>
                             )}
 
-                            <div className="ml-auto flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="ml-auto flex items-center gap-0.5">
                               {!isPending && !isDeleted && (
-                                <Tooltip>
-                                  <TooltipTrigger
-                                    render={
-                                      <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        onClick={() => copyCommentLink(comment)}
-                                        aria-label="Copy comment link"
-                                      />
-                                    }
-                                  >
-                                    <Link2 className="h-3.5 w-3.5" />
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">Copy link</TooltipContent>
-                                </Tooltip>
+                                <>
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={
+                                        <Button
+                                          variant="ghost"
+                                          size="icon-sm"
+                                          onClick={() => replyToComment(comment)}
+                                          aria-label={`Reply to ${comment.user.name}`}
+                                        />
+                                      }
+                                    >
+                                      <Reply className="h-3.5 w-3.5" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">Reply (quote + mention)</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      render={
+                                        <Button
+                                          variant="ghost"
+                                          size="icon-sm"
+                                          onClick={() => copyCommentLink(comment)}
+                                          aria-label="Copy comment link"
+                                        />
+                                      }
+                                    >
+                                      <Link2 className="h-3.5 w-3.5" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">Copy link</TooltipContent>
+                                  </Tooltip>
+                                </>
                               )}
-                              {isMine && !isPending && !isDeleted && (
+                              {canManage && (
                                 <>
                                   <Tooltip>
                                     <TooltipTrigger
@@ -1124,7 +1252,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                                         <Button
                                           variant="ghost"
                                           size="icon-sm"
-                                          onClick={() => handleDeleteComment(comment)}
+                                          onClick={() => setConfirmDeleteEntry(comment)}
                                           className="hover:text-destructive"
                                           aria-label="Delete comment"
                                         />
@@ -1162,6 +1290,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEditComment()
                                 }}
+                                mentionable={mentionable}
                               />
                               <div className="flex justify-end gap-2">
                                 <Button
@@ -1185,6 +1314,7 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
                           ) : (
                             <Markdown
                               source={comment.comment}
+                              projectSlug={fullStory.project_extra_info.slug}
                               className="text-muted-foreground break-words [&>*:first-child]:mt-0"
                             />
                           )}
@@ -1234,6 +1364,37 @@ export function IssueModal({ story, statuses, members, onClose, onUpdate, onDele
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete comment confirmation — Undo stays available via toast after confirm */}
+      <AlertDialog
+        open={confirmDeleteEntry != null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteEntry(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete comment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete the comment by{" "}
+              <strong>{confirmDeleteEntry?.user.name ?? "this user"}</strong>? You can undo
+              right after from the toast.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDeleteEntry) handleDeleteComment(confirmDeleteEntry)
+                setConfirmDeleteEntry(null)
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

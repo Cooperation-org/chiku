@@ -1,4 +1,5 @@
 ﻿import { MembersTable } from "@/components/members/members-table"
+import { useMentionable } from "@/lib/queries/memberships"
 import { useProjectBySlug } from "@/lib/queries/projects"
 
 interface MembersPageProps {
@@ -8,6 +9,7 @@ interface MembersPageProps {
 
 export default function MembersPage({ slug, filter }: MembersPageProps) {
   const { project } = useProjectBySlug(slug)
+  const { data: mentionable = [] } = useMentionable(project?.id ?? null)
   const canManage = project?.i_am_admin === true
 
   if (!project) {
@@ -28,6 +30,7 @@ export default function MembersPage({ slug, filter }: MembersPageProps) {
             project={project}
             filter={filter}
             canManage={canManage}
+            mentionable={mentionable}
           />
         </div>
       </div>

@@ -369,6 +369,42 @@ export interface NotifyPolicy {
 	web_notify_level?: boolean | null;
 }
 
+/**
+ * GET /web-notifications — one in-app notification for the authed user
+ * (taiga-back 6.8.1 `WebNotificationsViewSet`). `read` is null while unread.
+ */
+export interface WebNotification {
+	id: number;
+	event_type: number;
+	user: number;
+	data: {
+		obj: {
+			id: number;
+			ref: number;
+			subject: string;
+			content_type: string;
+		};
+		user: {
+			id: number;
+			name: string;
+			username: string;
+			photo: string | null;
+		};
+		project: {
+			id: number;
+			name: string;
+			slug: string;
+		};
+	};
+	created: string;
+	read: string | null;
+}
+
+export interface WebNotificationsResponse {
+	objects: WebNotification[];
+	total: number;
+}
+
 export interface ProjectTemplate {
 	id: number;
 	name: string;

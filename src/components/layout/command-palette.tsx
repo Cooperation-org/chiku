@@ -14,6 +14,7 @@ import {
   Moon,
   Rows3,
   Sun,
+  Timer,
   Users,
 } from "lucide-react"
 import {
@@ -42,6 +43,7 @@ import { useTheme } from "@/lib/stores/theme"
 const VIEW_ICONS = {
   board: KanbanSquare,
   backlog: Rows3,
+  sprints: Timer,
   epics: Layers,
   velocity: LineChart,
 } as const

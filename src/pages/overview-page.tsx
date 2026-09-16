@@ -10,11 +10,12 @@ import {
 } from "@/lib/project-views"
 import { useProjectBySlug, useProjectStats } from "@/lib/queries/projects"
 import { useNavigate } from "@tanstack/react-router"
-import { KanbanSquare, Layers, LineChart, Rows3 } from "lucide-react"
+import { KanbanSquare, Layers, LineChart, Rows3, Timer } from "lucide-react"
 
 const VIEW_ICONS: Record<ProjectView, typeof KanbanSquare> = {
   board: KanbanSquare,
   backlog: Rows3,
+  sprints: Timer,
   epics: Layers,
   velocity: LineChart,
 }

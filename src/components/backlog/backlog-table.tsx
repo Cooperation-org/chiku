@@ -1,9 +1,11 @@
 import { Avatar } from "@/components/app/avatar"
+import { ValueBadge } from "@/components/app/value-badge"
+import { TaskSprintSelector } from "@/components/sprints/task-sprint-selector"
 import {
   RegistryPagination,
   RegistryTh,
 } from "@/components/table/registry-chrome"
-import type { UserStory } from "@/lib/api/types"
+import type { Milestone, UserStory } from "@/lib/api/types"
 import { formatRelativeDate } from "@/lib/format"
 import { appTableFeatures, BACKLOG_PAGE_SIZE, filterFn } from "@/lib/table"
 import {
@@ -13,7 +15,7 @@ import {
   type SortingState,
   useTable,
 } from "@tanstack/react-table"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 /**
  * Backlog registry — a borderless editorial table. TanStack Table v9 drives
@@ -145,6 +147,12 @@ const columns = helper.columns([
       ),
     meta: { className: "w-16 text-right" },
   }),
+  helper.accessor((row) => row.tags?.map((t) => (Array.isArray(t) ? t[0] : t)).join(" ") ?? "", {
+    id: "value",
+    header: "Value",
+    cell: (ctx) => <ValueBadge story={ctx.row.original} />,
+    meta: { className: "w-28" },
+  }),
   helper.accessor("modified_date", {
     id: "updated",
     header: "Updated",
@@ -161,10 +169,15 @@ export function BacklogTable({
   stories,
   filter,
   onOpen,
+  sprints,
+  onMoveToSprint,
 }: {
   stories: UserStory[]
   filter: string
   onOpen: (story: UserStory) => void
+  /** Open sprints for the planning picker — when set, a Sprint column appears. */
+  sprints?: Milestone[]
+  onMoveToSprint?: (story: UserStory, milestoneId: number | null) => void
 }) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState<PaginationState>({
@@ -180,9 +193,38 @@ export function BacklogTable({
     setPagination((p) => ({ ...p, pageIndex: 0 }))
   }
 
+  // Planning picker column — only when the caller passes sprints + a move
+  // handler (backlog planning sections). Query owns the rows (passed in
+  // already filtered); the table only renders them, per the composition rule.
+  const sprintColumn = useMemo(() => {
+    if (!sprints || !onMoveToSprint) return null
+    const move = onMoveToSprint
+    return helper.display({
+      id: "sprint",
+      header: "Sprint",
+      cell: (ctx) => {
+        const story = ctx.row.original
+        return (
+          <TaskSprintSelector
+            sprints={sprints}
+            value={story.milestone}
+            onChange={(milestoneId) => move(story, milestoneId)}
+            ariaLabel={`Sprint for #${story.ref}`}
+            stopPropagation
+          />
+        )
+      },
+      meta: { className: "w-32" },
+    })
+  }, [sprints, onMoveToSprint])
+  const tableColumns = useMemo(
+    () => (sprintColumn ? [...columns, sprintColumn] : columns),
+    [sprintColumn],
+  )
+
   const table = useTable({
     features,
-    columns,
+    columns: tableColumns,
     data: stories ?? EMPTY_STORIES,
     state: { sorting, globalFilter: filter, pagination },
     onSortingChange: setSorting,

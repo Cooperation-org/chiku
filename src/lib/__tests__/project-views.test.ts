@@ -33,13 +33,13 @@ function projectWith(overrides: Partial<Project>): Project {
 describe("viewEnabled", () => {
   it("enables every view on a fully-activated project", () => {
     const p = projectWith({})
-    for (const view of ["board", "backlog", "epics", "velocity"] as const) {
+    for (const view of ["board", "backlog", "sprints", "epics", "velocity"] as const) {
       expect(viewEnabled(p, view)).toBe(true)
     }
   })
 
   it("disables everything when no project resolved yet", () => {
-    for (const view of ["board", "backlog", "epics", "velocity"] as const) {
+    for (const view of ["board", "backlog", "sprints", "epics", "velocity"] as const) {
       expect(viewEnabled(null, view)).toBe(false)
     }
   })
@@ -49,9 +49,10 @@ describe("viewEnabled", () => {
     expect(viewEnabled(projectWith({ is_kanban_activated: false }), "backlog")).toBe(true)
   })
 
-  it("gates backlog and velocity together on the backlog flag", () => {
+  it("gates backlog, sprints and velocity together on the backlog flag", () => {
     const p = projectWith({ is_backlog_activated: false })
     expect(viewEnabled(p, "backlog")).toBe(false)
+    expect(viewEnabled(p, "sprints")).toBe(false)
     expect(viewEnabled(p, "velocity")).toBe(false)
     expect(viewEnabled(p, "epics")).toBe(true)
   })

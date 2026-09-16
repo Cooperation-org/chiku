@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { qk } from "@/lib/query"
-import { getMilestones } from "@/lib/api/milestones"
-import { getUserStories } from "@/lib/api/userstories"
+import { closeMilestone, createMilestone, getMilestones, reopenMilestone, updateMilestone } from "@/lib/api/milestones"
+import { getUserStories, moveUserStoryToSprint } from "@/lib/api/userstories"
 import type { Milestone, UserStory } from "@/lib/api/types"
 
 export function useMilestones(projectId: number | null) {
@@ -36,3 +36,94 @@ export function useVelocityData(projectId: number | null) {
 }
 
 export type { Milestone }
+
+/** Create a sprint; refreshes the sprints list on success. */
+export function useCreateMilestone(projectId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { name: string; estimated_start: string; estimated_finish: string }) =>
+      createMilestone({ project: projectId, ...data }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.milestones(projectId) })
+    },
+  })
+}
+
+/** Rename / reschedule / close / reopen a sprint. */
+export function useUpdateMilestone(projectId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Milestone> }) =>
+      updateMilestone(id, data),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.milestones(projectId) })
+    },
+  })
+}
+
+/**
+ * Move one story into (or out of — null) a sprint, with optimistic cache
+ * update and rollback. Version conflicts retry once inside the API layer.
+ */
+export function useMoveStoryToSprint(projectId: number) {
+  const qc = useQueryClient()
+  const key = qk.stories(projectId)
+  return useMutation({
+    mutationFn: ({ storyId, milestoneId, version }: { storyId: number; milestoneId: number | null; version: number }) =>
+      moveUserStoryToSprint(storyId, milestoneId, version),
+    onMutate: async ({ storyId, milestoneId }) => {
+      const previous = qc.getQueryData<UserStory[]>(key)
+      qc.setQueryData<UserStory[]>(key, (old) =>
+        old?.map((s) => (s.id === storyId ? { ...s, milestone: milestoneId } : s)),
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(key, context.previous)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: key })
+      qc.invalidateQueries({ queryKey: qk.milestones(projectId) })
+    },
+  })
+}
+
+/**
+ * Close a sprint, rolling unfinished stories to the destination first.
+ * `destinationId` null sends them back to the backlog. Sequential moves keep
+ * Taiga's version checks happy; a failure aborts before the close so no work
+ * is stranded in a closed sprint.
+ */
+export function useCloseSprintAndRollover(projectId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      sprintId,
+      unfinished,
+      destinationId,
+    }: {
+      sprintId: number
+      unfinished: UserStory[]
+      destinationId: number | null
+    }) => {
+      for (const s of unfinished) {
+        await moveUserStoryToSprint(s.id, destinationId, s.version)
+      }
+      return closeMilestone(sprintId)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.stories(projectId) })
+      qc.invalidateQueries({ queryKey: qk.milestones(projectId) })
+    },
+  })
+}
+
+export function useReopenMilestone(projectId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => reopenMilestone(id),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk.milestones(projectId) })
+    },
+  })
+}

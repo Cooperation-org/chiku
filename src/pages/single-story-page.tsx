@@ -4,7 +4,7 @@ import { IssueModal } from "@/components/app/issue-modal"
 import { Button } from "@/components/ui/button"
 import { PagePresence, PageTransition } from "@/components/layout/page-transition"
 import { PageLoading, PageNotFound } from "@/components/layout/page-state"
-import { useMemberships } from "@/lib/queries/memberships"
+import { useMemberships, useMentionable } from "@/lib/queries/memberships"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { useStatuses, useStoryByRef } from "@/lib/queries/stories"
 import { qk, queryClient } from "@/lib/query"
@@ -28,6 +28,7 @@ export default function SingleStoryPage({ slug, storyRef }: SingleStoryPageProps
   const { data: story, isLoading, isError } = useStoryByRef(projectId, storyRef)
   const { data: statuses = [] } = useStatuses(projectId)
   const { data: memberships } = useMemberships(projectId)
+  const { data: mentionable = [] } = useMentionable(projectId)
 
   const members = (memberships ?? []).map((m) => ({
     id: m.user,
@@ -77,6 +78,8 @@ export default function SingleStoryPage({ slug, storyRef }: SingleStoryPageProps
             story={story}
             statuses={statuses}
             members={members}
+            mentionable={mentionable}
+            canModerate={currentProject.i_am_admin ?? false}
             onClose={goBack}
             onNavigateRef={goToRef}
             onUpdate={(updated) => {

@@ -1,0 +1,45 @@
+---
+version: "0.4.6"
+date: "2026-09-16"
+title: "Pie-slicing value on stories, and full sprints"
+---
+
+Stories now carry their pie-slicing worth, and Kanban grows into Scrum:
+plan backlog work into sprints, work the current sprint on the board, then
+close it — unfinished stories roll over to the next sprint.
+
+### Added
+
+- **Story value (team + cash)** — every story shows a value badge (`50 cook`,
+  `100 usd`, matching the `mcp-taiga` tag convention); unvalued stories show
+  an amber "No value" dot. Click the badge in the story view to set both
+  numbers — they land on the story's tags, so GovKit's next sync picks them
+  up with no backend change. Cash is required at the form level (prefilled
+  `0`; the backend treats missing cash as 0 and it never blocks a drop).
+- **Value column in the backlog** — team value and cash at a glance, next to
+  points. Note: `usd` cash tags are stored correctly today but not yet
+  counted by GovKit's pie (it reads cash from a custom field); team `cook`
+  value flows end to end now.
+- **Sprints view** — create sprints with a start/finish window, track points
+  progress per sprint, jump to the sprint's board, close and reopen.
+- **Backlog planning** — the backlog now groups unassigned stories plus one
+  section per open sprint, each with a sprint picker to plan or unplan a
+  story in place. Stories also carry a sprint picker in the story view.
+- **Sprint board scope** — open any sprint's board via `?sprint=<id>`; moves
+  still PATCH status with optimistic updates.
+- **Close with rollover** — closing lists every unfinished story and moves
+  them to the next open sprint (or back to the backlog) before the sprint
+  closes, so nothing strands in a closed sprint.
+- **Deadline countdown** — sprints show a badge that turns amber within 24
+  hours of the finish date and red past it, always naming where unfinished
+  work will move.
+
+### Changed
+
+- Units default to `cook` / `usd` unless the deployment sets `VITE_VALUE_UNIT`
+  / `VITE_CASH_UNIT`.
+- All date fields use the shadcn calendar picker (single dates for due dates
+  and filters, a range picker for sprint dates) instead of native date inputs.
+- Sprint assignment uses one shared `TaskSprintSelector` (shadcn Select) in
+  the backlog, the story view, and the close dialog — unassigned reads
+  "None".

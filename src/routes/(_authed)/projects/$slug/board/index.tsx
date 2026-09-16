@@ -3,8 +3,8 @@ import { BoardToolbarControls } from "@/components/board/board-toolbar-controls"
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { CrumbBoard } from "@/components/layout/breadcrumbs";
 
-/** Legacy `?story=<ref>` deep links redirect to the canonical /board/<ref>. `q` filters the board. */
-type BoardSearch = { story?: number; q?: string };
+/** Legacy `?story=<ref>` deep links redirect to the canonical /board/<ref>. `q` filters the board, `sprint` scopes it to one sprint. */
+type BoardSearch = { story?: number; q?: string; sprint?: number };
 
 export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
   validateSearch: (search: Record<string, unknown>): BoardSearch => {
@@ -15,6 +15,11 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
       if (Number.isFinite(story)) out.story = story;
     }
     if (typeof search.q === "string" && search.q !== "") out.q = search.q;
+    const rawSprint = search.sprint;
+    if (rawSprint !== undefined && rawSprint !== null && rawSprint !== "") {
+      const sprint = Number(rawSprint);
+      if (Number.isFinite(sprint)) out.sprint = sprint;
+    }
     return out;
   },
   beforeLoad: ({ params, search }) => {
@@ -37,6 +42,6 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
 
 function RouteComponent() {
   const { slug } = Route.useParams();
-  const { q } = Route.useSearch();
-  return <BoardPage slug={slug} q={q} />;
+  const { q, sprint } = Route.useSearch();
+  return <BoardPage slug={slug} q={q} sprintId={sprint} />;
 }

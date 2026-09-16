@@ -1,6 +1,7 @@
 import { useDraggable, useDroppable, useDragOperation } from "@dnd-kit/react"
 import { OctagonAlert } from "lucide-react"
 import { Avatar } from "@/components/app/avatar"
+import { ValueBadge } from "@/components/app/value-badge"
 import { useBoardStore } from "@/lib/stores/board"
 import type { UserStory } from "@/lib/api/types"
 
@@ -17,6 +18,10 @@ export function StoryCardView({ story, onClick }: { story: UserStory; onClick?: 
       className="group bg-card hover:bg-accent/60 relative cursor-grab rounded-lg border p-3 shadow-xs transition-colors active:cursor-grabbing"
     >
       <h4 className="mr-6 line-clamp-2 text-sm leading-snug font-medium">{story.subject}</h4>
+
+      <div className="mt-1.5">
+        <ValueBadge story={story} />
+      </div>
 
       {story.is_blocked && (
         <div
