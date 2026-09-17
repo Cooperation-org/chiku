@@ -1,5 +1,5 @@
 import { useDraggable, useDroppable, useDragOperation } from "@dnd-kit/react"
-import { OctagonAlert } from "lucide-react"
+import { Clock, OctagonAlert } from "lucide-react"
 import { Avatar } from "@/components/app/avatar"
 import { ValueBadge } from "@/components/app/value-badge"
 import { useBoardStore } from "@/lib/stores/board"
@@ -9,8 +9,20 @@ import type { UserStory } from "@/lib/api/types"
  * Pure card visual — no drag hooks, so it is safe to mount inside the
  * DragOverlay (which would otherwise double-register the same draggable id).
  */
-export function StoryCardView({ story, onClick }: { story: UserStory; onClick?: () => void }) {
+export function StoryCardView({
+  story,
+  sprintNames,
+  onClick,
+}: {
+  story: UserStory
+  sprintNames?: Map<number, string>
+  onClick?: () => void
+}) {
   const showLabels = useBoardStore((s) => s.showLabels)
+  const sprintName =
+    story.milestone == null
+      ? null
+      : (sprintNames?.get(story.milestone) ?? story.milestone_name ?? `Sprint #${story.milestone}`)
 
   return (
     <div
@@ -51,10 +63,19 @@ export function StoryCardView({ story, onClick }: { story: UserStory; onClick?: 
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-          <span className="inline-block h-3 w-3 rounded-sm border border-current opacity-70" aria-hidden />
-          #{story.ref}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className="text-muted-foreground inline-flex min-w-0 items-center gap-1.5 text-xs">
+          <span className="inline-block h-3 w-3 shrink-0 rounded-sm border border-current opacity-70" aria-hidden />
+          <span className="shrink-0">#{story.ref}</span>
+          {sprintName && (
+            <span
+              className="bg-muted inline-flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
+              title={`Sprint: ${sprintName}`}
+            >
+              <Clock className="h-3 w-3 shrink-0" />
+              <span className="truncate">{sprintName}</span>
+            </span>
+          )}
         </span>
         {story.assigned_to_extra_info && (
           <Avatar
@@ -69,7 +90,15 @@ export function StoryCardView({ story, onClick }: { story: UserStory; onClick?: 
   )
 }
 
-export function BoardCard({ story, onSelect }: { story: UserStory; onSelect: (story: UserStory) => void }) {
+export function BoardCard({
+  story,
+  sprintNames,
+  onSelect,
+}: {
+  story: UserStory
+  sprintNames?: Map<number, string>
+  onSelect: (story: UserStory) => void
+}) {
   const { ref: dragRef, isDragging } = useDraggable({ id: story.id, data: { story } })
   // Cards are droppable too (in addition to columns) so a drop onto another
   // card reports the exact insert position for in-column reorders.
@@ -97,7 +126,7 @@ export function BoardCard({ story, onSelect }: { story: UserStory; onSelect: (st
         }}
         className={isDragging ? "opacity-40" : ""}
       >
-        <StoryCardView story={story} onClick={() => onSelect(story)} />
+        <StoryCardView story={story} sprintNames={sprintNames} onClick={() => onSelect(story)} />
       </div>
     </>
   )

@@ -14,6 +14,8 @@ declare module "@tanstack/react-router" {
   interface StaticDataRouteOption {
     /** Breadcrumb controls declared by the route; rendered after the sidebar toggle. */
     toolbarBreadcrumbs?: ComponentType[]
+    /** Center controls declared by the route; rendered beside the palette trigger. */
+    toolbarCenter?: ComponentType[]
     /** Toolbar action controls declared by the route; rendered in the app bar. */
     toolbarControls?: ComponentType[]
   }
@@ -30,6 +32,7 @@ export function AppToolbar() {
   // controls stay leaf-owned — only the deepest route's actions render.
   const matches = useMatches()
   const breadcrumbs = matches.flatMap((m) => m.staticData?.toolbarBreadcrumbs ?? [])
+  const center = matches.flatMap((m) => m.staticData?.toolbarCenter ?? [])
   const controls =
     [...matches].reverse().find((m) => m.staticData?.toolbarControls)?.staticData
       ?.toolbarControls ?? []
@@ -62,8 +65,44 @@ export function AppToolbar() {
         </AnimatePresence>
       </div>
 
-      <motion.div layout transition={toolbarSpring} className="relative max-w-xl flex-1">
-        <CommandPaletteTrigger />
+      {/* Center: palette trigger plus optional route content beside it. The
+          flex layout only kicks in when a route provides center controls —
+          otherwise this renders exactly as before. */}
+      <motion.div
+        layout
+        transition={toolbarSpring}
+        className={
+          center.length > 0
+            ? "flex max-w-xl min-w-0 flex-1 items-center gap-2"
+            : "relative max-w-xl flex-1"
+        }
+      >
+        {center.length > 0 ? (
+          <>
+            <div className="shrink-0">
+              <CommandPaletteTrigger />
+            </div>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {center.map((Center, i) => (
+                  <motion.div
+                    key={`${Center.displayName ?? Center.name}-${i}`}
+                    layout
+                    transition={toolbarSpring}
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    className="flex min-w-0 items-center"
+                  >
+                    <Center />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </>
+        ) : (
+          <CommandPaletteTrigger />
+        )}
       </motion.div>
 
       <motion.div layout transition={toolbarSpring} className="ml-auto flex shrink-0 items-center gap-1">

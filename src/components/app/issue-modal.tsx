@@ -1,7 +1,71 @@
-﻿import { useEffect, useRef, useState } from "react"
-import { createPortal } from "react-dom"
+﻿import { Avatar } from "@/components/app/avatar"
+import { Markdown } from "@/components/app/markdown"
+import { MarkdownEditor } from "@/components/app/markdown-editor"
+import { ValueBadge } from "@/components/app/value-badge"
+import { ValueEditor } from "@/components/app/value-editor"
+import { AssigneeSelect } from "@/components/inputs/assignee-select"
+import { PointsSelect } from "@/components/inputs/points-select"
+import { StoryStatusSelect } from "@/components/inputs/story-status-select"
+import { TaskSprintSelector } from "@/components/sprints/task-sprint-selector"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import {
+  DatePicker,
+  parseISODateString,
+  toISODateString,
+} from "@/components/ui/date-picker"
+import { Input } from "@/components/ui/input"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  deleteStoryAttachment,
+  formatFileSize,
+  getStoryAttachments,
+  isImage,
+  isMarkdown,
+  isPreviewableText,
+  uploadStoryAttachment,
+} from "@/lib/api/attachments"
+import { api } from "@/lib/api/client"
+import { getMilestones } from "@/lib/api/milestones"
+import { pointsPatch, storyPointId } from "@/lib/api/points"
+import { getProject } from "@/lib/api/projects"
+import type {
+  Attachment,
+  HistoryEntry,
+  Milestone,
+  Project,
+  UserStory,
+  UserStoryStatus,
+} from "@/lib/api/types"
+import { memberPath } from "@/lib/api/users"
+import { getUserStory, updateUserStory } from "@/lib/api/userstories"
+import { buildQuoteReply, type Mentionable } from "@/lib/mentions"
+import {
+  useComments,
+  useDeleteStoryComment,
+  useEditStoryComment,
+  useUndeleteStoryComment,
+} from "@/lib/queries/comments"
+import { useUpdateStory } from "@/lib/queries/stories"
+import { qk, queryClient } from "@/lib/query"
+import { useAuth } from "@/lib/stores/auth"
+import { useToolbarSlots } from "@/lib/stores/toolbar-slots"
+import { parseCashValue, parseTeamValue, setValueTags } from "@/lib/values"
 import { Link, useSearch } from "@tanstack/react-router"
-import { toast } from "sonner"
+import { cn } from "cn"
 import {
   ArrowLeft,
   Calendar,
@@ -18,58 +82,9 @@ import {
   Trash2,
   User as UserIcon,
 } from "lucide-react"
-import type { Attachment, HistoryEntry, Milestone, Project, UserStory, UserStoryStatus } from "@/lib/api/types"
-import { getUserStory, updateUserStory } from "@/lib/api/userstories"
-import { getMilestones } from "@/lib/api/milestones"
-import { getProject } from "@/lib/api/projects"
-import { pointsPatch, storyPointId } from "@/lib/api/points"
-import {
-  deleteStoryAttachment,
-  formatFileSize,
-  getStoryAttachments,
-  isImage,
-  isMarkdown,
-  isPreviewableText,
-  uploadStoryAttachment,
-} from "@/lib/api/attachments"
-import { Markdown } from "@/components/app/markdown"
-import { MarkdownEditor } from "@/components/app/markdown-editor"
-import { buildQuoteReply, type Mentionable } from "@/lib/mentions"
-import { memberPath } from "@/lib/api/users"
-import { api } from "@/lib/api/client"
-import { useAuth } from "@/lib/stores/auth"
-import { useToolbarSlots } from "@/lib/stores/toolbar-slots"
-import { Avatar } from "@/components/app/avatar"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Input } from "@/components/ui/input"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useUpdateStory } from "@/lib/queries/stories"
-import {
-  useComments,
-  useDeleteStoryComment,
-  useEditStoryComment,
-  useUndeleteStoryComment,
-} from "@/lib/queries/comments"
-import { qk, queryClient } from "@/lib/query"
-import { cn } from "cn"
-import { StoryStatusSelect } from "@/components/inputs/story-status-select"
-import { AssigneeSelect } from "@/components/inputs/assignee-select"
-import { PointsSelect } from "@/components/inputs/points-select"
-import { ValueBadge } from "@/components/app/value-badge"
-import { ValueEditor } from "@/components/app/value-editor"
-import { TaskSprintSelector } from "@/components/sprints/task-sprint-selector"
-import { DatePicker, parseISODateString, toISODateString } from "@/components/ui/date-picker"
-import { parseCashValue, parseTeamValue, setValueTags } from "@/lib/values"
+import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
+import { toast } from "sonner"
 
 interface IssueModalProps {
   story: UserStory
@@ -119,7 +134,17 @@ async function copyToClipboard(text: string, successMessage: string) {
   }
 }
 
-export function IssueModal({ story, statuses, members, mentionable, canModerate, onClose, onUpdate, onDelete, onNavigateRef }: IssueModalProps) {
+export function IssueModal({
+  story,
+  statuses,
+  members,
+  mentionable,
+  canModerate,
+  onClose,
+  onUpdate,
+  onDelete,
+  onNavigateRef,
+}: IssueModalProps) {
   const [fullStory, setFullStory] = useState<UserStory>(story)
   const [project, setProject] = useState<Project | null>(null)
   /** Open sprints for the sprint picker — empty on Kanban-only projects. */
@@ -134,7 +159,8 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   /** Comment awaiting delete confirmation (shadcn AlertDialog below). */
-  const [confirmDeleteEntry, setConfirmDeleteEntry] = useState<HistoryEntry | null>(null)
+  const [confirmDeleteEntry, setConfirmDeleteEntry] =
+    useState<HistoryEntry | null>(null)
 
   const [pendingComments, setPendingComments] = useState<HistoryEntry[]>([])
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
@@ -172,7 +198,8 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
   useEffect(() => {
     if (highlightId == null || !commentsResolved) return
     const el =
-      document.getElementById(`comment-${highlightId}`) ?? document.getElementById("comments-section")
+      document.getElementById(`comment-${highlightId}`) ??
+      document.getElementById("comments-section")
     el?.scrollIntoView({ behavior: "smooth", block: "center" })
   }, [highlightId, commentsResolved])
 
@@ -226,7 +253,13 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
     }
     window.addEventListener("keydown", onKeydown)
     return () => window.removeEventListener("keydown", onKeydown)
-  }, [confirmDeleteEntry, editingCommentId, editingField, showDeleteConfirm, onClose])
+  }, [
+    confirmDeleteEntry,
+    editingCommentId,
+    editingField,
+    showDeleteConfirm,
+    onClose,
+  ])
 
   async function saveField(field: string, data: Record<string, unknown>) {
     const prev = { ...fullStory }
@@ -249,14 +282,15 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
           onUpdate(prev)
           toast.error(`Failed to save: ${(err as Error).message}`)
         },
-      },
+      }
     )
   }
 
   function startEdit(field: string) {
     if (field === "subject") setEditSubject(fullStory.subject)
     if (field === "description") setEditDescription(fullStory.description || "")
-    if (field === "tags") setEditTagsText(fullStory.tags?.map((t) => t[0]).join(", ") || "")
+    if (field === "tags")
+      setEditTagsText(fullStory.tags?.map((t) => t[0]).join(", ") || "")
     if (field === "due_date") setEditDueDate(fullStory.due_date || "")
     setEditingField(field)
   }
@@ -275,10 +309,12 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
     }
   }
 
-  const isEditing = (field: string) => editingField === field || editingField === "all"
+  const isEditing = (field: string) =>
+    editingField === field || editingField === "all"
 
   const currentPointId = project ? storyPointId(fullStory, project) : null
-  const currentPointName = project?.points.find((p) => p.id === currentPointId)?.name ?? null
+  const currentPointName =
+    project?.points.find((p) => p.id === currentPointId)?.name ?? null
 
   function saveSubject() {
     if (!editSubject.trim()) return
@@ -323,7 +359,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
   }
 
   function saveTags() {
-    const existingTagColors = new Map(fullStory.tags?.map((t) => [t[0], t[1]]) || [])
+    const existingTagColors = new Map(
+      fullStory.tags?.map((t) => [t[0], t[1]]) || []
+    )
     const newTags: [string, string | null][] = editTagsText
       .split(",")
       .map((t) => t.trim())
@@ -340,7 +378,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
    * as set) because the backend treats missing cash as 0.
    */
   function saveValue(team: number | null, cash: number) {
-    const tags = setValueTags(fullStory.tags, { teamValue: team, cashValue: cash })
+    const tags = setValueTags(fullStory.tags, {
+      teamValue: team,
+      cashValue: cash,
+    })
     saveField("tags", { tags })
   }
 
@@ -388,7 +429,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
           setCommentError((err as Error).message)
         },
         onSettled: () => setIsPostingComment(false),
-      },
+      }
     )
   }
 
@@ -399,8 +440,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
     ...pendingComments.filter(
       (p) =>
         !(comments ?? []).some(
-          (c) => c.comment.trim() === p.comment.trim() && c.user.pk === p.user.pk,
-        ),
+          (c) =>
+            c.comment.trim() === p.comment.trim() && c.user.pk === p.user.pk
+        )
     ),
   ]
 
@@ -425,8 +467,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
     editCommentMutation.mutate(
       { entryId: editingCommentId, comment: trimmed },
       {
-        onError: (err) => toast.error(`Failed to edit comment: ${(err as Error).message}`),
-      },
+        onError: (err) =>
+          toast.error(`Failed to edit comment: ${(err as Error).message}`),
+      }
     )
     setEditingCommentId(null)
   }
@@ -435,7 +478,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
     const entryId = String(entry.id)
     deleteCommentMutation.mutate(
       { entryId },
-      { onError: (err) => toast.error(`Failed to delete comment: ${(err as Error).message}`) },
+      {
+        onError: (err) =>
+          toast.error(`Failed to delete comment: ${(err as Error).message}`),
+      }
     )
     toast("Comment deleted", {
       action: {
@@ -443,7 +489,12 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
         onClick: () =>
           undeleteCommentMutation.mutate(
             { entryId },
-            { onError: (err) => toast.error(`Failed to restore comment: ${(err as Error).message}`) },
+            {
+              onError: (err) =>
+                toast.error(
+                  `Failed to restore comment: ${(err as Error).message}`
+                ),
+            }
           ),
       },
     })
@@ -452,7 +503,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
   function handleRestoreComment(entry: HistoryEntry) {
     undeleteCommentMutation.mutate(
       { entryId: String(entry.id) },
-      { onError: (err) => toast.error(`Failed to restore comment: ${(err as Error).message}`) },
+      {
+        onError: (err) =>
+          toast.error(`Failed to restore comment: ${(err as Error).message}`),
+      }
     )
   }
 
@@ -466,11 +520,17 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
   // the author and block-quotes their words — no backend change needed.
   // The @mention only notifies project members, matching Taiga's own rule.
   function replyToComment(entry: HistoryEntry) {
-    const prefix = buildQuoteReply(entry.user.username, entry.comment, entry.user.name)
-    setNewComment((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${prefix}` : prefix))
+    const prefix = buildQuoteReply(
+      entry.user.username,
+      entry.comment,
+      entry.user.name
+    )
+    setNewComment((prev) =>
+      prev.trim() ? `${prev.trimEnd()}\n\n${prefix}` : prefix
+    )
     requestAnimationFrame(() => {
       const composer = document.querySelector(
-        '[aria-label="New comment"]',
+        '[aria-label="New comment"]'
       ) as HTMLTextAreaElement | null
       composer?.scrollIntoView({ behavior: "smooth", block: "center" })
       composer?.focus()
@@ -485,7 +545,11 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
     setUploadingNames((old) => [...old, ...list.map((f) => f.name)])
     for (const file of list) {
       try {
-        const created = await uploadStoryAttachment(story.id, fullStory.project, file)
+        const created = await uploadStoryAttachment(
+          story.id,
+          fullStory.project,
+          file
+        )
         setAttachments((old) => [...old, created])
         setAttachmentError("")
       } catch (err) {
@@ -552,7 +616,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
         description: fullStory.description || "",
       })
       if (fullStory.tags && fullStory.tags.length > 0) {
-        await updateUserStory(copy.id, { tags: fullStory.tags, version: copy.version })
+        await updateUserStory(copy.id, {
+          tags: fullStory.tags,
+          version: copy.version,
+        })
       }
       onUpdate(copy)
       onClose()
@@ -588,14 +655,21 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <Button variant="ghost" size="icon" onClick={onClose} aria-label="Back (Esc)" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    aria-label="Back (Esc)"
+                  />
                 }
               >
                 <ArrowLeft className="h-4 w-4" />
               </TooltipTrigger>
               <TooltipContent side="bottom">Back (Esc)</TooltipContent>
             </Tooltip>
-            <span className="text-muted-foreground shrink-0 font-mono text-sm">#{fullStory.ref}</span>
+            <span className="shrink-0 font-mono text-sm text-muted-foreground">
+              #{fullStory.ref}
+            </span>
 
             {/* Prev/next from the server's neighbors chain — no list walk */}
             {onNavigateRef && fullStory.neighbors && (
@@ -608,7 +682,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                         size="icon"
                         className="h-7 w-7"
                         disabled={!fullStory.neighbors.previous}
-                        onClick={() => fullStory.neighbors?.previous && onNavigateRef(fullStory.neighbors.previous.ref)}
+                        onClick={() =>
+                          fullStory.neighbors?.previous &&
+                          onNavigateRef(fullStory.neighbors.previous.ref)
+                        }
                         aria-label="Previous story"
                       />
                     }
@@ -616,7 +693,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                     <ChevronLeft className="h-4 w-4" />
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    {fullStory.neighbors.previous ? `#${fullStory.neighbors.previous.ref} ${fullStory.neighbors.previous.subject}` : "No previous story"}
+                    {fullStory.neighbors.previous
+                      ? `#${fullStory.neighbors.previous.ref} ${fullStory.neighbors.previous.subject}`
+                      : "No previous story"}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -627,7 +706,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                         size="icon"
                         className="h-7 w-7"
                         disabled={!fullStory.neighbors.next}
-                        onClick={() => fullStory.neighbors?.next && onNavigateRef(fullStory.neighbors.next.ref)}
+                        onClick={() =>
+                          fullStory.neighbors?.next &&
+                          onNavigateRef(fullStory.neighbors.next.ref)
+                        }
                         aria-label="Next story"
                       />
                     }
@@ -635,13 +717,15 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                     <ChevronRight className="h-4 w-4" />
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    {fullStory.neighbors.next ? `#${fullStory.neighbors.next.ref} ${fullStory.neighbors.next.subject}` : "No next story"}
+                    {fullStory.neighbors.next
+                      ? `#${fullStory.neighbors.next.ref} ${fullStory.neighbors.next.subject}`
+                      : "No next story"}
                   </TooltipContent>
                 </Tooltip>
               </span>
             )}
           </div>,
-          breadcrumbEl,
+          breadcrumbEl
         )}
 
       {actionsEl &&
@@ -660,7 +744,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
               >
                 <Pencil className="h-4 w-4" />
               </TooltipTrigger>
-              <TooltipContent side="bottom">{editingAll ? "Stop editing" : "Edit all fields"}</TooltipContent>
+              <TooltipContent side="bottom">
+                {editingAll ? "Stop editing" : "Edit all fields"}
+              </TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger
@@ -677,13 +763,20 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 <Copy className="h-4 w-4" />
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                {fullStory.assigned_to ? "Only unassigned stories can be duplicated" : "Duplicate"}
+                {fullStory.assigned_to
+                  ? "Only unassigned stories can be duplicated"
+                  : "Duplicate"}
               </TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <Button variant="ghost" size="icon" onClick={handleShare} aria-label="Share" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleShare}
+                    aria-label="Share"
+                  />
                 }
               >
                 <Share2 className="h-4 w-4" />
@@ -707,7 +800,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
               <TooltipContent side="bottom">Delete</TooltipContent>
             </Tooltip>
           </div>,
-          actionsEl,
+          actionsEl
         )}
 
       {/* Blocked banner — from the server's is_blocked + blocked_note */}
@@ -715,7 +808,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
         <div className="flex shrink-0 items-center gap-2 border-b bg-amber-500/10 px-6 py-2 text-sm text-amber-600 dark:text-amber-400">
           <OctagonAlert className="h-4 w-4 shrink-0" />
           <span className="font-medium">Blocked</span>
-          {fullStory.blocked_note && <span className="truncate">— {fullStory.blocked_note}</span>}
+          {fullStory.blocked_note && (
+            <span className="truncate">— {fullStory.blocked_note}</span>
+          )}
         </div>
       )}
 
@@ -732,7 +827,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 if (e.key === "Enter") e.currentTarget.blur()
                 if (e.key === "Escape") setEditingField(null)
               }}
-              className="border-primary/50 h-auto border-b-2 bg-transparent px-0 py-1 text-2xl font-semibold focus-visible:ring-0 focus-visible:border-primary"
+              className="h-auto border-b-2 border-primary/50 bg-transparent px-0 py-1 text-2xl font-semibold focus-visible:border-primary focus-visible:ring-0"
               autoFocus
             />
           ) : (
@@ -750,7 +845,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 <span
                   key={epic.id}
                   className="rounded px-2 py-1 text-xs font-medium"
-                  style={{ backgroundColor: `${epic.color}20`, color: epic.color }}
+                  style={{
+                    backgroundColor: `${epic.color}20`,
+                    color: epic.color,
+                  }}
                 >
                   {epic.subject}
                 </span>
@@ -775,7 +873,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             ) : (
               <button
                 onClick={() => startEdit("status")}
-                className="hover:bg-accent -mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors"
+                className="-mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-accent"
                 title="Click to change status"
               >
                 <span
@@ -805,12 +903,14 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             ) : (
               <button
                 onClick={() => startEdit("assignee")}
-                className="text-muted-foreground hover:bg-accent -mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors"
+                className="-mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-muted-foreground transition-colors hover:bg-accent"
                 title="Click to change assignee"
               >
                 <UserIcon className="h-4 w-4" />
                 {fullStory.assigned_to_extra_info ? (
-                  <span>{fullStory.assigned_to_extra_info.full_name_display}</span>
+                  <span>
+                    {fullStory.assigned_to_extra_info.full_name_display}
+                  </span>
                 ) : (
                   <span className="text-muted-foreground/70">Unassigned</span>
                 )}
@@ -819,9 +919,21 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
 
             {/* Creator (read-only) */}
             {fullStory.owner_extra_info && (
-              <div className="text-muted-foreground flex items-center gap-2 px-2 py-1" title="Created by">
-                <Avatar name={fullStory.owner_extra_info.full_name_display || fullStory.owner_extra_info.username} size="sm" />
-                <span>{fullStory.owner_extra_info.full_name_display || fullStory.owner_extra_info.username}</span>
+              <div
+                className="flex items-center gap-2 px-2 py-1 text-muted-foreground"
+                title="Created by"
+              >
+                <Avatar
+                  name={
+                    fullStory.owner_extra_info.full_name_display ||
+                    fullStory.owner_extra_info.username
+                  }
+                  size="sm"
+                />
+                <span>
+                  {fullStory.owner_extra_info.full_name_display ||
+                    fullStory.owner_extra_info.username}
+                </span>
               </div>
             )}
 
@@ -840,18 +952,23 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             ) : project ? (
               <button
                 onClick={() => startEdit("points")}
-                className="text-muted-foreground hover:bg-accent -mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors"
+                className="-mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-muted-foreground transition-colors hover:bg-accent"
                 title="Click to estimate"
               >
                 {currentPointName ? (
-                  <span className="text-primary font-medium">{currentPointName} points</span>
+                  <span className="font-medium text-primary">
+                    {currentPointName} points
+                  </span>
                 ) : (
                   <span className="text-muted-foreground/70">No estimate</span>
                 )}
               </button>
-            ) : fullStory.total_points !== null && fullStory.total_points !== undefined ? (
-              <div className="text-muted-foreground flex items-center gap-2 px-2 py-1">
-                <span className="text-primary font-medium">{fullStory.total_points} points</span>
+            ) : fullStory.total_points !== null &&
+              fullStory.total_points !== undefined ? (
+              <div className="flex items-center gap-2 px-2 py-1 text-muted-foreground">
+                <span className="font-medium text-primary">
+                  {fullStory.total_points} points
+                </span>
               </div>
             ) : null}
 
@@ -868,7 +985,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             ) : (
               <button
                 onClick={() => startEdit("value")}
-                className="text-muted-foreground hover:bg-accent -mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors"
+                className="-mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-muted-foreground transition-colors hover:bg-accent"
                 title="Click to set pie-slicing value"
               >
                 <ValueBadge story={fullStory} />
@@ -903,7 +1020,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             ) : (
               <button
                 onClick={() => startEdit("due_date")}
-                className={`hover:bg-accent -mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors ${
+                className={`-mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-accent ${
                   fullStory.due_date_status === "past_due"
                     ? "text-destructive"
                     : fullStory.due_date_status === "near"
@@ -915,7 +1032,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 <Calendar className="h-4 w-4" />
                 {fullStory.due_date ? (
                   <span className="font-medium">
-                    Due {new Date(fullStory.due_date + "T00:00:00").toLocaleDateString()}
+                    Due{" "}
+                    {new Date(
+                      fullStory.due_date + "T00:00:00"
+                    ).toLocaleDateString()}
                   </span>
                 ) : (
                   <span className="text-muted-foreground/70">Set due date</span>
@@ -924,7 +1044,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             )}
 
             {milestones.length > 0 ? (
-              <div className="text-muted-foreground flex items-center gap-2 px-2 py-1" title="Sprint">
+              <div
+                className="flex items-center gap-2 px-2 py-1 text-muted-foreground"
+                title="Sprint"
+              >
                 <Clock className="h-4 w-4 shrink-0" />
                 <TaskSprintSelector
                   sprints={milestones}
@@ -934,7 +1057,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
               </div>
             ) : (
               fullStory.milestone_name && (
-                <div className="text-muted-foreground flex items-center gap-2 px-2 py-1">
+                <div className="flex items-center gap-2 px-2 py-1 text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   <span>{fullStory.milestone_name}</span>
                 </div>
@@ -965,21 +1088,29 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 fullStory.tags.map(([tag, color]) => (
                   <span
                     key={tag}
-                    className="bg-accent rounded px-2 py-1 text-xs"
-                    style={color ? { backgroundColor: `${color}20`, color } : undefined}
+                    className="rounded bg-accent px-2 py-1 text-xs"
+                    style={
+                      color
+                        ? { backgroundColor: `${color}20`, color }
+                        : undefined
+                    }
                   >
                     {tag}
                   </span>
                 ))
               ) : (
-                <span className="text-muted-foreground/70 text-sm italic">Add labels...</span>
+                <span className="text-sm text-muted-foreground/70 italic">
+                  Add labels...
+                </span>
               )}
             </div>
           )}
 
           {/* Description */}
           <div className="border-t pt-4">
-            <h3 className="text-muted-foreground mb-2 text-sm font-medium">Description</h3>
+            <h3 className="mb-2 text-sm font-medium text-muted-foreground">
+              Description
+            </h3>
             {isEditing("description") ? (
               <>
                 <MarkdownEditor
@@ -995,7 +1126,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                   ariaLabel="Story description"
                   mentionable={mentionable}
                 />
-                <p className="text-muted-foreground mt-1 text-xs">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Click outside or press Esc to save · Markdown supported
                 </p>
               </>
@@ -1006,9 +1137,14 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 title="Click to edit"
               >
                 {fullStory.description ? (
-                  <Markdown source={fullStory.description} projectSlug={fullStory.project_extra_info.slug} />
+                  <Markdown
+                    source={fullStory.description}
+                    projectSlug={fullStory.project_extra_info.slug}
+                  />
                 ) : (
-                  <span className="text-muted-foreground/70 italic">Click to add a description...</span>
+                  <span className="text-muted-foreground/70 italic">
+                    Click to add a description...
+                  </span>
                 )}
               </div>
             )}
@@ -1025,31 +1161,48 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             onDrop={(e) => {
               e.preventDefault()
               setIsDragOver(false)
-              if (e.dataTransfer?.files?.length) uploadFiles(e.dataTransfer.files)
+              if (e.dataTransfer?.files?.length)
+                uploadFiles(e.dataTransfer.files)
             }}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-muted-foreground text-sm font-medium">
-                Attachments{attachments.length ? ` (${attachments.length})` : ""}
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Attachments
+                {attachments.length ? ` (${attachments.length})` : ""}
               </h3>
-              <Button variant="ghost" size="sm" onClick={() => fileInput.current?.click()}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fileInput.current?.click()}
+              >
                 Add file
               </Button>
-              <input ref={fileInput} type="file" multiple className="sr-only" onChange={(e) => {
-                if (e.target.files) uploadFiles(e.target.files)
-                e.target.value = ""
-              }} />
+              <input
+                ref={fileInput}
+                type="file"
+                multiple
+                className="sr-only"
+                onChange={(e) => {
+                  if (e.target.files) uploadFiles(e.target.files)
+                  e.target.value = ""
+                }}
+              />
             </div>
 
-            {attachmentError && <p className="text-destructive mb-2 text-sm">{attachmentError}</p>}
+            {attachmentError && (
+              <p className="mb-2 text-sm text-destructive">{attachmentError}</p>
+            )}
 
-            <div className={`rounded-md border border-dashed transition-colors ${isDragOver ? "border-primary bg-primary/5" : ""}`}>
+            <div
+              className={`rounded-md border border-dashed transition-colors ${isDragOver ? "border-primary bg-primary/5" : ""}`}
+            >
               {attachments.length === 0 && uploadingNames.length === 0 ? (
                 <button
                   onClick={() => fileInput.current?.click()}
-                  className="text-muted-foreground hover:text-foreground w-full px-3 py-6 text-sm transition-colors"
+                  className="w-full px-3 py-6 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Drop a file here, or click to choose one. Markdown, images, documents.
+                  Drop a file here, or click to choose one. Markdown, images,
+                  documents.
                 </button>
               ) : (
                 <ul className="divide-y">
@@ -1059,12 +1212,19 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                         <button
                           onClick={() => toggleAttachment(a)}
                           className="group min-w-0 flex-1 text-left"
-                          title={isPreviewableText(a) || isImage(a) ? "Click to preview" : "File"}
+                          title={
+                            isPreviewableText(a) || isImage(a)
+                              ? "Click to preview"
+                              : "File"
+                          }
                         >
-                          <span className="group-hover:text-primary block truncate text-sm">{a.name}</span>
-                          <span className="text-muted-foreground text-xs">
+                          <span className="block truncate text-sm group-hover:text-primary">
+                            {a.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
                             {formatFileSize(a.size)}
-                            {uploaderName(a) && ` · ${uploaderName(a)}`} · {formatRelative(a.created_date)}
+                            {uploaderName(a) && ` · ${uploaderName(a)}`} ·{" "}
+                            {formatRelative(a.created_date)}
                           </span>
                         </button>
                         <a
@@ -1072,14 +1232,14 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                           download={a.name}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded p-1.5 transition-colors"
+                          className="shrink-0 rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                           title="Download"
                         >
                           <Download className="h-4 w-4" />
                         </a>
                         <button
                           onClick={() => removeAttachment(a)}
-                          className="text-muted-foreground hover:bg-accent hover:text-destructive shrink-0 rounded p-1.5 transition-colors"
+                          className="shrink-0 rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
                           title="Remove"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1088,26 +1248,37 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                       {openAttachmentId === a.id && (
                         <div className="px-3 pb-3">
                           {isImage(a) ? (
-                            <img src={a.url} alt={a.name} className="max-w-full rounded border" />
+                            <img
+                              src={a.url}
+                              alt={a.name}
+                              className="max-w-full rounded border"
+                            />
                           ) : previewError[a.id] ? (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                               Cannot show this file inline.{" "}
-                              <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              <a
+                                href={a.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
                                 Open it
                               </a>
                               .
                             </p>
                           ) : previewText[a.id] === undefined ? (
-                            <p className="text-muted-foreground text-sm">
-                              {isPreviewableText(a) ? "Loading preview..." : "No inline preview for this file type."}
+                            <p className="text-sm text-muted-foreground">
+                              {isPreviewableText(a)
+                                ? "Loading preview..."
+                                : "No inline preview for this file type."}
                             </p>
                           ) : isMarkdown(a) ? (
                             <Markdown
                               source={previewText[a.id]}
-                              className="bg-accent/40 overflow-x-auto rounded border p-4"
+                              className="overflow-x-auto rounded border bg-accent/40 p-4"
                             />
                           ) : (
-                            <pre className="bg-accent/40 overflow-x-auto whitespace-pre-wrap rounded border p-3 text-xs">
+                            <pre className="overflow-x-auto rounded border bg-accent/40 p-3 text-xs whitespace-pre-wrap">
                               {previewText[a.id]}
                             </pre>
                           )}
@@ -1116,7 +1287,10 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                     </li>
                   ))}
                   {uploadingNames.map((name) => (
-                    <li key={name} className="text-muted-foreground flex items-center gap-3 px-3 py-2 text-sm">
+                    <li
+                      key={name}
+                      className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground"
+                    >
                       <span className="flex-1 truncate">{name}</span>
                       <span className="text-xs">Uploading...</span>
                     </li>
@@ -1128,7 +1302,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
 
           {/* Comments */}
           <div className="border-t pt-4">
-            <h3 className="text-muted-foreground mb-3 text-sm font-medium">Comments</h3>
+            <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+              Comments
+            </h3>
             <div className="mb-4 flex items-end gap-2">
               <MarkdownEditor
                 value={newComment}
@@ -1137,7 +1313,8 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 placeholder="Add a comment... (type @ to mention a project member)"
                 ariaLabel="New comment"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) postComment()
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                    postComment()
                 }}
                 className="flex-1"
                 mentionable={mentionable}
@@ -1151,11 +1328,15 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
               </Button>
             </div>
             {commentError && (
-              <p className="text-destructive mb-4 text-sm">{commentError} — nothing you typed was lost.</p>
+              <p className="mb-4 text-sm text-destructive">
+                {commentError} — nothing you typed was lost.
+              </p>
             )}
             {!commentsLoading ? (
               visibleComments.length === 0 ? (
-                <p className="text-muted-foreground text-sm italic">No comments yet</p>
+                <p className="text-sm text-muted-foreground italic">
+                  No comments yet
+                </p>
               ) : (
                 <div id="comments-section" className="space-y-3">
                   {visibleComments.map((comment) => {
@@ -1164,11 +1345,18 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                     const isDeleted = comment.delete_comment_date != null
                     const isMine = comment.user.pk === me?.id
                     const isEditingThis = editingCommentId === commentId
-                    const isHighlighted = highlightId != null && commentId === highlightId
-                    const deleter = comment.delete_comment_user as { pk?: number; name?: string } | null
-                    const canRestore = isDeleted && (deleter?.pk === me?.id || isMine || canModerate)
+                    const isHighlighted =
+                      highlightId != null && commentId === highlightId
+                    const deleter = comment.delete_comment_user as {
+                      pk?: number
+                      name?: string
+                    } | null
+                    const canRestore =
+                      isDeleted &&
+                      (deleter?.pk === me?.id || isMine || canModerate)
                     // Authors manage their own comments; project admins manage anyone's.
-                    const canManage = !isPending && !isDeleted && (isMine || canModerate)
+                    const canManage =
+                      !isPending && !isDeleted && (isMine || canModerate)
 
                     return (
                       <div
@@ -1176,22 +1364,36 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                         id={isPending ? undefined : `comment-${commentId}`}
                         className={cn(
                           "group -mx-2 flex gap-3 rounded-md p-2 transition-colors",
-                          isHighlighted && "bg-primary/5 ring-ring/40 ring-2",
+                          isHighlighted && "bg-primary/5 ring-2 ring-ring/40"
                         )}
                       >
-                        <Avatar name={comment.user.name} photo={comment.user.photo} size="sm" className="mt-0.5" />
+                        <Avatar
+                          name={comment.user.name}
+                          photo={comment.user.photo}
+                          size="sm"
+                          className="mt-0.5"
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="mb-0.5 flex items-center gap-2">
                             <Link
-                              to={memberPath(fullStory.project_extra_info.slug, comment.user.username) as never}
+                              to={
+                                memberPath(
+                                  fullStory.project_extra_info.slug,
+                                  comment.user.username
+                                ) as never
+                              }
                               className="truncate text-sm font-medium hover:text-primary hover:underline"
                               title={`View ${comment.user.username}'s profile`}
                             >
                               {comment.user.name}
                             </Link>
-                            <span className="text-muted-foreground text-xs">{formatRelative(comment.created_at)}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatRelative(comment.created_at)}
+                            </span>
                             {comment.edit_comment_date && !isDeleted && (
-                              <span className="text-muted-foreground/70 text-xs">(edited)</span>
+                              <span className="text-xs text-muted-foreground/70">
+                                (edited)
+                              </span>
                             )}
 
                             <div className="ml-auto flex items-center gap-0.5">
@@ -1203,14 +1405,18 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                                         <Button
                                           variant="ghost"
                                           size="icon-sm"
-                                          onClick={() => replyToComment(comment)}
+                                          onClick={() =>
+                                            replyToComment(comment)
+                                          }
                                           aria-label={`Reply to ${comment.user.name}`}
                                         />
                                       }
                                     >
                                       <Reply className="h-3.5 w-3.5" />
                                     </TooltipTrigger>
-                                    <TooltipContent side="top">Reply (quote + mention)</TooltipContent>
+                                    <TooltipContent side="top">
+                                      Reply (quote + mention)
+                                    </TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger
@@ -1218,14 +1424,18 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                                         <Button
                                           variant="ghost"
                                           size="icon-sm"
-                                          onClick={() => copyCommentLink(comment)}
+                                          onClick={() =>
+                                            copyCommentLink(comment)
+                                          }
                                           aria-label="Copy comment link"
                                         />
                                       }
                                     >
                                       <Link2 className="h-3.5 w-3.5" />
                                     </TooltipTrigger>
-                                    <TooltipContent side="top">Copy link</TooltipContent>
+                                    <TooltipContent side="top">
+                                      Copy link
+                                    </TooltipContent>
                                   </Tooltip>
                                 </>
                               )}
@@ -1237,14 +1447,18 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                                         <Button
                                           variant="ghost"
                                           size="icon-sm"
-                                          onClick={() => startEditComment(comment)}
+                                          onClick={() =>
+                                            startEditComment(comment)
+                                          }
                                           aria-label="Edit comment"
                                         />
                                       }
                                     >
                                       <Pencil className="h-3.5 w-3.5" />
                                     </TooltipTrigger>
-                                    <TooltipContent side="top">Edit</TooltipContent>
+                                    <TooltipContent side="top">
+                                      Edit
+                                    </TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger
@@ -1252,7 +1466,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                                         <Button
                                           variant="ghost"
                                           size="icon-sm"
-                                          onClick={() => setConfirmDeleteEntry(comment)}
+                                          onClick={() =>
+                                            setConfirmDeleteEntry(comment)
+                                          }
                                           className="hover:text-destructive"
                                           aria-label="Delete comment"
                                         />
@@ -1260,7 +1476,9 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </TooltipTrigger>
-                                    <TooltipContent side="top">Delete</TooltipContent>
+                                    <TooltipContent side="top">
+                                      Delete
+                                    </TooltipContent>
                                   </Tooltip>
                                 </>
                               )}
@@ -1269,13 +1487,19 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
 
                           {isDeleted ? (
                             <div className="flex items-center gap-3">
-                              <p className="text-muted-foreground text-sm italic">
+                              <p className="text-sm text-muted-foreground italic">
                                 Comment deleted
                                 {deleter?.name ? ` by ${deleter.name}` : ""}
-                                {comment.delete_comment_date ? ` · ${formatRelative(comment.delete_comment_date)}` : ""}
+                                {comment.delete_comment_date
+                                  ? ` · ${formatRelative(comment.delete_comment_date)}`
+                                  : ""}
                               </p>
                               {canRestore && (
-                                <Button variant="ghost" size="sm" onClick={() => handleRestoreComment(comment)}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRestoreComment(comment)}
+                                >
                                   Restore
                                 </Button>
                               )}
@@ -1288,7 +1512,11 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                                 rows={4}
                                 ariaLabel="Edit comment"
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEditComment()
+                                  if (
+                                    e.key === "Enter" &&
+                                    (e.metaKey || e.ctrlKey)
+                                  )
+                                    saveEditComment()
                                 }}
                                 mentionable={mentionable}
                               />
@@ -1315,7 +1543,7 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                             <Markdown
                               source={comment.comment}
                               projectSlug={fullStory.project_extra_info.slug}
-                              className="text-muted-foreground break-words [&>*:first-child]:mt-0"
+                              className="wrap-break-word text-muted-foreground [&>*:first-child]:mt-0"
                             />
                           )}
                         </div>
@@ -1325,22 +1553,32 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
                 </div>
               )
             ) : (
-              <p className="text-muted-foreground text-sm">Loading comments...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading comments...
+              </p>
             )}
           </div>
 
-          <div className="text-muted-foreground border-t pt-4 text-xs">
+          <div className="border-t pt-4 text-xs text-muted-foreground">
             <div className="flex flex-wrap gap-4">
               <span>
                 Created
                 {fullStory.owner_extra_info && (
                   <>
-                    {" "}by <span className="font-medium">{fullStory.owner_extra_info.full_name_display || fullStory.owner_extra_info.username}</span>
+                    {" "}
+                    by{" "}
+                    <span className="font-medium">
+                      {fullStory.owner_extra_info.full_name_display ||
+                        fullStory.owner_extra_info.username}
+                    </span>
                   </>
                 )}{" "}
                 on {new Date(fullStory.created_date).toLocaleDateString()}
               </span>
-              <span>Updated: {new Date(fullStory.modified_date).toLocaleDateString()}</span>
+              <span>
+                Updated:{" "}
+                {new Date(fullStory.modified_date).toLocaleDateString()}
+              </span>
             </div>
           </div>
         </div>
@@ -1352,8 +1590,8 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Issue</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>#{fullStory.ref}</strong>? This action cannot be
-              undone.
+              Are you sure you want to delete <strong>#{fullStory.ref}</strong>?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1381,8 +1619,8 @@ export function IssueModal({ story, statuses, members, mentionable, canModerate,
             <AlertDialogTitle>Delete comment</AlertDialogTitle>
             <AlertDialogDescription>
               Delete the comment by{" "}
-              <strong>{confirmDeleteEntry?.user.name ?? "this user"}</strong>? You can undo
-              right after from the toast.
+              <strong>{confirmDeleteEntry?.user.name ?? "this user"}</strong>?
+              You can undo right after from the toast.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,29 +1,21 @@
-import { DragDropProvider, DragOverlay, KeyboardSensor, PointerSensor } from "@dnd-kit/react"
-import { PointerActivationConstraints } from "@dnd-kit/dom"
+import { DragDropProvider, DragOverlay } from "@dnd-kit/react"
 import { Plus } from "lucide-react"
 import { BoardColumn } from "./board-column"
 import { StoryCardView } from "./board-card"
 import { Button } from "@/components/ui/button"
+import { boardDragManager } from "@/lib/dnd/board-dnd"
 import type { UserStory, UserStoryStatus } from "@/lib/api/types"
-
-// Drags only start after the pointer moved 8px (community norm): plain
-// clicks — and their inevitable 1–3px of jitter — navigate normally instead
-// of being swallowed as micro-drags. KeyboardSensor is listed explicitly
-// because passing `sensors` replaces the library defaults. Module scope, so
-// the config is created once and no hooks are involved.
-const boardSensors = [
-  PointerSensor.configure({
-    activationConstraints: [new PointerActivationConstraints.Distance({ value: 8 })],
-  }),
-  KeyboardSensor,
-]
 
 interface BoardProps {
   statuses: UserStoryStatus[]
   stories: UserStory[]
+  /** Sprint id → name for the card chips (milestone_name is the fallback). */
+  sprintNames?: Map<number, string>
   onMoveStory: (story: UserStory, newStatusId: number) => void
   /** In-column reorder: story under another card (or null = column end). */
   onReorderStory: (storyId: number, overId: number | null, statusId: number) => void
+  /** Sprint drop (toolbar rail targets): card onto a sprint or the backlog. */
+  onMoveToSprint?: (story: UserStory, milestoneId: number | null) => void
   onSelect: (story: UserStory) => void
   onAddToColumn: (statusId: number) => void
   onNewList: () => void
@@ -32,8 +24,10 @@ interface BoardProps {
 export function Board({
   statuses,
   stories,
+  sprintNames,
   onMoveStory,
   onReorderStory,
+  onMoveToSprint,
   onSelect,
   onAddToColumn,
   onNewList,
@@ -50,14 +44,22 @@ export function Board({
   }, {} as Record<number, UserStory[]>)
 
   return (
+    // Same drag session as the toolbar sprint rail (shared manager): rail
+    // targets carry `milestoneId`, columns/cards carry `statusId`.
     <DragDropProvider
-      sensors={boardSensors}
+      manager={boardDragManager}
       onDragEnd={(event) => {
         const { source, target } = event.operation
         if (!source || !target) return
         const story: UserStory | undefined = source.data?.story
+        if (!story) return
+        const milestoneId: number | null | undefined = target.data?.milestoneId
+        if (milestoneId !== undefined) {
+          onMoveToSprint?.(story, milestoneId)
+          return
+        }
         const statusId: number | undefined = target.data?.statusId
-        if (!story || statusId === undefined) return
+        if (statusId === undefined) return
         if (story.status !== statusId) {
           onMoveStory(story, statusId)
           return
@@ -77,6 +79,7 @@ export function Board({
               key={status.id}
               status={status}
               stories={storiesByStatus[status.id] || []}
+              sprintNames={sprintNames}
               onSelect={onSelect}
               onAdd={() => onAddToColumn(status.id)}
             />
@@ -95,7 +98,7 @@ export function Board({
           if (!story) return null
           return (
             <div className="pointer-events-none w-72 rotate-2 shadow-xl">
-              <StoryCardView story={story} />
+              <StoryCardView story={story} sprintNames={sprintNames} />
             </div>
           )
         }}

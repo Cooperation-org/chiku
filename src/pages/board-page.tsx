@@ -1,4 +1,4 @@
-﻿import { useState } from "react"
+﻿import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { useNavigate } from "@tanstack/react-router"
 import { Board } from "@/components/board/board"
@@ -11,9 +11,7 @@ import { Button } from "@/components/ui/button"
 import { useProjectBySlug } from "@/lib/queries/projects"
 import { isArchived, unarchiveProject } from "@/lib/api/projects"
 import { useReorderKanbanOrder, useSetStoryStatus, useStories, useStatuses } from "@/lib/queries/stories"
-import { useMilestones } from "@/lib/queries/milestones"
-import { rolloverTarget, unfinishedStories } from "@/lib/sprints"
-import { SprintCountdownBadge } from "@/components/sprints/sprint-countdown-badge"
+import { useMilestones, useMoveStoryToSprint } from "@/lib/queries/milestones"
 import { EMPTY_FILTER, filterStories } from "@/lib/filters/stories"
 import { qk, queryClient } from "@/lib/query"
 import { viewEnabled } from "@/lib/project-views"
@@ -35,9 +33,10 @@ export default function BoardPage({ slug, q = "", sprintIds = [] }: BoardPagePro
 
   const { data: statuses = [], isLoading: statusesLoading } = useStatuses(projectId)
   const { data: stories, isLoading: storiesLoading } = useStories(projectId)
-  const { data: milestones = [] } = useMilestones(projectId)
+  const { data: milestones = [], isLoading: milestonesLoading } = useMilestones(projectId)
   const setStatus = useSetStoryStatus(projectId ?? 0)
   const reorderKanban = useReorderKanbanOrder(projectId ?? 0)
+  const moveToSprint = useMoveStoryToSprint(projectId ?? 0)
 
   const [showCreate, setShowCreate] = useState(false)
   const [createStatusId, setCreateStatusId] = useState<number | null>(null)
@@ -47,8 +46,12 @@ export default function BoardPage({ slug, q = "", sprintIds = [] }: BoardPagePro
   const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q }).filter(
     (s) => sprintIds.length === 0 || (s.milestone != null && sprintIds.includes(s.milestone))
   )
-  const scopedSprints = milestones.filter((m) => sprintIds.includes(m.id))
   const unknownSprintIds = sprintIds.filter((id) => !milestones.some((m) => m.id === id))
+  // Sprint names for the card chips (milestone_name is the fallback).
+  const sprintNameById = useMemo(
+    () => new Map(milestones.map((m) => [m.id, m.name] as const)),
+    [milestones],
+  )
 
   function handleMoveStory(story: UserStory, newStatusId: number) {
     const statusName = statuses.find((s) => s.id === newStatusId)?.name ?? "another column"
@@ -67,6 +70,30 @@ export default function BoardPage({ slug, q = "", sprintIds = [] }: BoardPagePro
           }
         },
       }
+    )
+  }
+
+  /**
+   * Toolbar rail sprint drop: card onto a sprint or the backlog. Same guard
+   * + toast shape as the backlog's move handler; the mutation patches the
+   * cache optimistically (see useMoveStoryToSprint).
+   */
+  function handleMoveToSprint(story: UserStory, milestoneId: number | null) {
+    if (story.milestone === milestoneId) return
+    const where =
+      milestoneId == null
+        ? "the backlog"
+        : `“${milestones.find((m) => m.id === milestoneId)?.name ?? "sprint"}”`
+    moveToSprint.mutate(
+      { storyId: story.id, milestoneId, version: story.version },
+      {
+        onSuccess: () => {
+          toast.success(`#${story.ref} moved to ${where}`)
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to move story")
+        },
+      },
     )
   }
 
@@ -147,34 +174,13 @@ export default function BoardPage({ slug, q = "", sprintIds = [] }: BoardPagePro
         </div>
       )}
 
-      {sprintIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-1.5 text-sm">
-          {scopedSprints.length > 0 ? (
-            scopedSprints.map((sprint) => (
-              <span key={sprint.id} className="inline-flex items-center gap-2">
-                <span className="font-medium">{sprint.name}</span>
-                <SprintCountdownBadge
-                  sprint={sprint}
-                  unfinishedCount={unfinishedStories(stories ?? [], sprint.id).length}
-                  rolloverName={rolloverTarget(milestones, sprint.id)?.name}
-                />
-              </span>
-            ))
-          ) : (
-            <span className="text-muted-foreground">
-              No matching sprints for this filter
-              {unknownSprintIds.length > 0 && (
-                <> ({unknownSprintIds.map((id) => `#${id}`).join(", ")})</>
-              )}
-            </span>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => navigate({ to: "/projects/$slug/board", params: { slug } })}
-          >
-            Show all
-          </Button>
+      {/* The sprint rail in the toolbar owns scope display now; only a stale
+          filter (ids matching no loaded sprint) earns an inline notice — and
+          scope clears from the sprint picker dropdown, so no button here. */}
+      {sprintIds.length > 0 && unknownSprintIds.length === sprintIds.length && !milestonesLoading && (
+        <div className="text-muted-foreground border-b px-4 py-1.5 text-sm">
+          No matching sprints for this filter ({unknownSprintIds.map((id) => `#${id}`).join(", ")})
+          — choose All tasks in the sprint picker.
         </div>
       )}
 
@@ -187,8 +193,10 @@ export default function BoardPage({ slug, q = "", sprintIds = [] }: BoardPagePro
               <Board
                 statuses={statuses}
                 stories={visible}
+                sprintNames={sprintNameById}
                 onMoveStory={handleMoveStory}
                 onReorderStory={handleReorderStory}
+                onMoveToSprint={handleMoveToSprint}
                 onSelect={(story) =>
                   navigate({
                     to: "/projects/$slug/board/$storyRef",

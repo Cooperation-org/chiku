@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearch } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 import { Check, ChevronDown, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,10 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useMilestones } from "@/lib/queries/milestones"
-import { useStories } from "@/lib/queries/stories"
-import { useProjectBySlug } from "@/lib/queries/projects"
-import { openSprintsSorted, parseSprintIdsParam, unfinishedStories } from "@/lib/sprints"
+import { unfinishedStories } from "@/lib/sprints"
+import { useSprintScope } from "@/components/sprints/use-sprint-scope"
 
 /**
  * Sprint scope picker, hosted in the breadcrumb trail after the "Board"
@@ -26,38 +24,22 @@ import { openSprintsSorted, parseSprintIdsParam, unfinishedStories } from "@/lib
  * milestones with no single-active constraint.
  */
 export function SprintScopeCrumb() {
-  const { slug } = useParams({ strict: false }) as { slug?: string }
-  const search = useSearch({ strict: false }) as { sprint?: string | number }
   const navigate = useNavigate()
-  const { project } = useProjectBySlug(slug)
-  const projectId = project?.id ?? null
-  const { data: milestones, isLoading, isError, refetch } = useMilestones(projectId)
-  const { data: stories } = useStories(projectId)
-
-  const selectedIds = parseSprintIdsParam(search.sprint)
-  const selected = new Set(selectedIds)
-  const open = openSprintsSorted(milestones ?? [])
-  const closed = (milestones ?? [])
-    .filter((m) => m.closed)
-    .sort((a, b) => +new Date(b.estimated_start) - +new Date(a.estimated_start))
-  const known = (milestones ?? []).filter((m) => selected.has(m.id))
-
-  function writeScope(ids: number[]) {
-    // Route-agnostic like BacklogFilterControl: the search shape is unknown
-    // here, so the updater result must satisfy the `never` fallback.
-    navigate({
-      search: (prev) =>
-        ({
-          ...(prev as Record<string, unknown>),
-          sprint: ids.length > 0 ? ids.join(",") : undefined,
-        }) as never,
-      replace: true,
-    })
-  }
-
-  function toggle(id: number) {
-    writeScope(selected.has(id) ? selectedIds.filter((sid) => sid !== id) : [...selectedIds, id])
-  }
+  const {
+    slug,
+    milestones,
+    stories,
+    milestonesLoading: isLoading,
+    milestonesError: isError,
+    retryMilestones: refetch,
+    selectedIds,
+    selected,
+    open,
+    closed,
+    known,
+    writeScope,
+    toggle,
+  } = useSprintScope()
 
   const label = isLoading
     ? "Sprints…"
@@ -104,7 +86,7 @@ export function SprintScopeCrumb() {
               Try again
             </DropdownMenuItem>
           </>
-        ) : (milestones ?? []).length === 0 ? (
+        ) : milestones.length === 0 ? (
           <>
             <DropdownMenuItem disabled>No sprints yet</DropdownMenuItem>
             <DropdownMenuItem
@@ -135,7 +117,7 @@ export function SprintScopeCrumb() {
                   >
                     <span className="min-w-0 flex-1 truncate">{m.name}</span>
                     <span className="text-muted-foreground text-xs tabular-nums">
-                      {unfinishedStories(stories ?? [], m.id).length}
+                      {unfinishedStories(stories, m.id).length}
                     </span>
                   </DropdownMenuCheckboxItem>
                 ))}

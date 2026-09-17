@@ -1,5 +1,6 @@
 ﻿import BoardPage from "@/pages/board-page";
 import { BoardToolbarControls } from "@/components/board/board-toolbar-controls";
+import { BoardSprintRail } from "@/components/board/board-sprint-rail";
 import { SprintScopeCrumb } from "@/components/sprints/sprint-scope-picker";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { CrumbBoard } from "@/components/layout/breadcrumbs";
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/(_authed)/projects/$slug/board/")({
   },
   staticData: {
     toolbarBreadcrumbs: [CrumbBoard, SprintScopeCrumb],
+    toolbarCenter: [BoardSprintRail],
     toolbarControls: [BoardToolbarControls],
   },
   component: RouteComponent,

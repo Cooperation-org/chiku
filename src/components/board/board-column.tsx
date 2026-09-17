@@ -7,11 +7,12 @@ import type { UserStory, UserStoryStatus } from "@/lib/api/types"
 interface BoardColumnProps {
   status: UserStoryStatus
   stories: UserStory[]
+  sprintNames?: Map<number, string>
   onSelect: (story: UserStory) => void
   onAdd: () => void
 }
 
-export function BoardColumn({ status, stories, onSelect, onAdd }: BoardColumnProps) {
+export function BoardColumn({ status, stories, sprintNames, onSelect, onAdd }: BoardColumnProps) {
   const { ref, isDropTarget } = useDroppable({
     id: `column-${status.id}`,
     data: { statusId: status.id },
@@ -107,7 +108,7 @@ export function BoardColumn({ status, stories, onSelect, onAdd }: BoardColumnPro
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
           {stories.map((story) => (
-            <BoardCard key={story.id} story={story} onSelect={onSelect} />
+            <BoardCard key={story.id} story={story} sprintNames={sprintNames} onSelect={onSelect} />
           ))}
           {stories.length === 0 && (
             <div className="text-muted-foreground/60 py-6 text-center text-xs">No stories</div>

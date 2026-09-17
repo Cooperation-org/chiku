@@ -73,8 +73,17 @@ export function useMoveStoryToSprint(projectId: number) {
       moveUserStoryToSprint(storyId, milestoneId, version),
     onMutate: async ({ storyId, milestoneId }) => {
       const previous = qc.getQueryData<UserStory[]>(key)
+      // Resolve the name from cache so card sprint chips stay truthful
+      // through the optimistic window (milestone_name is the fallback).
+      const sprints = qc.getQueryData<Milestone[]>(qk.milestones(projectId))
+      const sprintName =
+        milestoneId == null ? null : sprints?.find((m) => m.id === milestoneId)?.name
       qc.setQueryData<UserStory[]>(key, (old) =>
-        old?.map((s) => (s.id === storyId ? { ...s, milestone: milestoneId } : s)),
+        old?.map((s) =>
+          s.id === storyId
+            ? { ...s, milestone: milestoneId, milestone_name: sprintName ?? s.milestone_name }
+            : s,
+        ),
       )
       return { previous }
     },
