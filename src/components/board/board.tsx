@@ -1,9 +1,8 @@
-import { DragDropProvider, DragOverlay } from "@dnd-kit/react"
+import { DragOverlay, useDragDropMonitor } from "@dnd-kit/react"
 import { Plus } from "lucide-react"
 import { BoardColumn } from "./board-column"
 import { StoryCardView } from "./board-card"
 import { Button } from "@/components/ui/button"
-import { boardDragManager } from "@/lib/dnd/board-dnd"
 import type { UserStory, UserStoryStatus } from "@/lib/api/types"
 
 interface BoardProps {
@@ -43,35 +42,37 @@ export function Board({
     return acc
   }, {} as Record<number, UserStory[]>)
 
+  // Drop routing for the app-wide session (owned by AppShell): rail targets
+  // carry `milestoneId`, columns/cards carry `statusId`. A monitor, not a
+  // provider — the session outlives this component across route changes.
+  useDragDropMonitor({
+    onDragEnd: (event) => {
+      const { source, target } = event.operation
+      if (!source || !target) return
+      const story: UserStory | undefined = source.data?.story
+      if (!story) return
+      const milestoneId: number | null | undefined = target.data?.milestoneId
+      if (milestoneId !== undefined) {
+        onMoveToSprint?.(story, milestoneId)
+        return
+      }
+      const statusId: number | undefined = target.data?.statusId
+      if (statusId === undefined) return
+      if (story.status !== statusId) {
+        onMoveStory(story, statusId)
+        return
+      }
+      // Same-column drop: reorder. Dropping onto another card inserts the
+      // dragged card before it; dropping on empty column space appends.
+      const overId: number | undefined = target.data?.storyId
+      if (overId == null || overId !== story.id) {
+        onReorderStory(story.id, overId ?? null, statusId)
+      }
+    },
+  })
+
   return (
-    // Same drag session as the toolbar sprint rail (shared manager): rail
-    // targets carry `milestoneId`, columns/cards carry `statusId`.
-    <DragDropProvider
-      manager={boardDragManager}
-      onDragEnd={(event) => {
-        const { source, target } = event.operation
-        if (!source || !target) return
-        const story: UserStory | undefined = source.data?.story
-        if (!story) return
-        const milestoneId: number | null | undefined = target.data?.milestoneId
-        if (milestoneId !== undefined) {
-          onMoveToSprint?.(story, milestoneId)
-          return
-        }
-        const statusId: number | undefined = target.data?.statusId
-        if (statusId === undefined) return
-        if (story.status !== statusId) {
-          onMoveStory(story, statusId)
-          return
-        }
-        // Same-column drop: reorder. Dropping onto another card inserts the
-        // dragged card before it; dropping on empty column space appends.
-        const overId: number | undefined = target.data?.storyId
-        if (overId == null || overId !== story.id) {
-          onReorderStory(story.id, overId ?? null, statusId)
-        }
-      }}
-    >
+    <>
       <div className="flex h-full min-h-0 flex-col">
         <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto px-3 pt-3 pb-4">
           {sorted.map((status) => (
@@ -103,6 +104,6 @@ export function Board({
           )
         }}
       </DragOverlay>
-    </DragDropProvider>
+    </>
   )
 }

@@ -101,8 +101,11 @@ export function useSetStoryStatus(projectId: number) {
       if (context?.previous) qc.setQueryData(key, context.previous)
     },
     onSuccess: (updated) => {
+      // Merge the authoritative server story (status_extra_info, is_closed,
+      // milestone, version) so cards landing in closed-marked columns render
+      // the correct closed state immediately instead of stale open state.
       qc.setQueryData<UserStory[]>(key, (old) =>
-        old?.map((s) => (s.id === updated.id ? { ...s, version: updated.version } : s))
+        old?.map((s) => (s.id === updated.id ? updated : s))
       )
     },
   })

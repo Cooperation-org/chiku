@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link } from "@tanstack/react-router"
 import { useMilestoneStats } from "@/lib/queries/stats"
 import type { Milestone } from "@/lib/api/types"
 import { BurndownChart } from "@/components/stats/burndown-chart"
@@ -16,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
  * (falls back to the most recent closed one when a project has none). A stale
  * selection (project switch) falls back to the current sprint too.
  */
-export function BurndownCard({ milestones }: { milestones: Milestone[] }) {
+export function BurndownCard({ milestones, slug }: { milestones: Milestone[]; slug: string }) {
   const ordered = [...milestones].sort((a, b) =>
     a.estimated_start.localeCompare(b.estimated_start),
   )
@@ -75,6 +76,19 @@ export function BurndownCard({ milestones }: { milestones: Milestone[] }) {
               </>
             )}
           </p>
+          {stats.total_userstories === 0 && stats.total_tasks === 0 && (
+            <p className="text-muted-foreground text-xs">
+              This sprint is empty — assign stories from the{" "}
+              <Link
+                to="/projects/$slug/backlog"
+                params={{ slug }}
+                className="text-foreground underline underline-offset-2"
+              >
+                backlog
+              </Link>{" "}
+              to see the burndown move.
+            </p>
+          )}
         </div>
       )}
     </section>

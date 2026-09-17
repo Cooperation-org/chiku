@@ -1,8 +1,7 @@
-import { DragDropProvider, useDragOperation, useDroppable } from "@dnd-kit/react"
+import { useDragOperation, useDroppable } from "@dnd-kit/react"
 import { motion } from "motion/react"
 import { Inbox } from "lucide-react"
 import { cn } from "cn"
-import { boardDragManager } from "@/lib/dnd/board-dnd"
 import { useSprintScope } from "@/components/sprints/use-sprint-scope"
 import { SprintCountdownBadge } from "@/components/sprints/sprint-countdown-badge"
 import { rolloverTarget, unfinishedStories } from "@/lib/sprints"
@@ -15,22 +14,16 @@ const railSpring = { type: "spring", stiffness: 500, damping: 38 } as const
  * Board sprint rail, hosted in the toolbar center via route staticData.
  * Idle it shows the selected sprints with their countdowns (replacing the
  * old in-page banner); while a card is held the open sprints plus the
- * backlog expand into drop targets on the shared board drag session.
+ * backlog expand into drop targets on the app-wide drag session (owned by
+ * AppShell, consumed here via hooks — no provider of its own).
  *
  * All droppables stay mounted for the life of the rail and only CSS
  * visibility toggles: registering/unregistering drop targets mid-drag
- * wedges the shared manager's operation (no second drag until refresh),
- * so the tree here never swaps on drag state — only classes change.
+ * wedges the manager's operation (no second drag until refresh), so the
+ * tree here never swaps on drag state — only classes change.
  */
 export function BoardSprintRail() {
-  // Same manager as <Board>: rail droppables join the board's drag session
-  // even though the toolbar lives outside the board's provider subtree.
-  // No onDragEnd here — Board's handler routes every drop in the session.
-  return (
-    <DragDropProvider manager={boardDragManager}>
-      <RailContent />
-    </DragDropProvider>
-  )
+  return <RailContent />
 }
 BoardSprintRail.displayName = "BoardSprintRail"
 

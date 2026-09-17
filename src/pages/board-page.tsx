@@ -43,7 +43,10 @@ export default function BoardPage({ slug, q = "", sprintIds = [] }: BoardPagePro
   const columnEditorOpen = useBoardStore((s) => s.columnEditorOpen)
   const setColumnEditorOpen = useBoardStore((s) => s.setColumnEditorOpen)
 
-  const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q }).filter(
+  // Closed-marked columns (Done, Archived, or any status with is_closed)
+  // must keep rendering their cards — filtering closed stories here is what
+  // emptied them seconds after a move, once fresh server data arrived.
+  const visible = filterStories(stories ?? [], { ...EMPTY_FILTER, q, showClosed: true }).filter(
     (s) => sprintIds.length === 0 || (s.milestone != null && sprintIds.includes(s.milestone))
   )
   const unknownSprintIds = sprintIds.filter((id) => !milestones.some((m) => m.id === id))

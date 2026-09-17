@@ -66,6 +66,17 @@ describe('filterStories', () => {
 		expect(filterStories(stories, { ...base, showClosed: true })).toHaveLength(2);
 	});
 
+	it('keeps closed stories in every closed-marked column (board: Done, Archived)', () => {
+		const stories = [
+			story(),
+			story({ id: 2, status: 10, status_extra_info: { name: 'Done', color: '#0f0', is_closed: true }, is_closed: true }),
+			story({ id: 3, status: 11, status_extra_info: { name: 'Archived', color: '#999', is_closed: true }, is_closed: true })
+		];
+		// The board always shows closed columns — it filters with showClosed: true.
+		const visible = filterStories(stories, { ...EMPTY_FILTER, q: '', showClosed: true });
+		expect(visible.map((s) => s.id)).toEqual([1, 2, 3]);
+	});
+
 	it('filters by assignee, including unassigned', () => {
 		const stories = [story(), story({ id: 2, assigned_to: null, assigned_to_extra_info: null })];
 		expect(filterStories(stories, { ...base, assignee: 7 })).toHaveLength(1);
