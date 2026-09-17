@@ -1,0 +1,30 @@
+---
+version: "0.4.7"
+date: "2026-09-17"
+title: "Per-venture value units"
+---
+
+Every venture can now name its own pie-slicing units instead of sharing one
+deployment-wide setting. A venture with nothing configured keeps working
+exactly as before — `cook` for team value, `usd` for cash.
+
+### Added
+
+- **Value units in project settings** — admins set the team and cash units
+  under Settings → General ("Value units"). They are stored as shared project
+  tags (`value-team:slices`, `value-cash:eur`), so every member sees the same
+  units and GovKit's sync plus `mcp-taiga` (`TAG_TEAM` / `TAG_CASH`) keep
+  working with no change.
+- **Per-venture badges and editor** — the board, backlog, and story view read
+  the venture's units, and the value editor writes story tags in them
+  (`30slices`, `100eur`).
+
+### Changed
+
+- Unit resolution is now per venture with a fallback chain: project tags →
+  `VITE_VALUE_UNIT` / `VITE_CASH_UNIT` → `cook` / `usd`.
+- Renaming a venture's units does not orphan old stories: reads still
+  recognise legacy `cook` / `usd` tags, and the next value edit rewrites them
+  into the venture's units.
+- Resetting both units to `cook` / `usd` removes the project tags entirely —
+  absence means defaults.

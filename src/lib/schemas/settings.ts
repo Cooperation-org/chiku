@@ -59,3 +59,22 @@ export type TransferTokenForm = z.infer<typeof transferTokenSchema>
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Invalid input"
 }
+
+/**
+ * Venture value units — tag-safe names (`slices`, `eur`) that land in story
+ * tags as `{number}{unit}`. Same charset as `normalizeUnit`.
+ */
+const unitNameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1, "Unit is required")
+  .max(16, "Unit is too long")
+  .regex(/^[a-z0-9$.-]+$/, "Use letters, digits, $, . or - only")
+
+export const valueUnitsSchema = z.object({
+  team: unitNameSchema,
+  cash: unitNameSchema,
+})
+
+export type ValueUnitsForm = z.infer<typeof valueUnitsSchema>

@@ -63,7 +63,12 @@ import { useUpdateStory } from "@/lib/queries/stories"
 import { qk, queryClient } from "@/lib/query"
 import { useAuth } from "@/lib/stores/auth"
 import { useToolbarSlots } from "@/lib/stores/toolbar-slots"
-import { parseCashValue, parseTeamValue, setValueTags } from "@/lib/values"
+import {
+  getProjectUnits,
+  parseProjectCashValue,
+  parseProjectTeamValue,
+  setProjectValueTags,
+} from "@/lib/project-units"
 import { Link, useSearch } from "@tanstack/react-router"
 import { cn } from "cn"
 import {
@@ -371,16 +376,20 @@ export function IssueModal({
   }
 
   /**
-   * Pie-slicing value save — rewrites the `50cook` / `100usd` tags in place,
-   * preserving every other tag and its color. The Taiga story stays the
-   * record; GovKit's sync parses the tags with no backend change. Cash is
-   * required at the form level (the editor always passes a number, 0 counts
+   * Pie-slicing value save — rewrites the value tags in place (the venture's
+   * own units, defaulting to `50cook` / `100usd`), preserving every other tag
+   * and its color. The Taiga story stays the record; GovKit's sync parses the
+   * tags with no backend change. Legacy default-unit tags are stripped when
+   * the venture renamed its units, so old stories migrate on next edit. Cash
+   * is required at the form level (the editor always passes a number, 0 counts
    * as set) because the backend treats missing cash as 0.
    */
   function saveValue(team: number | null, cash: number) {
-    const tags = setValueTags(fullStory.tags, {
+    const units = getProjectUnits(project)
+    const tags = setProjectValueTags(fullStory.tags, {
       teamValue: team,
       cashValue: cash,
+      units,
     })
     saveField("tags", { tags })
   }
@@ -972,11 +981,13 @@ export function IssueModal({
               </div>
             ) : null}
 
-            {/* Pie-slicing value (team cook + cash usd tags) */}
+            {/* Pie-slicing value (venture units, defaulting to team cook + cash usd) */}
             {isEditing("value") ? (
               <ValueEditor
-                initialTeam={parseTeamValue(fullStory.tags)}
-                initialCash={parseCashValue(fullStory.tags)}
+                initialTeam={parseProjectTeamValue(fullStory.tags, getProjectUnits(project))}
+                initialCash={parseProjectCashValue(fullStory.tags, getProjectUnits(project))}
+                teamUnitLabel={getProjectUnits(project).team}
+                cashUnitLabel={getProjectUnits(project).cash}
                 onSave={(team, cash) => saveValue(team, cash)}
                 onCancel={() => {
                   if (!editingAll) setEditingField(null)
@@ -988,7 +999,7 @@ export function IssueModal({
                 className="-mx-2 flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-muted-foreground transition-colors hover:bg-accent"
                 title="Click to set pie-slicing value"
               >
-                <ValueBadge story={fullStory} />
+                <ValueBadge story={fullStory} units={getProjectUnits(project)} />
               </button>
             )}
 

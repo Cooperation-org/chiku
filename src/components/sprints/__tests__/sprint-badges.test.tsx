@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { SprintCountdownBadge } from "@/components/sprints/sprint-countdown-badge";
 import { TaskSprintSelector } from "@/components/sprints/task-sprint-selector";
@@ -48,15 +49,33 @@ describe("SprintCountdownBadge", () => {
   });
 });
 
-describe("ValueBadge", () => {  it("shows team value and cash", () => {
-    render(<ValueBadge story={story([["50cook", null], ["100usd", null]])} />);
+describe("ValueBadge", () => {
+  // The badge resolves venture units through the projects query — a fresh,
+  // fetch-quiet client keeps the auto path on cook/usd defaults in jsdom.
+  function renderBadge(tags: [string, string | null][], units?: { team: string; cash: string }) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(["projects"], []);
+    return render(
+      <QueryClientProvider client={client}>
+        <ValueBadge story={story(tags)} units={units} />
+      </QueryClientProvider>,
+    );
+  }
+
+  it("shows team value and cash", () => {
+    renderBadge([["50cook", null], ["100usd", null]]);
     expect(screen.getByText(/50/)).toBeInTheDocument();
     expect(screen.getByTitle(/50 cook.*100 usd/)).toBeInTheDocument();
   });
 
   it("flags missing value", () => {
-    render(<ValueBadge story={story([["frontend", null]])} />);
+    renderBadge([["frontend", null]]);
     expect(screen.getByText("No value")).toBeInTheDocument();
+  });
+
+  it("renders venture units when given explicitly", () => {
+    renderBadge([["30slices", null]], { team: "slices", cash: "eur" });
+    expect(screen.getByTitle(/30 slices/)).toBeInTheDocument();
   });
 });
 

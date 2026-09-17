@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { BrandSection } from "@/components/settings/brand-section"
 import { GeneralSection } from "@/components/settings/general-section"
 import { ModulesSection } from "@/components/settings/modules-section"
+import { ValueUnitsSection } from "@/components/settings/value-units-section"
 import { useSettings } from "@/components/settings/use-settings"
 import { CrumbGeneral } from "@/components/layout/breadcrumbs"
 
@@ -15,6 +16,7 @@ function RouteComponent() {
   return (
     <div className="space-y-6">
       <GeneralSection project={project} canEdit={canEdit} />
+      <ValueUnitsSection project={project} canEdit={canEdit} />
       <BrandSection project={project} canEdit={canEdit} />
       <ModulesSection project={project} canEdit={canEdit} />
     </div>

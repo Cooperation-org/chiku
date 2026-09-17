@@ -8,18 +8,21 @@
  *
  * Defaults are `cook` / `usd` unless the deployment provides its own unit
  * via `VITE_VALUE_UNIT` / `VITE_CASH_UNIT` (same build-time mechanism as
- * branding). An explicit pattern always wins over the unit-derived one.
+ * branding). A venture (project) can override both per-project via
+ * `value-team:*` / `value-cash:*` project tags — see `lib/project-units.ts`.
+ * An explicit pattern always wins over the unit-derived one, and an explicit
+ * unit override wins over the deployment default.
  */
 
 export const DEFAULT_TEAM_UNIT = "cook";
 export const DEFAULT_CASH_UNIT = "usd";
 
-export function teamUnit(): string {
-  return (import.meta.env.VITE_VALUE_UNIT as string | undefined)?.trim() || DEFAULT_TEAM_UNIT;
+export function teamUnit(override?: string): string {
+  return override?.trim() || (import.meta.env.VITE_VALUE_UNIT as string | undefined)?.trim() || DEFAULT_TEAM_UNIT;
 }
 
-export function cashUnit(): string {
-  return (import.meta.env.VITE_CASH_UNIT as string | undefined)?.trim() || DEFAULT_CASH_UNIT;
+export function cashUnit(override?: string): string {
+  return override?.trim() || (import.meta.env.VITE_CASH_UNIT as string | undefined)?.trim() || DEFAULT_CASH_UNIT;
 }
 
 /** Escape a literal unit so it can be embedded in a RegExp. */
@@ -32,14 +35,14 @@ export function defaultPatternFor(unit: string): string {
   return `(\\d+)\\s*${escapeRegExp(unit)}`;
 }
 
-export function teamPattern(customPattern?: string): string {
+export function teamPattern(customPattern?: string, unitOverride?: string): string {
   const p = (customPattern ?? "").trim();
-  return p || defaultPatternFor(teamUnit());
+  return p || defaultPatternFor(teamUnit(unitOverride));
 }
 
-export function cashPattern(customPattern?: string): string {
+export function cashPattern(customPattern?: string, unitOverride?: string): string {
   const p = (customPattern ?? "").trim();
-  return p || defaultPatternFor(cashUnit());
+  return p || defaultPatternFor(cashUnit(unitOverride));
 }
 
 export type StoryTag = [string, string | null] | string;
@@ -83,16 +86,18 @@ export function parseTaggedNumber(
 export function parseTeamValue(
   tags: readonly StoryTag[] | null | undefined,
   customPattern?: string,
+  unitOverride?: string,
 ): number | null {
-  return parseTaggedNumber(tags, teamPattern(customPattern));
+  return parseTaggedNumber(tags, teamPattern(customPattern, unitOverride));
 }
 
 /** Cash value (`usd` by default) parsed from story tags. */
 export function parseCashValue(
   tags: readonly StoryTag[] | null | undefined,
   customPattern?: string,
+  unitOverride?: string,
 ): number | null {
-  return parseTaggedNumber(tags, cashPattern(customPattern));
+  return parseTaggedNumber(tags, cashPattern(customPattern, unitOverride));
 }
 
 /** Format one value tag the way `mcp-taiga` writes them: `50cook`, no space. */
@@ -150,6 +155,7 @@ export function setValueTags(
 export function isMissingValue(
   tags: readonly StoryTag[] | null | undefined,
   customPattern?: string,
+  unitOverride?: string,
 ): boolean {
-  return parseTeamValue(tags, customPattern) == null;
+  return parseTeamValue(tags, customPattern, unitOverride) == null;
 }
