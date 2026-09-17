@@ -14,6 +14,10 @@ import type { MilestoneStats } from "@/lib/api/types"
  * Sprint burndown: actual remaining points against the ideal slope, from
  * GET /milestones/{id}/stats. Colors are CSS tokens so the chart follows the
  * theme (and any deployment brand) automatically.
+ *
+ * Readability rules: the y domain always starts at 0 (never a negative
+ * stub), x labels are short month/day pairs, and the series legend lives in
+ * the card as HTML — not in the chart definition.
  */
 export function BurndownChart({ stats }: { stats: MilestoneStats }) {
   const definition = useMemo(() => {
@@ -22,6 +26,7 @@ export function BurndownChart({ stats }: { stats: MilestoneStats }) {
       open: d.open_points,
       optimal: d.optimal_points,
     }))
+    const peak = Math.max(1, ...rows.flatMap((r) => [r.open, r.optimal]))
     return defineChart({
       marks: [
         // The ideal line is context — painted but not interactive.
@@ -43,9 +48,14 @@ export function BurndownChart({ stats }: { stats: MilestoneStats }) {
         }),
       ],
       scales: {
-        x: { scale: () => scalePoint<string>().padding(0.25) },
+        x: {
+          scale: () => scalePoint<string>().padding(0.25),
+          axis: { ticks: { format: (day: string) => shortDay(day) } },
+        },
         y: {
-          scale: scaleLinear,
+          // Configured instance (not the factory): owns the domain so the
+          // floor stays 0 no matter how flat the sprint is.
+          scale: scaleLinear().domain([0, Math.ceil(peak)]),
           nice: true,
           grid: true,
           axis: { label: "Open points" },
@@ -63,4 +73,11 @@ export function BurndownChart({ stats }: { stats: MilestoneStats }) {
       ariaDescription="Remaining points per day against the ideal trend"
     />
   )
+}
+
+/** "2026-09-17" → "Sep 17"; falls back to the raw value when unparseable. */
+function shortDay(day: string): string {
+  const d = new Date(`${day}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return day
+  return d.toLocaleDateString("en", { month: "short", day: "numeric" })
 }
