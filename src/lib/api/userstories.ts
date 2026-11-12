@@ -94,6 +94,39 @@ export async function setUserStoryStatus(
 	}
 }
 
+/** What Taiga answers for each story whose kanban_order it rewrote. */
+export interface KanbanOrderUpdate {
+	id: number;
+	status: number;
+	swimlane: number | null;
+	kanban_order: number;
+}
+
+/**
+ * Put a story at a position in its board column, saved in Taiga's
+ * `kanban_order`. The position is given by a neighbour: the card now above it
+ * (`afterId`) or, when it went to the top, the card now below it (`beforeId`).
+ * Taiga renumbers whatever else in the column has to shift and returns every
+ * story it changed. It does not bump `version`.
+ */
+export async function setKanbanPosition(
+	projectId: number,
+	statusId: number,
+	storyId: number,
+	neighbour: { afterId?: number; beforeId?: number }
+): Promise<KanbanOrderUpdate[]> {
+	return api.post<KanbanOrderUpdate[]>('/userstories/bulk_update_kanban_order', {
+		project_id: projectId,
+		status_id: statusId,
+		bulk_userstories: [storyId],
+		...(neighbour.afterId !== undefined
+			? { after_userstory_id: neighbour.afterId }
+			: neighbour.beforeId !== undefined
+				? { before_userstory_id: neighbour.beforeId }
+				: {})
+	});
+}
+
 export async function moveUserStory(storyId: number, targetProjectId: number, targetStatus: number, version: number): Promise<UserStory> {
 	return api.patch<UserStory>(`/userstories/${storyId}`, {
 		project: targetProjectId,

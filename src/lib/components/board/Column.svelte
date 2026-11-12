@@ -9,7 +9,7 @@
 	export let stories: UserStory[];
 
 	const dispatch = createEventDispatcher<{
-		drop: { storyId: number; newStatusId: number };
+		drop: { storyId: number; newStatusId: number; afterId?: number; beforeId?: number };
 		select: UserStory;
 		add: number;
 	}>();
@@ -28,13 +28,18 @@
 		stories = e.detail.items;
 	}
 
-	function handleDndFinalize(e: CustomEvent<{ items: UserStory[] }>) {
+	function handleDndFinalize(e: CustomEvent<{ items: UserStory[]; info: { id: string } }>) {
 		stories = e.detail.items;
-		// Dispatch drop event for any story that changed to this column
-		e.detail.items.forEach(story => {
-			if (story.status !== status.id) {
-				dispatch('drop', { storyId: story.id, newStatusId: status.id });
-			}
+		// Finalize fires on the column the card left and the one it landed in;
+		// only the landing column holds the card. Its neighbours give the new
+		// position, which the board saves to Taiga.
+		const index = stories.findIndex(s => String(s.id) === String(e.detail.info.id));
+		if (index === -1) return;
+		dispatch('drop', {
+			storyId: stories[index].id,
+			newStatusId: status.id,
+			afterId: stories[index - 1]?.id,
+			beforeId: stories[index + 1]?.id
 		});
 	}
 
