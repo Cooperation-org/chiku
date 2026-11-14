@@ -25,11 +25,7 @@ export async function getProjectStats(projectId: number): Promise<ProjectStats> 
 }
 
 export async function getProjectBySlug(slug: string): Promise<Project> {
-	const projects = await api.get<Project[]>('/projects', { slug });
-	if (projects.length === 0) {
-		throw new Error(`Project not found: ${slug}`);
-	}
-	return projects[0];
+	return api.get<Project>('/projects/by_slug', { slug });
 }
 
 export async function createProject(data: CreateProjectData): Promise<Project> {

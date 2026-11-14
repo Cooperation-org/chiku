@@ -9,6 +9,12 @@ import { useAuth } from "@/lib/stores/auth"
 import { applyBrand } from "@/lib/brand"
 import { PageError, PageLoading, PageNotFound } from "@/components/layout/page-state"
 import "./index.css"
+import { installWebMCP } from "@mcp-b/webmcp-polyfill"
+try {
+  installWebMCP()
+} catch (e) {
+  console.error("webmcp polyfill install failed", e)
+}
 
 // Sync localStorage tokens into the store before the first route guard runs.
 useAuth.getState().init()
