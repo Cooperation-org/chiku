@@ -1,5 +1,64 @@
 import { createUserStory, getUserStory, getUserStoryByRef } from "@/lib/api/userstories"
 import { api } from "@/lib/api/client"
+
+/**
+ * Show an in-page confirmation modal and resolve to true (delete) or false (cancel).
+ * Uses a custom modal (not window.confirm) so it can be interacted with by
+ * browsers, agents, and automation alike.
+ */
+function confirmDelete(ref: number, subject: string): Promise<boolean> {
+	return new Promise<boolean>((resolve) => {
+		const overlay = document.createElement("div")
+		overlay.id = "webmcp-delete-confirm-overlay"
+		overlay.style.cssText =
+			"position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);"
+
+		const card = document.createElement("div")
+		card.style.cssText =
+			"background:#fff;color:#111;padding:24px;border-radius:8px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.35);font-family:system-ui,sans-serif;"
+
+		const title = document.createElement("h3")
+		title.style.cssText = "margin:0 0 8px;font-size:16px;font-weight:600;"
+		title.textContent = `Delete task #${ref}?`
+
+		const body = document.createElement("p")
+		body.style.cssText = "margin:0 0 20px;color:#555;font-size:14px;line-height:1.4;"
+		body.textContent = `${subject}\n\nThis action cannot be undone.`
+
+		const actions = document.createElement("div")
+		actions.style.cssText = "display:flex;gap:8px;justify-content:flex-end;"
+
+		const cancelBtn = document.createElement("button")
+		cancelBtn.id = "webmcp-delete-cancel"
+		cancelBtn.textContent = "Cancel"
+		cancelBtn.style.cssText =
+			"padding:8px 16px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;font-size:14px;"
+
+		const deleteBtn = document.createElement("button")
+		deleteBtn.id = "webmcp-delete-confirm"
+		deleteBtn.textContent = "Delete"
+		deleteBtn.style.cssText =
+			"padding:8px 16px;border:none;border-radius:4px;background:#dc2626;color:#fff;cursor:pointer;font-size:14px;"
+
+		actions.appendChild(cancelBtn)
+		actions.appendChild(deleteBtn)
+		card.appendChild(title)
+		card.appendChild(body)
+		card.appendChild(actions)
+		overlay.appendChild(card)
+		document.body.appendChild(overlay)
+
+		const cleanup = () => overlay.remove()
+		cancelBtn.addEventListener("click", () => {
+			cleanup()
+			resolve(false)
+		})
+		deleteBtn.addEventListener("click", () => {
+			cleanup()
+			resolve(true)
+		})
+	})
+}
 import { getProject, getProjectBySlug, getProjects } from "@/lib/api/projects"
 import { queryClient, qk } from "@/lib/query"
 import { useProjectStore } from "@/lib/stores/project"
@@ -136,9 +195,7 @@ export async function deleteTask(input: DeleteTaskInput): Promise<DeleteTaskResu
 		throw new Error("Either 'id' or 'ref' is required")
 	}
 
-	const confirmed = window.confirm(
-		`Delete task #${story.ref}: "${story.subject}"?\\n\\nThis action cannot be undone.`
-	)
+	const confirmed = await confirmDelete(story.ref, story.subject)
 	if (!confirmed) {
 		return { cancelled: true, id: story.id, ref: story.ref, subject: story.subject }
 	}
