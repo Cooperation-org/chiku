@@ -5,6 +5,7 @@ import { ProjectHoldPicker } from "@/components/app/project-hold-picker"
 import { AppToolbar } from "@/components/layout/app-toolbar"
 import { AppHotkeys } from "@/components/layout/hotkeys"
 import { CommandPalette } from "@/components/layout/command-palette"
+import { WelcomeDialog } from "@/components/onboarding/welcome-dialog"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import {
   SidebarInset,
@@ -52,6 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarProvider>
 
           <CommandPalette />
+          <WelcomeDialog />
           <ProjectHoldPicker />
           <ShortcutsHelpDialog />
         </div>
