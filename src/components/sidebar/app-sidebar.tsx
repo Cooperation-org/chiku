@@ -23,6 +23,7 @@ import {
 import { Avatar } from "@/components/app/avatar"
 import { ProjectSwitcher } from "@/components/sidebar/project-switcher"
 import { useAuth } from "@/lib/stores/auth"
+import { useMe } from "@/lib/queries/users"
 import { useSidebarStore } from "@/lib/stores/sidebar"
 import { useProjectStore } from "@/lib/stores/project"
 import { SETTINGS_SECTIONS } from "@/components/settings/settings-nav"
@@ -69,7 +70,11 @@ export function AppSidebar() {
   const location = useLocation()
   const params = useParams({ strict: false })
   const { setOpenMobile } = useSidebar()
-  const { user } = useAuth()
+  const { user: authUser } = useAuth()
+  const { data: me } = useMe()
+  const user = me
+    ? { ...authUser, full_name: me.full_name, full_name_display: me.full_name_display, username: me.username, photo: me.photo }
+    : authUser
   const setSelectedSlug = useProjectStore((s) => s.setSelectedSlug)
 
   const urlSlug = (params as { slug?: string }).slug ?? null
@@ -209,12 +214,12 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Your account" onClick={() => go("/account")}>
               <Avatar
-                name={user?.full_name || user?.username}
+                name={user?.full_name || user?.full_name_display || user?.username || "User"}
                 photo={user?.photo}
                 size="sm"
                 className="shrink-0"
               />
-              <span className="truncate">{user?.full_name_display || user?.username || "Signed in"}</span>
+              <span className="truncate">{user?.full_name_display || user?.full_name || user?.username || "Account"}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
