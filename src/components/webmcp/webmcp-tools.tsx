@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useWebMCP } from "usewebmcp"
 import { useAuth } from "@/lib/stores/auth"
-import { addTask, bulkAddTasks } from "@/lib/webmcp/task-tools"
+import { addTask, bulkAddTasks, deleteTask } from "@/lib/webmcp/task-tools"
 
 export function WebMcpTools() {
 	const isAuthenticated = useAuth((s) => s.isAuthenticated)
@@ -97,6 +97,36 @@ export function WebMcpTools() {
 			execute: async (args) => {
 				if (!isAuthenticated) throw new Error("Not authenticated")
 				const result = await bulkAddTasks(args as any)
+				return { content: [{ type: "text", text: JSON.stringify(result) }] }
+			},
+		},
+		undefined
+	)
+
+	useWebMCP(
+		{
+			enabled: supported && isAuthenticated,
+			name: "delete_task",
+			description:
+				"Delete a task (user story) by id or ref. Asks the user for confirmation before deleting; returns cancelled if declined.",
+			annotations: {
+				readOnlyHint: false,
+				consequentialHint: true,
+			},
+			inputSchema: {
+				type: "object",
+				properties: {
+					project: {
+						type: "string",
+						description: "Project id or slug (used to resolve 'ref'). Defaults to the currently selected project.",
+					},
+					id: { type: "number", description: "Task id" },
+					ref: { type: "number", description: "Task human ref (requires project)" },
+				},
+			},
+			execute: async (args) => {
+				if (!isAuthenticated) throw new Error("Not authenticated")
+				const result = await deleteTask(args as any)
 				return { content: [{ type: "text", text: JSON.stringify(result) }] }
 			},
 		},

@@ -1,4 +1,5 @@
-import { createUserStory } from "@/lib/api/userstories"
+import { createUserStory, getUserStory, getUserStoryByRef } from "@/lib/api/userstories"
+import { api } from "@/lib/api/client"
 import { getProject, getProjectBySlug, getProjects } from "@/lib/api/projects"
 import { queryClient, qk } from "@/lib/query"
 import { useProjectStore } from "@/lib/stores/project"
@@ -107,4 +108,44 @@ export async function bulkAddTasks(input: BulkAddTasksInput): Promise<BulkAddTas
 	queryClient.invalidateQueries({ queryKey: qk.myTasks() })
 
 	return { project: project.id, total: items.length, created, failed }
+}
+
+export interface DeleteTaskInput {
+	project?: string
+	id?: number
+	ref?: number
+}
+
+export interface DeleteTaskResult {
+	cancelled?: boolean
+	deleted?: boolean
+	id?: number
+	ref?: number
+	subject?: string
+	reason?: string
+}
+
+export async function deleteTask(input: DeleteTaskInput): Promise<DeleteTaskResult> {
+	let story: UserStory
+	if (input.id != null) {
+		story = await getUserStory(input.id)
+	} else if (input.ref != null) {
+		const project = await resolveProject(input.project)
+		story = await getUserStoryByRef(project.id, input.ref)
+	} else {
+		throw new Error("Either 'id' or 'ref' is required")
+	}
+
+	const confirmed = window.confirm(
+		`Delete task #${story.ref}: "${story.subject}"?\\n\\nThis action cannot be undone.`
+	)
+	if (!confirmed) {
+		return { cancelled: true, id: story.id, ref: story.ref, subject: story.subject }
+	}
+
+	await api.delete(`/userstories/${story.id}`)
+	const projectId = story.project
+	queryClient.invalidateQueries({ queryKey: qk.stories(projectId) })
+	queryClient.invalidateQueries({ queryKey: qk.myTasks() })
+	return { deleted: true, id: story.id, ref: story.ref, subject: story.subject }
 }
