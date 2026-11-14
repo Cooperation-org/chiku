@@ -1,0 +1,42 @@
+---
+version: "0.4.9"
+date: "2026-11-14"
+title: "WebMCP: let AI agents drive chiku"
+---
+
+Chiku now speaks WebMCP. Browser-based AI agents (Claude, ChatGPT, Gemini,
+Cursor, Copilot, and the openCode browse extension) can discover and call
+structured tools on the page instead of scraping the DOM — inheriting the
+visitor's existing session, cookies, and permissions.
+
+### Added
+
+- **WebMCP runtime** — `@mcp-b/webmcp-polyfill` installs `document.modelContext`
+  so the API works in every browser, not just Chrome Canary.
+- **`hello_chiku`** — health-check tool that returns a greeting; handy for
+  verifying agent discovery end-to-end.
+- **`add_task`** — create a single task (user story) in a project, with
+  optional subject, description, status, and assignee. Defaults to the
+  currently selected project.
+- **`bulk_add_tasks`** — create many tasks in one call via a `tasks` array or
+  a shorthand `subjects` string array; reports per-item successes and failures
+  instead of aborting on the first error.
+- **`delete_task`** — delete a task by `id` or `ref`. Shows an in-page
+  confirmation modal and only deletes after the user clicks **Delete**;
+  returns `cancelled: true` if they decline. Marked consequential/destructive.
+- **Project resolution** — tools accept a project id or slug and fall back to
+  the last selected project, matching how slug-less routes already behave.
+
+### Changed
+
+- **`getProjectBySlug`** now calls `/projects/by_slug` instead of filtering
+  `/projects` client-side (the latter ignored the slug param and returned every
+  project, resolving to the wrong one).
+
+### Notes
+
+- Tools register through `AppShell`/`__root`, so `hello_chiku` is available
+  even on the login page; the task tools gate on authentication.
+- Mutations invalidate `qk.stories` and `qk.myTasks`, so the board and task
+  list refresh in the same tab (and across tabs via the broadcast client).
+- The polyfill is loaded in `main.tsx` before `createRoot`.
