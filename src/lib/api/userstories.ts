@@ -133,6 +133,11 @@ export async function createUserStory(data: {
 	status?: number;
 	description?: string;
 	assigned_to?: number | null;
+	due_date?: string | null;
+	milestone?: number | null;
+	tags?: string[];
+	is_blocked?: boolean;
+	blocked_note?: string;
 }): Promise<UserStory> {
 	return api.post<UserStory>('/userstories', data);
 }

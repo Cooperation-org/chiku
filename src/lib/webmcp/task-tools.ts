@@ -95,6 +95,11 @@ export interface AddTaskInput {
 	description?: string
 	status?: number
 	assigned_to?: number | null
+	due_date?: string | null
+	milestone?: number | null
+	tags?: string[]
+	is_blocked?: boolean
+	blocked_note?: string
 }
 
 export async function addTask(input: AddTaskInput): Promise<UserStory> {
@@ -105,6 +110,11 @@ export async function addTask(input: AddTaskInput): Promise<UserStory> {
 		description: input.description?.trim() || undefined,
 		status: input.status,
 		assigned_to: input.assigned_to ?? null,
+		due_date: input.due_date ?? undefined,
+		milestone: input.milestone ?? undefined,
+		tags: input.tags,
+		is_blocked: input.is_blocked,
+		blocked_note: input.blocked_note,
 	})
 	queryClient.invalidateQueries({ queryKey: qk.stories(project.id) })
 	queryClient.invalidateQueries({ queryKey: qk.myTasks() })
@@ -116,6 +126,11 @@ export interface BulkTaskItem {
 	description?: string
 	status?: number
 	assigned_to?: number | null
+	due_date?: string | null
+	milestone?: number | null
+	tags?: string[]
+	is_blocked?: boolean
+	blocked_note?: string
 }
 
 export interface BulkAddTasksInput {
@@ -145,6 +160,11 @@ export async function bulkAddTasks(input: BulkAddTasksInput): Promise<BulkAddTas
 				description: item.description?.trim() || undefined,
 				status: item.status,
 				assigned_to: item.assigned_to ?? null,
+				due_date: item.due_date ?? undefined,
+				milestone: item.milestone ?? undefined,
+				tags: item.tags,
+				is_blocked: item.is_blocked,
+				blocked_note: item.blocked_note,
 			})
 		)
 	)
