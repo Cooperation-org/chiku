@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { currentProject } from '$lib/stores/project';
 
 	// Redirect to board if project selected
 	$: if ($currentProject) {
-		goto(`/p/${$currentProject.slug}/board`);
+		goto(`${base}/p/${$currentProject.slug}/board`);
 	}
 </script>
 
@@ -14,7 +15,7 @@
 
 <div class="h-full flex items-center justify-center">
 	<div class="text-center space-y-6 max-w-md">
-		<img src="/logo.svg" alt="LinkedTrust" class="w-24 h-24 mx-auto" />
+		<img src="{base}/logo.svg" alt="LinkedTrust" class="w-24 h-24 mx-auto" />
 		<div>
 			<h1 class="text-2xl font-bold text-zinc-100">TaigaLT</h1>
 			<p class="text-zinc-400 mt-2">Fast, modern project management powered by Taiga</p>

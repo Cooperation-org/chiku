@@ -20,12 +20,9 @@ export async function getProject(projectId: number): Promise<Project> {
 	return api.get<Project>(`/projects/${projectId}`);
 }
 
+/** One project by slug. Works without signing in when the project is public. */
 export async function getProjectBySlug(slug: string): Promise<Project> {
-	const projects = await api.get<Project[]>('/projects', { slug });
-	if (projects.length === 0) {
-		throw new Error(`Project not found: ${slug}`);
-	}
-	return projects[0];
+	return api.get<Project>('/projects/by_slug', { slug });
 }
 
 export async function createProject(data: CreateProjectData): Promise<Project> {

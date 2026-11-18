@@ -18,6 +18,7 @@
 	import { renderMarkdown } from '$lib/markdown';
 	import { api } from '$lib/api';
 	import { auth } from '$lib/stores/auth';
+	import { canEdit } from '$lib/stores/permissions';
 
 	export let story: UserStory;
 	export let statuses: UserStoryStatus[] = [];
@@ -199,6 +200,7 @@
 	}
 
 	async function startEdit(field: string) {
+		if (!$canEdit) return;
 		if (field === 'subject') editSubject = fullStory.subject;
 		if (field === 'description') editDescription = fullStory.description || '';
 		if (field === 'tags') editTagsText = fullStory.tags?.map(t => t[0]).join(', ') || '';
@@ -208,6 +210,7 @@
 	}
 
 	function toggleEditAll() {
+		if (!$canEdit) return;
 		editingAll = !editingAll;
 		if (editingAll) {
 			editSubject = fullStory.subject;
@@ -450,11 +453,15 @@
 			<span class="text-sm font-mono text-zinc-500">#{fullStory.ref}</span>
 			<!-- Project name — click to move -->
 			<div class="relative">
+				{#if $canEdit}
 				<button
 					on:click={openMoveDropdown}
 					class="text-xs text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded px-1.5 py-0.5 transition-colors"
 					title="Move to another project"
 				>{fullStory.project_extra_info?.name || 'Project'}</button>
+				{:else}
+				<span class="text-xs text-zinc-400 px-1.5 py-0.5">{fullStory.project_extra_info?.name || 'Project'}</span>
+				{/if}
 				{#if showMoveDropdown}
 					<div class="absolute top-full left-0 mt-1 bg-white border border-zinc-200 rounded-md shadow-lg z-50 min-w-[200px] max-h-60 overflow-y-auto">
 						<div class="px-3 py-1.5 text-xs text-zinc-400 border-b border-zinc-100">Move to...</div>
@@ -489,12 +496,13 @@
 					on:click={() => startEdit('status')}
 					class="px-2 py-0.5 text-xs rounded font-medium cursor-pointer hover:ring-2 hover:ring-blue-300 transition-shadow"
 					style="background-color: {getStatusColor(fullStory.status)}30; color: {getStatusColor(fullStory.status)}"
-					title="Click to change status"
+					title={$canEdit ? 'Click to change status' : undefined}
 				>
 					{getStatusName(fullStory.status)}
 				</button>
 			{/if}
 		</div>
+		{#if $canEdit}
 		<div class="flex items-center gap-1">
 			<button
 				on:click={toggleEditAll}
@@ -516,6 +524,7 @@
 				</svg>
 			</button>
 		</div>
+		{/if}
 	</div>
 
 	<!-- Scrollable content — all fields are inline-editable -->
@@ -565,7 +574,7 @@
 						{/each}
 					</select>
 				{:else}
-					<button on:click={() => startEdit('assignee')} class="flex items-center gap-2 text-zinc-500 hover:bg-zinc-50 rounded px-2 py-1 -mx-2 transition-colors cursor-pointer" title="Click to change assignee">
+					<button on:click={() => startEdit('assignee')} class="flex items-center gap-2 text-zinc-500 hover:bg-zinc-50 rounded px-2 py-1 -mx-2 transition-colors cursor-pointer" title={$canEdit ? 'Click to change assignee' : undefined}>
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
 						{#if fullStory.assigned_to_extra_info}
 							<span class="text-zinc-700">{fullStory.assigned_to_extra_info.full_name_display}</span>
@@ -600,7 +609,7 @@
 						{/each}
 					</select>
 				{:else if project}
-					<button on:click={() => startEdit('points')} class="flex items-center gap-2 text-zinc-500 hover:bg-zinc-50 rounded px-2 py-1 -mx-2 transition-colors cursor-pointer" title="Click to estimate">
+					<button on:click={() => startEdit('points')} class="flex items-center gap-2 text-zinc-500 hover:bg-zinc-50 rounded px-2 py-1 -mx-2 transition-colors cursor-pointer" title={$canEdit ? 'Click to estimate' : undefined}>
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
 						{#if currentPointName}
 							<span class="text-blue-600 font-medium">{currentPointName} points</span>
@@ -628,12 +637,12 @@
 						/>
 					</div>
 				{:else}
-					<button on:click={() => startEdit('due_date')} class="flex items-center gap-2 hover:bg-zinc-50 rounded px-2 py-1 -mx-2 transition-colors cursor-pointer {fullStory.due_date_status === 'past_due' ? 'text-red-600' : fullStory.due_date_status === 'near' ? 'text-amber-600' : 'text-zinc-500'}" title="Click to set due date">
+					<button on:click={() => startEdit('due_date')} class="flex items-center gap-2 hover:bg-zinc-50 rounded px-2 py-1 -mx-2 transition-colors cursor-pointer {fullStory.due_date_status === 'past_due' ? 'text-red-600' : fullStory.due_date_status === 'near' ? 'text-amber-600' : 'text-zinc-500'}" title={$canEdit ? 'Click to set due date' : undefined}>
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 						{#if fullStory.due_date}
 							<span class="font-medium">Due {new Date(fullStory.due_date + 'T00:00:00').toLocaleDateString()}</span>
 						{:else}
-							<span class="text-zinc-400">Set due date</span>
+							<span class="text-zinc-400">{$canEdit ? 'Set due date' : 'No due date'}</span>
 						{/if}
 					</button>
 				{/if}
@@ -663,14 +672,14 @@
 				<div
 					class="flex flex-wrap gap-2 cursor-text hover:bg-zinc-50 rounded px-1 -mx-1 py-1 transition-colors min-h-[2rem]"
 					on:click={() => startEdit('tags')}
-					title="Click to edit labels"
+					title={$canEdit ? 'Click to edit labels' : undefined}
 				>
 					{#if fullStory.tags && fullStory.tags.length > 0}
 						{#each fullStory.tags as [tag, color]}
 							<span class="px-2 py-1 text-xs rounded bg-zinc-100 text-zinc-600" style={color ? `background-color: ${color}20; color: ${color}` : ''}>{tag}</span>
 						{/each}
 					{:else}
-						<span class="text-zinc-400 text-sm italic">Add labels...</span>
+						{#if $canEdit}<span class="text-zinc-400 text-sm italic">Add labels...</span>{/if}
 					{/if}
 				</div>
 			{/if}
@@ -693,12 +702,12 @@
 					<div
 						class="text-zinc-800 whitespace-pre-wrap leading-relaxed cursor-text hover:bg-zinc-50 rounded px-2 -mx-2 py-2 transition-colors min-h-[3rem]"
 						on:click={() => startEdit('description')}
-						title="Click to edit"
+						title={$canEdit ? 'Click to edit' : undefined}
 					>
 						{#if fullStory.description}
 							{fullStory.description}
 						{:else}
-							<span class="text-zinc-400 italic">Click to add a description...</span>
+							<span class="text-zinc-400 italic">{$canEdit ? 'Click to add a description...' : 'No description.'}</span>
 						{/if}
 					</div>
 				{/if}
@@ -709,18 +718,20 @@
 				class="pt-4 border-t border-zinc-200"
 				role="region"
 				aria-label="Attachments"
-				on:dragover|preventDefault={() => (isDragOver = true)}
+				on:dragover|preventDefault={() => ($canEdit && (isDragOver = true))}
 				on:dragleave={() => (isDragOver = false)}
-				on:drop={handleDrop}
+				on:drop={(e) => $canEdit && handleDrop(e)}
 			>
 				<div class="flex items-center justify-between mb-3">
 					<h3 class="text-sm font-medium text-zinc-500">
 						Attachments{attachments.length ? ` (${attachments.length})` : ''}
 					</h3>
+					{#if $canEdit}
 					<button
 						on:click={() => fileInput.click()}
 						class="text-sm text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
 					>Add file</button>
+					{/if}
 					<input
 						bind:this={fileInput}
 						type="file"
@@ -742,7 +753,9 @@
 							? 'border-blue-400 bg-blue-50'
 							: 'border-zinc-200'}"
 					>
-						{#if attachments.length === 0 && uploadingNames.length === 0}
+						{#if attachments.length === 0 && uploadingNames.length === 0 && !$canEdit}
+							<p class="px-3 py-6 text-sm text-zinc-400">No attachments.</p>
+						{:else if attachments.length === 0 && uploadingNames.length === 0}
 							<button
 								on:click={() => fileInput.click()}
 								class="w-full px-3 py-6 text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
@@ -772,6 +785,7 @@
 											>
 												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
 											</a>
+											{#if $canEdit}
 											<button
 												on:click={() => removeAttachment(a)}
 												class="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-zinc-100 rounded transition-colors shrink-0"
@@ -779,6 +793,7 @@
 											>
 												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
 											</button>
+											{/if}
 										</div>
 										{#if openAttachmentId === a.id}
 											<div class="px-3 pb-3">
@@ -824,12 +839,14 @@
 			<!-- Comments -->
 			<div class="pt-4 border-t border-zinc-200">
 				<h3 class="text-sm font-medium text-zinc-500 mb-3">Comments</h3>
+				{#if $canEdit}
 				<div class="flex gap-2 mb-4">
 					<textarea bind:value={newComment} rows="6" placeholder="Add a comment..." class="flex-1 px-3 py-2 bg-zinc-50 border border-zinc-300 rounded-md text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y text-sm" on:keydown={(e) => { if (e.key === 'Enter' && e.metaKey) postComment(); }}></textarea>
 					<button on:click={postComment} disabled={!newComment.trim() || isPostingComment} class="px-3 py-2 text-sm bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end">
 						{isPostingComment ? '...' : 'Post'}
 					</button>
 				</div>
+				{/if}
 				{#if commentError}
 					<p class="mb-4 text-sm text-red-700">{commentError} — nothing you typed was lost.</p>
 				{/if}

@@ -6,6 +6,7 @@
 	import IssueModal from '$lib/components/IssueModal.svelte';
 	import CreateStoryModal from '$lib/components/CreateStoryModal.svelte';
 	import { currentProject } from '$lib/stores/project';
+	import { canEdit } from '$lib/stores/permissions';
 	import { getUserStories, getUserStoryStatuses, getUserStory } from '$lib/api/userstories';
 	import { getProjectMemberships } from '$lib/api/memberships';
 	import { isArchived, unarchiveProject } from '$lib/api/projects';
@@ -117,6 +118,7 @@
 	}
 
 	function startEditingName() {
+		if (!$canEdit) return;
 		editName = $currentProject?.name || '';
 		isEditingName = true;
 	}
@@ -184,13 +186,14 @@
 					<h1
 						class="text-lg font-semibold text-zinc-100 cursor-pointer hover:text-lt-cyan transition-colors"
 						on:click={startEditingName}
-						title="Click to rename"
+						title={$canEdit ? 'Click to rename' : undefined}
 					>
 						{$currentProject?.name || 'Select a project'}
 					</h1>
 				{/if}
 				<p class="text-sm text-zinc-500">Kanban Board</p>
 			</div>
+			{#if $canEdit}
 			<div class="flex items-center gap-2">
 				<button
 					on:click={() => showColumnEditor = true}
@@ -210,16 +213,19 @@
 					New Story
 				</button>
 			</div>
+			{/if}
 		</header>
 
 		<!-- Archived banner -->
 		{#if $currentProject && isArchived($currentProject)}
 			<div class="flex items-center justify-between px-6 py-2 bg-amber-900/30 border-b border-amber-700/50 text-amber-300 text-sm">
 				<span>This project is archived.</span>
+				{#if $canEdit}
 				<button
 					on:click={handleUnarchive}
 					class="px-3 py-1 text-xs font-medium bg-amber-600 text-white rounded hover:bg-amber-500 transition-colors"
 				>Unarchive</button>
+				{/if}
 			</div>
 		{/if}
 

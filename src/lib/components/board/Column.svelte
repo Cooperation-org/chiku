@@ -4,6 +4,7 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
 	import { createEventDispatcher } from 'svelte';
+	import { canEdit } from '$lib/stores/permissions';
 
 	export let status: UserStoryStatus;
 	export let stories: UserStory[];
@@ -66,6 +67,7 @@
 		use:dndzone={{
 			items: stories,
 			flipDurationMs,
+			dragDisabled: !$canEdit,
 			dropTargetStyle: {},
 			dropTargetClasses: ['bg-lt-cyan/5', 'border-lt-cyan/20', 'border', 'border-dashed', 'rounded-lg']
 		}}
@@ -79,6 +81,7 @@
 		{/each}
 	</div>
 
+	{#if $canEdit}
 	<!-- Add card button -->
 	<button
 		on:click={handleAddClick}
@@ -89,4 +92,5 @@
 		</svg>
 		Add story
 	</button>
+	{/if}
 </div>

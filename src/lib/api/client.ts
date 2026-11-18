@@ -103,6 +103,17 @@ class TaigaClient {
 	private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
 		const { params, _isRetry, ...fetchOptions } = options;
 
+		// The public demo build answers from sample data and never calls a server.
+		if (import.meta.env.VITE_DEMO === '1') {
+			const { demoGet, READ_ONLY } = await import('$lib/demo/server');
+			if ((fetchOptions.method || 'GET') !== 'GET') {
+				throw new ApiError(403, READ_ONLY, { detail: READ_ONLY });
+			}
+			const body = demoGet(endpoint, params);
+			if (body === undefined) throw new ApiError(404, 'Not found', { detail: 'Not found' });
+			return structuredClone(body) as T;
+		}
+
 		let url = `${API_BASE}${endpoint}`;
 		if (params) {
 			const searchParams = new URLSearchParams();
@@ -201,6 +212,7 @@ class TaigaClient {
 
 	/** Fetch a URL as a blob with the auth header attached (Taiga media may be access-controlled). */
 	async getBlob(url: string): Promise<Blob> {
+		if (import.meta.env.VITE_DEMO === '1') throw new Error('Not available in the demo');
 		const headers: Record<string, string> = {};
 		if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
 		const response = await fetch(url, { headers });

@@ -2,11 +2,13 @@
 	import '../app.css';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
+	import { DEMO_SLUG } from '$lib/demo';
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { saveReturnTo } from '$lib/auth/returnTo';
 	import { currentProject } from '$lib/stores/project';
-	import { getProjects, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject, reorderProjects } from '$lib/api/projects';
+	import { getProjects, getProjectBySlug, archiveProject, unarchiveProject, isArchived, createProject, updateProject, deleteProject, reorderProjects } from '$lib/api/projects';
 	import { getStatuses, createStatus, deleteStatus } from '$lib/api/statuses';
 	import MembersModal from '$lib/components/MembersModal.svelte';
 	import ProfileModal from '$lib/components/ProfileModal.svelte';
@@ -46,12 +48,54 @@
 		auth.init();
 	});
 
+	/** The public demo build: sample data, no server, no sign-in. */
+	const isDemo = import.meta.env.VITE_DEMO === '1';
+
+	/** The app path, without the base the build is served under. */
+	$: path = $page.url.pathname.slice(base.length) || '/';
+
 	// Redirect to login if not authenticated, preserving the deep-linked URL
 	// (incl. ?story=) so login round-trips back to it.
-	$: if (!$auth.isLoading && !$auth.isAuthenticated && !$page.url.pathname.startsWith('/login') && !$page.url.pathname.startsWith('/oauth/') && !$page.url.pathname.startsWith('/auth/')) {
-		saveReturnTo($page.url.pathname + $page.url.search);
-		goto('/login');
+	// A visitor who is not signed in may read a demo board at /p/<slug>/…
+	// (VITE_DEMO_BOARDS, and Taiga must also hold it public). Anything else goes to login.
+	$: if (isDemo && !path.startsWith(`/p/${DEMO_SLUG}/`)) {
+		goto(`${base}/p/${DEMO_SLUG}/board`, { replaceState: true });
+	} else if (!$auth.isLoading && !$auth.isAuthenticated && !path.startsWith('/login') && !path.startsWith('/oauth/') && !path.startsWith('/auth/')) {
+		openAsVisitor(path.match(/^\/p\/([^/]+)/)?.[1] ?? null);
 	}
+
+	/**
+	 * Boards a visitor may read without signing in: only the demo boards named in
+	 * VITE_DEMO_BOARDS (comma-separated project slugs, build-time). A Taiga
+	 * project being public is not enough; client boards always need a login.
+	 */
+	const demoBoards: string[] = isDemo ? [DEMO_SLUG] : (import.meta.env.VITE_DEMO_BOARDS || '')
+				.split(',')
+				.map((s: string) => s.trim())
+				.filter(Boolean);
+
+	/** The public project a visitor is reading, or null. */
+	let visitorProject: Project | null = null;
+	let visitorSlugTried: string | null = null;
+
+	async function openAsVisitor(slug: string | null) {
+		if (slug && slug === visitorProject?.slug) return;
+		if (slug && slug === visitorSlugTried) return;
+		const toLogin = () => {
+			saveReturnTo($page.url.pathname + $page.url.search);
+			goto(`${base}/login`);
+		};
+		if (!slug || !demoBoards.includes(slug)) return toLogin();
+		visitorSlugTried = slug;
+		try {
+			const project = await getProjectBySlug(slug);
+			visitorProject = project;
+			currentProject.set(project);
+		} catch {
+			toLogin();
+		}
+	}
+	$: if ($auth.isAuthenticated) visitorProject = null;
 
 	// Load projects when authenticated
 	$: if ($auth.isAuthenticated && projects.length === 0) {
@@ -64,7 +108,7 @@
 	$: displayedProjects = showArchived ? archivedProjects : activeProjects;
 
 	// Extract project slug and view from URL path: /p/[slug]/board
-	$: urlMatch = $page.url.pathname.match(/^\/p\/([^/]+)(\/.*)?$/);
+	$: urlMatch = path.match(/^\/p\/([^/]+)(\/.*)?$/);
 	$: urlSlug = urlMatch ? urlMatch[1] : null;
 	$: urlView = urlMatch ? (urlMatch[2] || '/board') : null;
 
@@ -99,12 +143,12 @@
 	function selectProject(project: Project) {
 		currentProject.set(project);
 		// Always go to the board (no query params), clearing any story detail view
-		goto(`/p/${project.slug}/board`);
+		goto(`${base}/p/${project.slug}/board`);
 	}
 
 	function handleLogout() {
 		auth.logout();
-		goto('/login');
+		goto(`${base}/login`);
 	}
 
 	function handleContextMenu(event: MouseEvent, project: Project) {
@@ -135,16 +179,16 @@
 			const active = projects.filter(p => !isArchived(p));
 			if (active.length > 0) {
 				currentProject.set(active[0]);
-				goto(`/p/${active[0].slug}/board`);
+				goto(`${base}/p/${active[0].slug}/board`);
 			} else {
 				currentProject.set(null);
-				goto('/');
+				goto(`${base}/`);
 			}
 		}
 		// If we unarchived a project, select it and navigate to it
 		if (archived) {
 			currentProject.set({ ...project, tags: updatedTags });
-			goto(`/p/${project.slug}/board`);
+			goto(`${base}/p/${project.slug}/board`);
 		}
 
 		// Sync with server in background
@@ -255,7 +299,7 @@
 			projects = projects.map(p => p.id === tempId ? newProject : p);
 			// Now safe to select and navigate
 			currentProject.set(newProject);
-			goto(`/p/${newProject.slug}/board`);
+			goto(`${base}/p/${newProject.slug}/board`);
 		} catch (err) {
 			console.error('Failed to create project:', err);
 			// Remove temp project on error
@@ -417,11 +461,11 @@
 	}
 
 	// Check if current route is login or auth callback
-	$: isLoginPage = $page.url.pathname.startsWith('/login') || $page.url.pathname.startsWith('/oauth/') || $page.url.pathname.startsWith('/auth/');
+	$: isLoginPage = !isDemo && (path.startsWith('/login') || path.startsWith('/oauth/') || path.startsWith('/auth/'));
 
 	// Helper for project-scoped nav links
-	$: projectBase = $currentProject ? `/p/${$currentProject.slug}` : '';
-	$: currentView = $page.url.pathname.replace(/^\/p\/[^/]+/, '') || '/board';
+	$: projectBase = $currentProject ? `${base}/p/${$currentProject.slug}` : '';
+	$: currentView = path.replace(/^\/p\/[^/]+/, '') || '/board';
 	function isView(view: string): boolean {
 		return currentView === view || currentView === view + '/';
 	}
@@ -445,19 +489,26 @@
 	<div class="min-h-screen bg-surface-0 flex items-center justify-center">
 		<div class="text-zinc-500">Loading...</div>
 	</div>
-{:else if $auth.isAuthenticated}
+{:else if $auth.isAuthenticated || visitorProject}
 	<CohortNav org={$currentProject?.slug || urlSlug} />
 	<div class="min-h-[calc(100vh-32px)] bg-surface-0 flex">
 		<!-- Sidebar -->
 		<aside class="w-56 bg-surface-1 border-r border-border flex flex-col">
 			<!-- Logo -->
 			<div class="p-4 border-b border-border">
-				<a href="/" class="flex items-center gap-2">
-					<img src="/logo.svg" alt="LinkedTrust" class="w-8 h-8" />
+				<a href="{base}/" class="flex items-center gap-2">
+					<img src="{base}/logo.svg" alt="LinkedTrust" class="w-8 h-8" />
 					<span class="font-semibold text-zinc-100">Taiga<span class="text-lt-cyan">LT</span></span>
 				</a>
 			</div>
 
+			{#if visitorProject}
+			<div class="flex-1 px-3 py-3 border-b border-border">
+				<div class="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Project</div>
+				<div class="text-sm text-zinc-100">{visitorProject.name}</div>
+				<div class="text-xs text-zinc-500 mt-1">{isDemo ? 'Read-only demo with sample data' : 'Read only'}</div>
+			</div>
+			{:else}
 			<!-- Projects List -->
 			<div class="flex-1 flex flex-col min-h-0 border-b border-border">
 				<div class="px-3 py-2 flex items-center justify-between">
@@ -522,15 +573,19 @@
 				</div>
 			</div>
 
+			{/if}
+
 			<!-- Navigation -->
 			<nav class="p-2 space-y-1">
-				<a href="/tasks" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={$page.url.pathname === '/tasks'} class:text-zinc-100={$page.url.pathname === '/tasks'}>
+				{#if !visitorProject}
+				<a href="{base}/tasks" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={$page.url.pathname === '/tasks'} class:text-zinc-100={$page.url.pathname === '/tasks'}>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
 					</svg>
 					My Tasks
 				</a>
 				<div class="border-t border-border my-1"></div>
+				{/if}
 					{#if showBoard}
 						<a href="{projectBase}/board" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-zinc-400 hover:text-zinc-100 hover:bg-surface-3 transition-colors" class:bg-surface-3={isView('/board')} class:text-zinc-100={isView('/board')}>
 							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -563,6 +618,7 @@
 							Velocity
 						</a>
 					{/if}
+				{#if !visitorProject}
 				<button
 					on:click={() => showMembersModal = true}
 					disabled={!$currentProject}
@@ -573,8 +629,17 @@
 					</svg>
 					Members
 				</button>
+				{/if}
 			</nav>
 
+			{#if visitorProject}
+			<div class="p-3 border-t border-border space-y-1 text-sm">
+				<a href="https://github.com/Cooperation-org/chiku" target="_blank" rel="noopener" class="block px-1 py-1 text-zinc-400 hover:text-zinc-100">Source code on GitHub</a>
+				{#if !isDemo}
+				<a href="{base}/login" on:click={() => saveReturnTo($page.url.pathname + $page.url.search)} class="block px-1 py-1 text-zinc-400 hover:text-zinc-100">Sign in</a>
+				{/if}
+			</div>
+			{:else}
 			<!-- User & Logout -->
 			<div class="p-3 border-t border-border">
 				<div class="flex items-center justify-between">
@@ -602,6 +667,7 @@
 					</button>
 				</div>
 			</div>
+			{/if}
 		</aside>
 
 		<!-- Main content -->

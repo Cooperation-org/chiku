@@ -3,6 +3,7 @@
 	import type { Epic } from '$lib/api/types';
 	import { updateEpic } from '$lib/api/epics';
 	import { api } from '$lib/api';
+	import { canEdit } from '$lib/stores/permissions';
 
 	export let epic: Epic;
 
@@ -117,7 +118,7 @@
 				{/if}
 			</div>
 			<div class="flex items-center gap-2">
-				{#if !isEditing}
+				{#if !isEditing && $canEdit}
 					<button
 						on:click={startEditing}
 						class="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-surface-3 rounded transition-colors"

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chiku</title>
+<meta name="description" content="Modern task tracker with no per seat costs.">
+<link rel="icon" href="logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#ffffff; --fg:#18181b; --muted:#52525b; --line:#e4e4e7; --accent:#0891b2; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0b0b0c; --fg:#f4f4f5; --muted:#a1a1aa; --line:#27272a; --accent:#22d3ee; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 Inter, system-ui, sans-serif; }
+.wrap { padding:32px clamp(16px, 4vw, 56px); }
+header { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+header img { width:44px; height:44px; }
+h1 { font-size:32px; margin:0; letter-spacing:-0.02em; }
+.lede { font-size:20px; color:var(--muted); margin:12px 0 20px; }
+.links { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:28px; }
+.links a { color:var(--fg); text-decoration:none; border:1px solid var(--line); border-radius:8px; padding:10px 16px; font-weight:500; }
+.links a.primary { background:var(--accent); border-color:var(--accent); color:#0b0b0c; }
+.links a:hover { border-color:var(--accent); }
+.shot { display:block; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.shot img { display:block; width:100%; height:auto; }
+.shot:hover { border-color:var(--accent); }
+ul { columns:2 360px; column-gap:40px; padding-left:20px; margin:28px 0 0; color:var(--muted); }
+li { margin-bottom:6px; break-inside:avoid; }
+footer { margin-top:28px; color:var(--muted); font-size:14px; }
+footer a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="logo.svg" alt="">
+    <h1>Chiku</h1>
+  </header>
+  <p class="lede">Modern task tracker with no per seat costs.</p>
+  <div class="links">
+    <a class="primary" href="p/chiku-demo/board/">Open the demo board</a>
+    <a href="https://github.com/Cooperation-org/chiku">Source code on GitHub</a>
+    <a href="https://linkedtrust.us">LinkedTrust.us</a>
+  </div>
+  <a class="shot" href="p/chiku-demo/board/" aria-label="Open the demo board">
+    <img src="board.png" alt="Chiku kanban board with sample stories in New, Ready, In progress, Ready for test and Done columns" width="3200" height="1800">
+  </a>
+</div>
+</body>
+</html>
